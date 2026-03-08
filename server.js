@@ -135,13 +135,20 @@ wss.on("connection", (socket) => {
   let boundRole = null; // "web" | "mobile"
 
   socket.on("message", (raw) => {
+    // Debug logging — observe all inbound frames without mutating
+    console.log("[relay] raw frame:", raw.toString().slice(0, 512));
+
     let msg;
     try {
       msg = JSON.parse(raw);
     } catch {
+      console.error("[relay] invalid JSON from", boundRole || "unbound");
       socket.send(envelope("error", null, { message: "invalid_json" }));
       return;
     }
+
+    console.log("[relay] message type:", msg.type);
+    console.log("[relay] sessionId:", msg.sessionId);
 
     // Validate inbound envelope shape
     if (!msg.type) {

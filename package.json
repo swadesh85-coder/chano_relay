@@ -1,0 +1,18 @@
+{
+  "name": "chano_relay",
+  "version": "1.0.0",
+  "description": "Stateless WebSocket relay server for Project Chano",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "uuid": "^13.0.0",
+    "ws": "^8.19.0"
+  }
+}

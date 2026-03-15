@@ -1,233 +1,428 @@
-/**
- * Integration test for Chano Relay Server — envelope-enforced protocol.
- *
- * Every message must conform to:
- * { type: string, sessionId: string|null, timestamp: number, payload: object }
- */
+const assert = require("node:assert/strict");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const test = require("node:test");
+const { EventEmitter } = require("events");
 const WebSocket = require("ws");
+const selfsigned = require("selfsigned");
 
-const URL = "ws://localhost:8080";
-let passed = 0;
-let failed = 0;
+const {
+  createConnectionManager,
+  createMessageRouter,
+  createRelayServer,
+  DEFAULT_PROTOCOL_VERSION,
+  DEFAULT_MAX_PAYLOAD_BYTES,
+} = require("./server");
 
-function assert(condition, label) {
-  if (condition) {
-    console.log(`  PASS: ${label}`);
-    passed++;
-  } else {
-    console.error(`  FAIL: ${label}`);
-    failed++;
+class MockSocket extends EventEmitter {
+  constructor() {
+    super();
+    this.sentMessages = [];
+    this.readyState = 1;
+  }
+
+  send(message) {
+    this.sentMessages.push(message);
+  }
+
+  close() {
+    this.readyState = 3;
+    this.emit("close");
   }
 }
 
-/** Validate that a parsed message follows the standard envelope. */
-function assertEnvelope(msg, expectedType, label) {
-  assert(msg.type === expectedType, `${label} → type is "${expectedType}"`);
-  assert("sessionId" in msg, `${label} → has sessionId field`);
-  assert(typeof msg.timestamp === "number" && msg.timestamp > 0, `${label} → has valid timestamp`);
-  assert(typeof msg.payload === "object" && msg.payload !== null, `${label} → has payload object`);
-}
-
-function connect() {
-  return new Promise((resolve) => {
-    const ws = new WebSocket(URL);
-    ws.on("open", () => resolve(ws));
-  });
-}
-
-function waitMsg(ws, filter, timeoutMs = 3000) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`Timeout waiting for ${filter}`)), timeoutMs);
-    const handler = (raw) => {
-      const msg = JSON.parse(raw);
-      if (typeof filter === "string" ? msg.type === filter : filter(msg)) {
-        clearTimeout(timer);
-        ws.removeListener("message", handler);
-        resolve(msg);
-      }
-    };
-    ws.on("message", handler);
-  });
-}
-
-/** Envelope helper for client → server messages. */
-function env(type, sessionId, payload) {
-  return JSON.stringify({
-    type,
-    sessionId: sessionId || null,
+function createEnvelope(overrides = {}) {
+  return {
+    protocolVersion: DEFAULT_PROTOCOL_VERSION,
+    type: "event_stream",
+    sessionId: "session-1",
     timestamp: Date.now(),
-    payload: payload || {},
+    sequence: 1,
+    payload: { opaque: true },
+    ...overrides,
+  };
+}
+
+function waitForOpen(socket) {
+  return new Promise((resolve, reject) => {
+    socket.once("open", resolve);
+    socket.once("error", reject);
   });
 }
 
-async function testFullFlow() {
-  console.log("\n--- Test 1: Full flow (create → pair → relay → disconnect) ---");
+function waitForConnectionCount(relayServer, expectedCount, timeoutMs = 3000) {
+  const start = Date.now();
 
-  const web = await connect();
-  const mobile = await connect();
+  return new Promise((resolve, reject) => {
+    const poll = () => {
+      if (relayServer.getConnectionCount() === expectedCount) {
+        resolve();
+        return;
+      }
 
-  // 1. Web creates session
-  web.send(env("qr_session_create"));
-  const ready = await waitMsg(web, "qr_session_ready");
+      if (Date.now() - start >= timeoutMs) {
+        reject(new Error(`Timed out waiting for ${expectedCount} active connections`));
+        return;
+      }
 
-  assertEnvelope(ready, "qr_session_ready", "qr_session_ready");
-  assert(typeof ready.sessionId === "string" && ready.sessionId.length > 0, "sessionId is a valid UUID string");
-  assert(typeof ready.payload.expiresAt === "number" && ready.payload.expiresAt > Date.now(), "payload.expiresAt is a future timestamp");
+      setTimeout(poll, 10);
+    };
 
-  const { sessionId } = ready;
-
-  // 2. Mobile pairs
-  mobile.send(env("pair_request", sessionId));
-
-  const pairWeb = await waitMsg(web, "pair_approved");
-  const pairMobile = await waitMsg(mobile, "pair_approved");
-
-  assertEnvelope(pairWeb, "pair_approved", "pair_approved → web");
-  assert(pairWeb.sessionId === sessionId, "pair_approved has correct sessionId (web)");
-  assertEnvelope(pairMobile, "pair_approved", "pair_approved → mobile");
-  assert(pairMobile.sessionId === sessionId, "pair_approved has correct sessionId (mobile)");
-
-  // 3. Relay: mobile → web
-  mobile.send(env("relay", sessionId, { action: "scan_result", data: "hello" }));
-  const relayedToWeb = await waitMsg(web, "relay");
-
-  assertEnvelope(relayedToWeb, "relay", "relay → web");
-  assert(relayedToWeb.sessionId === sessionId, "relay has correct sessionId");
-  assert(relayedToWeb.payload.from === "mobile", "relay payload.from is mobile");
-  assert(relayedToWeb.payload.payload.action === "scan_result", "original payload forwarded intact (not mutated)");
-
-  // 4. Relay: web → mobile
-  web.send(env("relay", sessionId, { action: "ack" }));
-  const relayedToMobile = await waitMsg(mobile, "relay");
-
-  assertEnvelope(relayedToMobile, "relay", "relay → mobile");
-  assert(relayedToMobile.payload.from === "web", "reverse relay payload.from is web");
-  assert(relayedToMobile.payload.payload.action === "ack", "reverse relay payload forwarded intact");
-
-  // 5. Disconnect: mobile closes → web should get session_close
-  const webClosePromise = waitMsg(web, "session_close");
-  mobile.close();
-  const closeMsg = await webClosePromise;
-
-  assertEnvelope(closeMsg, "session_close", "session_close → web");
-  assert(closeMsg.sessionId === sessionId, "session_close has correct sessionId");
-  assert(closeMsg.payload.reason === "peer_disconnected", "session_close payload.reason is peer_disconnected");
-
-  web.close();
+    poll();
+  });
 }
 
-async function testExpiredSession() {
-  console.log("\n--- Test 2: Expired session rejection ---");
+function waitForMessage(socket, timeoutMs = 3000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Timed out waiting for websocket message")), timeoutMs);
 
-  const web = await connect();
-  web.send(env("qr_session_create"));
-  await waitMsg(web, "qr_session_ready");
+    socket.once("message", (data, isBinary) => {
+      clearTimeout(timer);
+      if (isBinary) {
+        reject(new Error("Expected text websocket frame"));
+        return;
+      }
 
-  const mobile = await connect();
-  mobile.send(env("pair_request", "nonexistent-id"));
-  const err = await waitMsg(mobile, "error");
+      resolve(JSON.parse(data.toString("utf8")));
+    });
 
-  assertEnvelope(err, "error", "error → expired");
-  assert(err.payload.message === "session_not_found", "payload.message is session_not_found");
-
-  web.close();
-  mobile.close();
+    socket.once("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+  });
 }
 
-async function testDuplicatePairing() {
-  console.log("\n--- Test 3: Duplicate mobile pairing rejected ---");
+async function withStartedServer(config, callback) {
+  const relayServer = createRelayServer(config);
+  await relayServer.start();
 
-  const web = await connect();
-  const mobile1 = await connect();
-  const mobile2 = await connect();
-
-  web.send(env("qr_session_create"));
-  const ready = await waitMsg(web, "qr_session_ready");
-  const { sessionId } = ready;
-
-  mobile1.send(env("pair_request", sessionId));
-  await waitMsg(mobile1, "pair_approved");
-
-  mobile2.send(env("pair_request", sessionId));
-  const err = await waitMsg(mobile2, "error");
-
-  assertEnvelope(err, "error", "error → duplicate pair");
-  assert(err.payload.message === "session_already_paired", "payload.message is session_already_paired");
-
-  web.close();
-  mobile1.close();
-  mobile2.close();
-}
-
-async function testAlreadyBound() {
-  console.log("\n--- Test 4: Already-bound socket cannot create or pair again ---");
-
-  const web = await connect();
-  web.send(env("qr_session_create"));
-  await waitMsg(web, "qr_session_ready");
-
-  web.send(env("qr_session_create"));
-  const err = await waitMsg(web, "error");
-
-  assertEnvelope(err, "error", "error → already bound");
-  assert(err.payload.message === "already_bound", "payload.message is already_bound");
-
-  web.close();
-}
-
-async function testInvalidJson() {
-  console.log("\n--- Test 5: Invalid JSON rejected ---");
-
-  const ws = await connect();
-  ws.send("not json at all");
-  const err = await waitMsg(ws, "error");
-
-  assertEnvelope(err, "error", "error → invalid json");
-  assert(err.payload.message === "invalid_json", "payload.message is invalid_json");
-
-  ws.close();
-}
-
-async function testMissingType() {
-  console.log("\n--- Test 6: Missing type rejected ---");
-
-  const ws = await connect();
-  ws.send(JSON.stringify({ sessionId: null, timestamp: Date.now(), payload: {} }));
-  const err = await waitMsg(ws, "error");
-
-  assertEnvelope(err, "error", "error → missing type");
-  assert(err.payload.message === "missing_type", "payload.message is missing_type");
-
-  ws.close();
-}
-
-async function testHealthEndpoint() {
-  console.log("\n--- Test 7: Health endpoint ---");
-
-  const res = await fetch("http://localhost:8080/health");
-  const body = await res.json();
-
-  assert(res.status === 200, "Health returns 200");
-  assert(body.status === "ok", "Health status is ok");
-  assert(typeof body.sessions === "number", "Health reports session count");
-}
-
-(async () => {
   try {
-    await testFullFlow();
-    await testExpiredSession();
-    await testDuplicatePairing();
-    await testAlreadyBound();
-    await testInvalidJson();
-    await testMissingType();
-    await testHealthEndpoint();
-
-    console.log(`\n=============================`);
-    console.log(`  PASSED: ${passed}  |  FAILED: ${failed}`);
-    console.log(`=============================\n`);
-    process.exit(failed > 0 ? 1 : 0);
-  } catch (err) {
-    console.error("FATAL:", err);
-    process.exit(1);
+    await callback(relayServer);
+  } finally {
+    await relayServer.stop();
   }
-})();
+}
+
+test("server_start", async () => {
+  await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
+    const address = relayServer.server.address();
+    assert.equal(typeof address.port, "number");
+    assert.ok(address.port > 0);
+
+    const response = await fetch(`http://127.0.0.1:${address.port}/health`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.status, "ok");
+    assert.equal(body.wsPath, "/relay");
+    assert.equal(body.transport, "ws");
+    assert.equal(body.protocolVersion, DEFAULT_PROTOCOL_VERSION);
+    assert.equal(body.maxPayloadBytes, DEFAULT_MAX_PAYLOAD_BYTES);
+  });
+});
+
+test("websocket_upgrade", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "chano-relay-"));
+  const keyPath = path.join(tempDir, "relay.key");
+  const certPath = path.join(tempDir, "relay.crt");
+  const cert = await selfsigned.generate([{ name: "commonName", value: "127.0.0.1" }], {
+    algorithm: "rsa",
+    days: 7,
+    keySize: 2048,
+  });
+
+  fs.writeFileSync(keyPath, cert.private);
+  fs.writeFileSync(certPath, cert.cert);
+
+  try {
+    await withStartedServer(
+      {
+        host: "127.0.0.1",
+        port: 0,
+        wsPath: "/relay",
+        tls: {
+          enabled: true,
+          keyPath,
+          certPath,
+          minVersion: "TLSv1.2",
+        },
+      },
+      async (relayServer) => {
+        const address = relayServer.server.address();
+        const socket = new WebSocket(`wss://127.0.0.1:${address.port}/relay`, {
+          rejectUnauthorized: false,
+        });
+
+        await waitForOpen(socket);
+        assert.equal(relayServer.getConnectionCount(), 1);
+        socket.close();
+      },
+    );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("connection_accept", async () => {
+  await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
+    const address = relayServer.server.address();
+    const socket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+    const expectedEnvelope = createEnvelope();
+    const envelopePromise = new Promise((resolve) => {
+      relayServer.events.once("transportEnvelope", resolve);
+    });
+
+    await waitForOpen(socket);
+    socket.send(JSON.stringify(expectedEnvelope));
+
+    const result = await envelopePromise;
+    assert.deepEqual(result.envelope, expectedEnvelope);
+
+    socket.close();
+  });
+});
+
+test("invalid_protocol_version", async () => {
+  await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
+    const address = relayServer.server.address();
+    const socket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+    const envelope = createEnvelope({ protocolVersion: 1 });
+
+    await waitForOpen(socket);
+    socket.send(JSON.stringify(envelope));
+
+    const response = await waitForMessage(socket);
+    assert.equal(response.type, "transport_error");
+    assert.equal(response.payload.reason, "unsupported_protocol_version");
+
+    socket.close();
+  });
+});
+
+test("missing_session_id", async () => {
+  await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
+    const address = relayServer.server.address();
+    const socket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+    const envelope = createEnvelope({ sessionId: "" });
+
+    await waitForOpen(socket);
+    socket.send(JSON.stringify(envelope));
+
+    const response = await waitForMessage(socket);
+    assert.equal(response.type, "transport_error");
+    assert.equal(response.payload.reason, "missing_session_id");
+
+    socket.close();
+  });
+});
+
+test("missing_type", async () => {
+  await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
+    const address = relayServer.server.address();
+    const socket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+    const envelope = createEnvelope({ type: "" });
+
+    await waitForOpen(socket);
+    socket.send(JSON.stringify(envelope));
+
+    const response = await waitForMessage(socket);
+    assert.equal(response.type, "transport_error");
+    assert.equal(response.payload.reason, "missing_type");
+
+    socket.close();
+  });
+});
+
+test("payload_size_limit", async () => {
+  await withStartedServer(
+    { host: "127.0.0.1", port: 0, wsPath: "/relay", maxPayloadBytes: 32 },
+    async (relayServer) => {
+      const address = relayServer.server.address();
+      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+      const envelope = createEnvelope({ payload: { blob: "x".repeat(64) } });
+
+      await waitForOpen(socket);
+      socket.send(JSON.stringify(envelope));
+
+      const response = await waitForMessage(socket);
+      assert.equal(response.type, "transport_error");
+      assert.equal(response.payload.reason, "payload_too_large");
+
+      socket.close();
+    },
+  );
+});
+
+test("valid_envelope_pass", async () => {
+  await withStartedServer(
+    { host: "127.0.0.1", port: 0, wsPath: "/relay", maxPayloadBytes: 256 },
+    async (relayServer) => {
+      const address = relayServer.server.address();
+      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+      const expectedEnvelope = createEnvelope({ payload: { blob: "ok" } });
+      const envelopePromise = new Promise((resolve) => {
+        relayServer.events.once("transportEnvelope", resolve);
+      });
+
+      await waitForOpen(socket);
+      socket.send(JSON.stringify(expectedEnvelope));
+
+      const result = await envelopePromise;
+      assert.deepEqual(result.envelope, expectedEnvelope);
+
+      socket.close();
+    },
+  );
+});
+
+test("socket_register", () => {
+  const connectionManager = createConnectionManager();
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+
+  connectionManager.registerConnection(mobileSocket);
+  connectionManager.registerConnection(webSocket);
+
+  assert.equal(connectionManager.getConnectionCount(), 2);
+});
+
+test("socket_remove", () => {
+  const connectionManager = createConnectionManager();
+  const socket = new MockSocket();
+
+  connectionManager.registerConnection(socket);
+  assert.equal(connectionManager.getConnectionCount(), 1);
+
+  const removed = connectionManager.removeConnection(socket);
+  assert.equal(removed, true);
+  assert.equal(connectionManager.getConnectionCount(), 0);
+});
+
+test("session_binding", () => {
+  const connectionManager = createConnectionManager();
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+
+  connectionManager.registerConnection(mobileSocket);
+  connectionManager.registerConnection(webSocket);
+  connectionManager.bindSessionSockets("session-42", mobileSocket, webSocket);
+
+  const binding = connectionManager.lookupConnection("session-42");
+  assert.equal(binding.mobileSocket, mobileSocket);
+  assert.equal(binding.webSocket, webSocket);
+});
+
+test("disconnect_cleanup", async () => {
+  const connectionManager = createConnectionManager();
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+
+  connectionManager.registerConnection(mobileSocket);
+  connectionManager.registerConnection(webSocket);
+  connectionManager.bindSessionSockets("session-cleanup", mobileSocket, webSocket);
+  assert.equal(connectionManager.getConnectionCount(), 2);
+
+  mobileSocket.emit("close");
+
+  assert.equal(connectionManager.getConnectionCount(), 1);
+  const binding = connectionManager.lookupConnection("session-cleanup");
+  assert.equal(binding.mobileSocket, null);
+  assert.equal(binding.webSocket, webSocket);
+});
+
+test("mobile_to_web_routing", () => {
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager);
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const envelope = createEnvelope({ sessionId: "session-route-1", payload: { opaque: "mobile" } });
+
+  connectionManager.bindSessionSockets("session-route-1", mobileSocket, webSocket);
+
+  const routed = messageRouter.routeMessage(envelope, mobileSocket);
+
+  assert.equal(routed, true);
+  assert.equal(webSocket.sentMessages.length, 1);
+  assert.equal(webSocket.sentMessages[0], JSON.stringify(envelope));
+  assert.equal(mobileSocket.sentMessages.length, 0);
+});
+
+test("web_to_mobile_routing", () => {
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager);
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const envelope = createEnvelope({ sessionId: "session-route-2", payload: { opaque: "web" } });
+
+  connectionManager.bindSessionSockets("session-route-2", mobileSocket, webSocket);
+
+  const routed = messageRouter.routeMessage(envelope, webSocket);
+
+  assert.equal(routed, true);
+  assert.equal(mobileSocket.sentMessages.length, 1);
+  assert.equal(mobileSocket.sentMessages[0], JSON.stringify(envelope));
+  assert.equal(webSocket.sentMessages.length, 0);
+});
+
+test("missing_destination_drop", () => {
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager);
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const envelope = createEnvelope({ sessionId: "session-route-3" });
+
+  connectionManager.bindSessionSockets("session-route-3", mobileSocket, webSocket);
+  webSocket.close();
+
+  const routed = messageRouter.routeMessage(envelope, mobileSocket);
+
+  assert.equal(routed, false);
+  assert.equal(webSocket.sentMessages.length, 0);
+});
+
+test("envelope_integrity_preserved", () => {
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager);
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const envelope = createEnvelope({
+    sessionId: "session-route-4",
+    timestamp: 1234567890,
+    sequence: 77,
+    payload: { nested: { opaque: true } },
+  });
+  const originalSnapshot = JSON.stringify(envelope);
+
+  connectionManager.bindSessionSockets("session-route-4", mobileSocket, webSocket);
+
+  const routed = messageRouter.routeMessage(envelope, mobileSocket);
+
+  assert.equal(routed, true);
+  assert.equal(webSocket.sentMessages[0], originalSnapshot);
+  assert.equal(JSON.stringify(envelope), originalSnapshot);
+});
+
+test("multiple_connection_handling", async () => {
+  await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
+    const address = relayServer.server.address();
+    const sockets = Array.from({ length: 8 }, () => new WebSocket(`ws://127.0.0.1:${address.port}/relay`));
+
+    await Promise.all(sockets.map(waitForOpen));
+    assert.equal(relayServer.getConnectionCount(), sockets.length);
+
+    await Promise.all(
+      sockets.map(
+        (socket) =>
+          new Promise((resolve) => {
+            socket.once("close", resolve);
+            socket.close();
+          }),
+      ),
+    );
+
+    await waitForConnectionCount(relayServer, 0);
+    assert.equal(relayServer.getConnectionCount(), 0);
+  });
+});

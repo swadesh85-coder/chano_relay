@@ -1,276 +1,523 @@
+const fs = require("fs");
 const http = require("http");
-const WebSocket = require("ws");
-const { WebSocketServer } = WebSocket;
-const { v4: uuidv4 } = require("uuid");
+const https = require("https");
+const path = require("path");
+const { EventEmitter } = require("events");
+const { WebSocketServer } = require("ws");
 
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
-const PORT = parseInt(process.env.PORT, 10) || 8080;
-const SESSION_TTL_MS = parseInt(process.env.SESSION_TTL_MS, 10) || 60 * 1000; // 60 seconds
-const REAPER_INTERVAL_MS = 10 * 1000; // sweep every 10s (tight for 60s TTL)
+const DEFAULT_PROTOCOL_VERSION = 2;
+const DEFAULT_MAX_PAYLOAD_BYTES = 1024 * 1024;
+const DEFAULT_CONFIG_PATH = path.join(__dirname, "relay.config.json");
 
-// ---------------------------------------------------------------------------
-// Envelope helper — every outbound message conforms to the standard shape:
-// { type, sessionId, timestamp, payload }
-// ---------------------------------------------------------------------------
-function envelope(type, sessionId, payload) {
+function parseBoolean(value, fallback = false) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
+}
+
+function parseInteger(value, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) ? parsed : fallback;
+}
+
+function loadRelayConfiguration(options = {}) {
+  const env = options.env || process.env;
+  const configPath = options.configPath || env.RELAY_CONFIG_PATH || DEFAULT_CONFIG_PATH;
+  let fileConfig = {};
+
+  if (fs.existsSync(configPath)) {
+    fileConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  }
+
+  const tlsConfig = {
+    enabled: parseBoolean(env.RELAY_TLS_ENABLED, fileConfig.tls && fileConfig.tls.enabled),
+    keyPath: env.RELAY_TLS_KEY_PATH || (fileConfig.tls && fileConfig.tls.keyPath) || "",
+    certPath: env.RELAY_TLS_CERT_PATH || (fileConfig.tls && fileConfig.tls.certPath) || "",
+    minVersion:
+      env.RELAY_TLS_MIN_VERSION ||
+      (fileConfig.tls && fileConfig.tls.minVersion) ||
+      "TLSv1.2",
+  };
+
+  const config = {
+    host: env.HOST || fileConfig.host || "0.0.0.0",
+    port: parseInteger(env.PORT, parseInteger(fileConfig.port, 8080)),
+    wsPath: env.RELAY_WS_PATH || fileConfig.wsPath || "/relay",
+    protocolVersion: parseInteger(
+      env.RELAY_PROTOCOL_VERSION,
+      parseInteger(fileConfig.protocolVersion, DEFAULT_PROTOCOL_VERSION),
+    ),
+    maxPayloadBytes: parseInteger(
+      env.RELAY_MAX_PAYLOAD_BYTES,
+      parseInteger(fileConfig.maxPayloadBytes, DEFAULT_MAX_PAYLOAD_BYTES),
+    ),
+    tls: tlsConfig,
+  };
+
+  if (tlsConfig.enabled) {
+    if (!tlsConfig.keyPath || !tlsConfig.certPath) {
+      throw new Error("TLS is enabled but RELAY_TLS_KEY_PATH or RELAY_TLS_CERT_PATH is missing");
+    }
+
+    if (!fs.existsSync(tlsConfig.keyPath) || !fs.existsSync(tlsConfig.certPath)) {
+      throw new Error("TLS key or certificate file does not exist");
+    }
+  }
+
+  return config;
+}
+
+function createTransportEnvelopeError(reason, protocolVersion) {
   return JSON.stringify({
-    type,
-    sessionId: sessionId || null,
+    protocolVersion,
+    type: "transport_error",
+    sessionId: null,
     timestamp: Date.now(),
-    payload: payload || {},
+    sequence: 0,
+    payload: { reason },
   });
 }
 
-// ---------------------------------------------------------------------------
-// Session Registry (in-memory only — zero persistence by design)
-// ---------------------------------------------------------------------------
-/** @type {Map<string, RelaySession>} */
-const sessions = new Map();
-
-/**
- * @typedef {Object} RelaySession
- * @property {string}         sessionId
- * @property {number}         createdAt    - epoch ms
- * @property {number}         expiresAt    - epoch ms
- * @property {WebSocket|null} webSocket
- * @property {WebSocket|null} mobileSocket
- */
-
-function createSession(webSocket) {
-  const now = Date.now();
-  /** @type {RelaySession} */
-  const session = {
-    sessionId: uuidv4(),
-    createdAt: now,
-    expiresAt: now + SESSION_TTL_MS,
-    webSocket,
-    mobileSocket: null,
-  };
-  sessions.set(session.sessionId, session);
-  return session;
+function getPayloadSizeBytes(payload) {
+  return Buffer.byteLength(JSON.stringify(payload));
 }
 
-/**
- * Send session_close to both sides and remove from registry.
- * The relay never stores user vault data, never decrypts payloads,
- * and never mutates message contents.
- */
-function destroySession(sessionId, reason) {
-  const session = sessions.get(sessionId);
-  if (!session) return;
+function validateTransportEnvelope(message, options) {
+  const protocolVersion = options.protocolVersion;
+  const maxPayloadBytes = options.maxPayloadBytes;
 
-  const closeMsg = envelope("session_close", sessionId, { reason });
-
-  for (const role of ["webSocket", "mobileSocket"]) {
-    const sock = session[role];
-    if (sock && sock.readyState === WebSocket.OPEN) {
-      sock.send(closeMsg);
-      sock.close(1000, reason || "session_destroyed");
-    }
+  if (!message || typeof message !== "object" || Array.isArray(message)) {
+    return { valid: false, reason: "invalid_transport_envelope" };
   }
-  sessions.delete(sessionId);
+
+  const hasSequence = Number.isInteger(message.sequence) && message.sequence >= 0;
+  const hasTimestamp = typeof message.timestamp === "number" && Number.isFinite(message.timestamp);
+  const hasType = typeof message.type === "string";
+  const hasPayload = Object.prototype.hasOwnProperty.call(message, "payload");
+
+  if (!Object.prototype.hasOwnProperty.call(message, "protocolVersion")) {
+    return { valid: false, reason: "missing_protocol_version" };
+  }
+
+  if (message.protocolVersion !== protocolVersion) {
+    return { valid: false, reason: "unsupported_protocol_version" };
+  }
+
+  if (typeof message.sessionId !== "string" || message.sessionId.trim() === "") {
+    return { valid: false, reason: "missing_session_id" };
+  }
+
+  if (typeof message.type !== "string" || message.type.trim() === "") {
+    return { valid: false, reason: "missing_type" };
+  }
+
+  if (!hasType || !hasTimestamp || !hasSequence || !hasPayload) {
+    return { valid: false, reason: "invalid_transport_envelope" };
+  }
+
+  if (getPayloadSizeBytes(message.payload) > maxPayloadBytes) {
+    return { valid: false, reason: "payload_too_large" };
+  }
+
+  return { valid: true };
 }
 
-// ---------------------------------------------------------------------------
-// Session Reaper — automatic expiry
-// ---------------------------------------------------------------------------
-const reaper = setInterval(() => {
-  const now = Date.now();
-  for (const [id, session] of sessions) {
-    if (now >= session.expiresAt) {
-      console.log(`[reaper] Session ${id} expired`);
-      destroySession(id, "session_expired");
+function createConnectionManager() {
+  const socketRegistry = new Map();
+  const sessionRegistry = new Map();
+
+  function ensureSession(sessionId) {
+    let session = sessionRegistry.get(sessionId);
+    if (!session) {
+      session = {
+        sessionId,
+        mobileSocket: null,
+        webSocket: null,
+      };
+      sessionRegistry.set(sessionId, session);
+    }
+
+    return session;
+  }
+
+  function cleanupSessionIfEmpty(sessionId) {
+    const session = sessionRegistry.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    if (!session.mobileSocket && !session.webSocket) {
+      sessionRegistry.delete(sessionId);
     }
   }
-}, REAPER_INTERVAL_MS);
-reaper.unref(); // don't prevent process exit
 
-// ---------------------------------------------------------------------------
-// HTTP Server — health endpoint only (session creation is over WS)
-// ---------------------------------------------------------------------------
-const httpServer = http.createServer((req, res) => {
-  if (req.method === "OPTIONS") {
-    res.writeHead(204, corsHeaders());
-    res.end();
-    return;
+  function detachSocket(socket) {
+    const registration = socketRegistry.get(socket);
+    if (!registration || !registration.sessionId || !registration.role) {
+      return;
+    }
+
+    const session = sessionRegistry.get(registration.sessionId);
+    if (!session) {
+      registration.sessionId = null;
+      registration.role = null;
+      return;
+    }
+
+    if (registration.role === "mobile" && session.mobileSocket === socket) {
+      session.mobileSocket = null;
+    }
+
+    if (registration.role === "web" && session.webSocket === socket) {
+      session.webSocket = null;
+    }
+
+    registration.sessionId = null;
+    registration.role = null;
+    cleanupSessionIfEmpty(session.sessionId);
   }
 
-  if (req.method === "GET" && req.url === "/health") {
-    const body = JSON.stringify({ status: "ok", sessions: sessions.size });
-    res.writeHead(200, {
-      ...corsHeaders(),
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(body),
-    });
-    res.end(body);
-    return;
+  function registerConnection(socket) {
+    const existing = socketRegistry.get(socket);
+    if (existing) {
+      return existing;
+    }
+
+    const onClose = () => {
+      removeConnection(socket);
+    };
+
+    const registration = {
+      socket,
+      sessionId: null,
+      role: null,
+      onClose,
+    };
+
+    socketRegistry.set(socket, registration);
+    socket.once("close", onClose);
+    return registration;
   }
 
-  res.writeHead(404, corsHeaders());
-  res.end();
-});
+  function removeConnection(socket) {
+    const registration = socketRegistry.get(socket);
+    if (!registration) {
+      return false;
+    }
 
-function corsHeaders() {
+    detachSocket(socket);
+    if (typeof socket.off === "function") {
+      socket.off("close", registration.onClose);
+    } else if (typeof socket.removeListener === "function") {
+      socket.removeListener("close", registration.onClose);
+    }
+
+    socketRegistry.delete(socket);
+    return true;
+  }
+
+  function lookupConnection(sessionId) {
+    return sessionRegistry.get(sessionId) || null;
+  }
+
+  function lookupSocket(socket) {
+    return socketRegistry.get(socket) || null;
+  }
+
+  function bindSessionSockets(sessionId, mobileSocket, webSocket) {
+    if (typeof sessionId !== "string" || sessionId.trim() === "") {
+      throw new Error("sessionId is required");
+    }
+
+    const mobileRegistration = registerConnection(mobileSocket);
+    const webRegistration = registerConnection(webSocket);
+
+    detachSocket(mobileSocket);
+    detachSocket(webSocket);
+
+    const session = ensureSession(sessionId);
+    session.mobileSocket = mobileSocket;
+    session.webSocket = webSocket;
+
+    mobileRegistration.sessionId = sessionId;
+    mobileRegistration.role = "mobile";
+    webRegistration.sessionId = sessionId;
+    webRegistration.role = "web";
+
+    return session;
+  }
+
+  function getConnectionCount() {
+    return socketRegistry.size;
+  }
+
+  function closeAllConnections(code = 1001, reason = "server_shutdown") {
+    for (const socket of socketRegistry.keys()) {
+      socket.close(code, reason);
+    }
+  }
+
   return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    registerConnection,
+    removeConnection,
+    lookupConnection,
+    lookupSocket,
+    bindSessionSockets,
+    closeAllConnections,
+    getConnectionCount,
   };
 }
 
-// ---------------------------------------------------------------------------
-// WebSocket Server — relay transport
-//
-// SECURITY INVARIANTS:
-// • The relay NEVER stores user vault data.
-// • The relay NEVER decrypts payloads.
-// • The relay NEVER mutates message contents — payload is forwarded opaquely.
-// ---------------------------------------------------------------------------
-const wss = new WebSocketServer({ server: httpServer });
+function canSendToSocket(socket) {
+  if (!socket || typeof socket.send !== "function") {
+    return false;
+  }
 
-wss.on("connection", (socket) => {
-  let boundSessionId = null;
-  let boundRole = null; // "web" | "mobile"
+  if (socket.readyState === undefined) {
+    return true;
+  }
 
-  socket.on("message", (raw) => {
-    // Debug logging — observe all inbound frames without mutating
-    console.log("[relay] raw frame:", raw.toString().slice(0, 512));
+  return socket.readyState === 1;
+}
 
-    let msg;
-    try {
-      msg = JSON.parse(raw);
-    } catch {
-      console.error("[relay] invalid JSON from", boundRole || "unbound");
-      socket.send(envelope("error", null, { message: "invalid_json" }));
+function createMessageRouter(connectionManager) {
+  function routeMessage(envelope, senderSocket) {
+    const senderRegistration = connectionManager.lookupSocket(senderSocket);
+    if (!senderRegistration || !senderRegistration.sessionId || !senderRegistration.role) {
+      return false;
+    }
+
+    if (senderRegistration.sessionId !== envelope.sessionId) {
+      return false;
+    }
+
+    const session = connectionManager.lookupConnection(envelope.sessionId);
+    if (!session) {
+      return false;
+    }
+
+    const destinationSocket =
+      senderRegistration.role === "mobile" ? session.webSocket : session.mobileSocket;
+
+    if (!canSendToSocket(destinationSocket)) {
+      return false;
+    }
+
+    destinationSocket.send(JSON.stringify(envelope));
+    return true;
+  }
+
+  return {
+    routeMessage,
+  };
+}
+
+function writeUpgradeRejection(socket, statusCode, statusText) {
+  socket.write(`HTTP/1.1 ${statusCode} ${statusText}\r\nConnection: close\r\n\r\n`);
+  socket.destroy();
+}
+
+function mergeConfiguration(configOverrides = {}) {
+  const baseConfig = loadRelayConfiguration(configOverrides);
+  return {
+    ...baseConfig,
+    ...configOverrides,
+    tls: {
+      ...baseConfig.tls,
+      ...(configOverrides.tls || {}),
+    },
+  };
+}
+
+function createRelayServer(configOverrides = {}) {
+  const config = mergeConfiguration(configOverrides);
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager);
+  const events = new EventEmitter();
+
+  let relayServer;
+
+  const requestHandler = (req, res) => {
+    if (req.method === "GET" && req.url === "/health") {
+      const body = JSON.stringify({
+        status: "ok",
+        transport: config.tls.enabled ? "wss" : "ws",
+        wsPath: config.wsPath,
+        protocolVersion: config.protocolVersion,
+        maxPayloadBytes: config.maxPayloadBytes,
+        activeConnections: connectionManager.getConnectionCount(),
+      });
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "Cache-Control": "no-store",
+      });
+      res.end(body);
       return;
     }
 
-    console.log("[relay] message type:", msg.type);
-    console.log("[relay] sessionId:", msg.sessionId);
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Not Found");
+  };
 
-    // Validate inbound envelope shape
-    if (!msg.type) {
-      socket.send(envelope("error", boundSessionId, { message: "missing_type" }));
+  const server = config.tls.enabled
+    ? https.createServer(
+        {
+          key: fs.readFileSync(config.tls.keyPath, "utf8"),
+          cert: fs.readFileSync(config.tls.certPath, "utf8"),
+          minVersion: config.tls.minVersion,
+        },
+        requestHandler,
+      )
+    : http.createServer(requestHandler);
+
+  const wsServer = new WebSocketServer({ noServer: true, clientTracking: false });
+
+  server.on("upgrade", (req, socket, head) => {
+    const requestUrl = new URL(
+      req.url,
+      `${config.tls.enabled ? "https" : "http"}://${req.headers.host || "localhost"}`,
+    );
+
+    if (requestUrl.pathname !== config.wsPath) {
+      writeUpgradeRejection(socket, 404, "Not Found");
       return;
     }
 
-    // ------ QR SESSION CREATE (Web client) ------
-    if (msg.type === "qr_session_create") {
-      if (boundSessionId) {
-        socket.send(envelope("error", boundSessionId, { message: "already_bound" }));
-        return;
-      }
-
-      const session = createSession(socket);
-      boundSessionId = session.sessionId;
-      boundRole = "web";
-
-      socket.send(envelope("qr_session_ready", session.sessionId, {
-        expiresAt: session.expiresAt,
-      }));
-
-      console.log(`[ws] Web created session ${session.sessionId}`);
-      return;
-    }
-
-    // ------ PAIR REQUEST (Mobile client) ------
-    if (msg.type === "pair_request") {
-      const { sessionId } = msg;
-
-      if (!sessionId) {
-        socket.send(envelope("error", null, { message: "missing_session_id" }));
-        return;
-      }
-
-      if (boundSessionId) {
-        socket.send(envelope("error", boundSessionId, { message: "already_bound" }));
-        return;
-      }
-
-      const session = sessions.get(sessionId);
-      if (!session) {
-        socket.send(envelope("error", sessionId, { message: "session_not_found" }));
-        return;
-      }
-
-      if (Date.now() >= session.expiresAt) {
-        destroySession(sessionId, "session_expired");
-        socket.send(envelope("error", sessionId, { message: "session_expired" }));
-        return;
-      }
-
-      if (session.mobileSocket) {
-        socket.send(envelope("error", sessionId, { message: "session_already_paired" }));
-        return;
-      }
-
-      // Bind mobile socket to session
-      session.mobileSocket = socket;
-      boundSessionId = sessionId;
-      boundRole = "mobile";
-
-      // Notify the Web client that pairing succeeded
-      if (session.webSocket && session.webSocket.readyState === WebSocket.OPEN) {
-        session.webSocket.send(envelope("pair_approved", sessionId, {}));
-      }
-
-      // Confirm to mobile
-      socket.send(envelope("pair_approved", sessionId, {}));
-
-      console.log(`[ws] Mobile paired to session ${sessionId}`);
-      return;
-    }
-
-    // ------ RELAY: forward payload to the peer ------
-    if (msg.type === "relay") {
-      if (!boundSessionId || !boundRole) {
-        socket.send(envelope("error", null, { message: "not_paired" }));
-        return;
-      }
-
-      const session = sessions.get(boundSessionId);
-      if (!session) {
-        socket.send(envelope("error", boundSessionId, { message: "session_not_found" }));
-        return;
-      }
-
-      const peerKey = boundRole === "mobile" ? "webSocket" : "mobileSocket";
-      const peer = session[peerKey];
-
-      if (!peer || peer.readyState !== WebSocket.OPEN) {
-        socket.send(envelope("error", boundSessionId, { message: "peer_not_connected" }));
-        return;
-      }
-
-      // Forward payload OPAQUELY — relay never inspects, stores, or mutates
-      peer.send(envelope("relay", boundSessionId, {
-        from: boundRole,
-        payload: msg.payload,
-      }));
-      return;
-    }
-
-    socket.send(envelope("error", boundSessionId, { message: "unknown_type" }));
+    wsServer.handleUpgrade(req, socket, head, (ws) => {
+      wsServer.emit("connection", ws, req);
+    });
   });
 
-  // ------ DISCONNECT: tear down entire session ------
-  socket.on("close", () => {
-    if (!boundSessionId) return;
-    console.log(`[ws] ${boundRole} disconnected from session ${boundSessionId}`);
-    destroySession(boundSessionId, "peer_disconnected");
+  wsServer.on("connection", (socket, req) => {
+    const remoteAddress = req.socket.remoteAddress || "unknown";
+    connectionManager.registerConnection(socket);
+    events.emit("connection", { remoteAddress });
+
+    socket.on("message", (rawMessage, isBinary) => {
+      if (isBinary) {
+        socket.send(createTransportEnvelopeError("binary_frames_not_supported", config.protocolVersion));
+        return;
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawMessage.toString("utf8"));
+      } catch {
+        socket.send(createTransportEnvelopeError("invalid_json", config.protocolVersion));
+        return;
+      }
+
+      const validation = validateTransportEnvelope(parsed, {
+        protocolVersion: config.protocolVersion,
+        maxPayloadBytes: config.maxPayloadBytes,
+      });
+      if (!validation.valid) {
+        socket.send(createTransportEnvelopeError(validation.reason, config.protocolVersion));
+        return;
+      }
+
+      events.emit("transportEnvelope", {
+        envelope: parsed,
+        remoteAddress,
+      });
+
+      const routed = messageRouter.routeMessage(parsed, socket);
+      if (routed) {
+        events.emit("messageRouted", {
+          envelope: parsed,
+          remoteAddress,
+        });
+        return;
+      }
+
+      events.emit("messageDropped", {
+        envelope: parsed,
+        remoteAddress,
+      });
+    });
+
+    socket.on("close", () => {
+      connectionManager.removeConnection(socket);
+      events.emit("disconnect", { remoteAddress });
+    });
+
+    socket.on("error", (error) => {
+      events.emit("socketError", { remoteAddress, error });
+    });
   });
 
-  socket.on("error", (err) => {
-    console.error(`[ws] Socket error:`, err.message);
-  });
-});
+  relayServer = {
+    config,
+    connectionManager,
+    events,
+    messageRouter,
+    server,
+    wsServer,
+    start() {
+      return new Promise((resolve, reject) => {
+        server.once("error", reject);
+        server.listen(config.port, config.host, () => {
+          server.removeListener("error", reject);
+          resolve(relayServer);
+        });
+      });
+    },
+    stop() {
+      connectionManager.closeAllConnections();
 
-// ---------------------------------------------------------------------------
-// Start
-// ---------------------------------------------------------------------------
-httpServer.listen(PORT, () => {
-  console.log(`[chano_relay] Relay server listening on port ${PORT}`);
-  console.log(`[chano_relay] Session TTL: ${SESSION_TTL_MS / 1000}s | Reaper interval: ${REAPER_INTERVAL_MS / 1000}s`);
-});
+      return new Promise((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      });
+    },
+    getConnectionCount() {
+      return connectionManager.getConnectionCount();
+    },
+  };
+
+  return relayServer;
+}
+
+async function startRelayServer() {
+  const relayServer = createRelayServer();
+  await relayServer.start();
+
+  const address = relayServer.server.address();
+  const protocol = relayServer.config.tls.enabled ? "wss" : "ws";
+  console.log(
+    `[chano_relay] listening on ${protocol}://${relayServer.config.host}:${address.port}${relayServer.config.wsPath}`,
+  );
+
+  return relayServer;
+}
+
+if (require.main === module) {
+  startRelayServer().catch((error) => {
+    console.error("[chano_relay] failed to start", error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  DEFAULT_PROTOCOL_VERSION,
+  DEFAULT_MAX_PAYLOAD_BYTES,
+  createConnectionManager,
+  createMessageRouter,
+  createRelayServer,
+  loadRelayConfiguration,
+  startRelayServer,
+  validateTransportEnvelope,
+};

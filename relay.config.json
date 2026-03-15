@@ -1,0 +1,13 @@
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "wsPath": "/relay",
+  "protocolVersion": 2,
+  "maxPayloadBytes": 1048576,
+  "tls": {
+    "enabled": false,
+    "keyPath": "",
+    "certPath": "",
+    "minVersion": "TLSv1.2"
+  }
+}

@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "redis": "^5.11.0",
     "ws": "^8.19.0"
   },
   "devDependencies": {

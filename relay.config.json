@@ -3,7 +3,21 @@
   "port": 8080,
   "wsPath": "/relay",
   "protocolVersion": 2,
-  "maxPayloadBytes": 1048576,
+  "maxPayloadBytes": 2097152,
+  "pairing": {
+  "secret": "dev_pairing_secret_key",
+  "ttlMs": 120000
+},
+  "rateLimiting": {
+    "maxCommandsPerSecond": 30,
+    "maxPayloadSize": 2097152,
+    "maxSessionsPerIP": 10
+  },
+  "diagnostics": {
+    "ingress": {
+      "enabled": true
+    }
+  },
   "tls": {
     "enabled": false,
     "keyPath": "",

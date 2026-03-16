@@ -4,10 +4,57 @@ const https = require("https");
 const path = require("path");
 const { EventEmitter } = require("events");
 const { WebSocketServer } = require("ws");
+const { DEFAULT_PAIRING_TTL_MS, QRPairingSystem, createQRPairingSystem } = require("./qrPairingSystem");
+const {
+  DEFAULT_MAX_COMMANDS_PER_SECOND,
+  DEFAULT_MAX_PAYLOAD_SIZE,
+  DEFAULT_MAX_SESSIONS_PER_IP,
+  RelayRateLimiter,
+  createRelayRateLimiter,
+} = require("./relayRateLimiter");
+const {
+  SessionLifecycleManager,
+  createSessionLifecycleManager,
+} = require("./sessionLifecycleManager");
+const {
+  SESSION_STATES,
+  RedisSessionRegistry,
+  connectRedisSessionRegistry,
+  createRedisSessionRegistry,
+  getRedisSessionKey,
+} = require("./redisSessionRegistry");
 
 const DEFAULT_PROTOCOL_VERSION = 2;
-const DEFAULT_MAX_PAYLOAD_BYTES = 1024 * 1024;
+const DEFAULT_MAX_PAYLOAD_BYTES = DEFAULT_MAX_PAYLOAD_SIZE;
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "relay.config.json");
+const BOOTSTRAP_MESSAGE_TYPES = new Set(["protocol_handshake", "qr_session_create", "pair_request"]);
+
+function createRelayIngressDiagnostics(options = {}) {
+  const enabled = Boolean(options.enabled);
+  const logger =
+    typeof options.logger === "function"
+      ? options.logger
+      : (entry) => {
+          console.log(`[relay_ingress] ${JSON.stringify(entry)}`);
+        };
+
+  function log(stage, details = {}) {
+    if (!enabled) {
+      return;
+    }
+
+    logger({
+      stage,
+      timestamp: Date.now(),
+      ...details,
+    });
+  }
+
+  return {
+    enabled,
+    log,
+  };
+}
 
 function parseBoolean(value, fallback = false) {
   if (value === undefined || value === null || value === "") {
@@ -49,6 +96,7 @@ function loadRelayConfiguration(options = {}) {
     host: env.HOST || fileConfig.host || "0.0.0.0",
     port: parseInteger(env.PORT, parseInteger(fileConfig.port, 8080)),
     wsPath: env.RELAY_WS_PATH || fileConfig.wsPath || "/relay",
+    redisUrl: env.REDIS_URL || fileConfig.redisUrl || "",
     protocolVersion: parseInteger(
       env.RELAY_PROTOCOL_VERSION,
       parseInteger(fileConfig.protocolVersion, DEFAULT_PROTOCOL_VERSION),
@@ -57,6 +105,42 @@ function loadRelayConfiguration(options = {}) {
       env.RELAY_MAX_PAYLOAD_BYTES,
       parseInteger(fileConfig.maxPayloadBytes, DEFAULT_MAX_PAYLOAD_BYTES),
     ),
+    pairing: {
+      secret: env.RELAY_PAIRING_SECRET || (fileConfig.pairing && fileConfig.pairing.secret) || "",
+      ttlMs: parseInteger(
+        env.RELAY_PAIRING_TTL_MS,
+        parseInteger(fileConfig.pairing && fileConfig.pairing.ttlMs, DEFAULT_PAIRING_TTL_MS),
+      ),
+    },
+    rateLimiting: {
+      maxCommandsPerSecond: parseInteger(
+        env.RELAY_MAX_COMMANDS_PER_SECOND,
+        parseInteger(
+          fileConfig.rateLimiting && fileConfig.rateLimiting.maxCommandsPerSecond,
+          DEFAULT_MAX_COMMANDS_PER_SECOND,
+        ),
+      ),
+      maxPayloadSize: parseInteger(
+        env.RELAY_MAX_PAYLOAD_SIZE,
+        parseInteger(fileConfig.rateLimiting && fileConfig.rateLimiting.maxPayloadSize, DEFAULT_MAX_PAYLOAD_SIZE),
+      ),
+      maxSessionsPerIp: parseInteger(
+        env.RELAY_MAX_SESSIONS_PER_IP,
+        parseInteger(
+          fileConfig.rateLimiting &&
+            (fileConfig.rateLimiting.maxSessionsPerIp || fileConfig.rateLimiting.maxSessionsPerIP),
+          DEFAULT_MAX_SESSIONS_PER_IP,
+        ),
+      ),
+    },
+    diagnostics: {
+      ingress: {
+        enabled: parseBoolean(
+          env.RELAY_INGRESS_DIAGNOSTICS_ENABLED,
+          fileConfig.diagnostics && fileConfig.diagnostics.ingress && fileConfig.diagnostics.ingress.enabled,
+        ),
+      },
+    },
     tls: tlsConfig,
   };
 
@@ -91,9 +175,28 @@ function getPayloadSizeBytes(payload) {
 function validateTransportEnvelope(message, options) {
   const protocolVersion = options.protocolVersion;
   const maxPayloadBytes = options.maxPayloadBytes;
+  const diagnostics = options.diagnostics || null;
+  const socketId = options.socketId || null;
+
+  function logValidation(result) {
+    if (diagnostics) {
+      diagnostics.log("transport_envelope_validated", {
+        socketId,
+        messageType: message && typeof message === "object" && !Array.isArray(message) ? message.type || null : null,
+        sessionId:
+          message && typeof message === "object" && !Array.isArray(message)
+            ? message.sessionId || null
+            : null,
+        valid: result.valid,
+        reason: result.reason || null,
+      });
+    }
+
+    return result;
+  }
 
   if (!message || typeof message !== "object" || Array.isArray(message)) {
-    return { valid: false, reason: "invalid_transport_envelope" };
+    return logValidation({ valid: false, reason: "invalid_transport_envelope" });
   }
 
   const hasSequence = Number.isInteger(message.sequence) && message.sequence >= 0;
@@ -102,34 +205,36 @@ function validateTransportEnvelope(message, options) {
   const hasPayload = Object.prototype.hasOwnProperty.call(message, "payload");
 
   if (!Object.prototype.hasOwnProperty.call(message, "protocolVersion")) {
-    return { valid: false, reason: "missing_protocol_version" };
+    return logValidation({ valid: false, reason: "missing_protocol_version" });
   }
 
   if (message.protocolVersion !== protocolVersion) {
-    return { valid: false, reason: "unsupported_protocol_version" };
+    return logValidation({ valid: false, reason: "unsupported_protocol_version" });
   }
 
   if (typeof message.sessionId !== "string" || message.sessionId.trim() === "") {
-    return { valid: false, reason: "missing_session_id" };
+    return logValidation({ valid: false, reason: "missing_session_id" });
   }
 
   if (typeof message.type !== "string" || message.type.trim() === "") {
-    return { valid: false, reason: "missing_type" };
+    return logValidation({ valid: false, reason: "missing_type" });
   }
 
   if (!hasType || !hasTimestamp || !hasSequence || !hasPayload) {
-    return { valid: false, reason: "invalid_transport_envelope" };
+    return logValidation({ valid: false, reason: "invalid_transport_envelope" });
   }
 
   if (getPayloadSizeBytes(message.payload) > maxPayloadBytes) {
-    return { valid: false, reason: "payload_too_large" };
+    return logValidation({ valid: false, reason: "payload_too_large" });
   }
 
-  return { valid: true };
+  return logValidation({ valid: true });
 }
 
-function createConnectionManager() {
+function createConnectionManager(options = {}) {
+  const diagnostics = options.diagnostics || null;
   const socketRegistry = new Map();
+  const connectionIdRegistry = new Map();
   const sessionRegistry = new Map();
 
   function ensureSession(sessionId) {
@@ -183,9 +288,18 @@ function createConnectionManager() {
     cleanupSessionIfEmpty(session.sessionId);
   }
 
-  function registerConnection(socket) {
+  function registerConnection(socket, options = {}) {
     const existing = socketRegistry.get(socket);
     if (existing) {
+      if (options.connectionId && existing.connectionId !== options.connectionId) {
+        if (existing.connectionId) {
+          connectionIdRegistry.delete(existing.connectionId);
+        }
+
+        existing.connectionId = options.connectionId;
+        connectionIdRegistry.set(options.connectionId, existing);
+      }
+
       return existing;
     }
 
@@ -195,12 +309,27 @@ function createConnectionManager() {
 
     const registration = {
       socket,
+      connectionId: options.connectionId || null,
+      clientRole: options.clientRole || null,
+      remoteAddress: options.remoteAddress || null,
       sessionId: null,
       role: null,
       onClose,
     };
 
     socketRegistry.set(socket, registration);
+    if (registration.connectionId) {
+      connectionIdRegistry.set(registration.connectionId, registration);
+    }
+
+    if (diagnostics) {
+      diagnostics.log("socket_registered", {
+        socketId: registration.connectionId,
+        messageType: null,
+        sessionId: null,
+      });
+    }
+
     socket.once("close", onClose);
     return registration;
   }
@@ -218,6 +347,10 @@ function createConnectionManager() {
       socket.removeListener("close", registration.onClose);
     }
 
+    if (registration.connectionId) {
+      connectionIdRegistry.delete(registration.connectionId);
+    }
+
     socketRegistry.delete(socket);
     return true;
   }
@@ -227,7 +360,21 @@ function createConnectionManager() {
   }
 
   function lookupSocket(socket) {
-    return socketRegistry.get(socket) || null;
+    const registration = socketRegistry.get(socket) || null;
+
+    if (diagnostics && registration) {
+      diagnostics.log("socket_lookup", {
+        socketId: registration.connectionId,
+        messageType: null,
+        sessionId: registration.sessionId || null,
+      });
+    }
+
+    return registration;
+  }
+
+  function lookupConnectionById(connectionId) {
+    return connectionIdRegistry.get(connectionId) || null;
   }
 
   function bindSessionSockets(sessionId, mobileSocket, webSocket) {
@@ -250,6 +397,14 @@ function createConnectionManager() {
     webRegistration.sessionId = sessionId;
     webRegistration.role = "web";
 
+    if (diagnostics) {
+      diagnostics.log("session_sockets_bound", {
+        socketId: webRegistration.connectionId,
+        messageType: null,
+        sessionId,
+      });
+    }
+
     return session;
   }
 
@@ -267,11 +422,21 @@ function createConnectionManager() {
     registerConnection,
     removeConnection,
     lookupConnection,
+    lookupConnectionById,
     lookupSocket,
     bindSessionSockets,
     closeAllConnections,
     getConnectionCount,
   };
+}
+
+function buildConnectionId(req) {
+  return [
+    req.socket.remoteAddress || "unknown",
+    req.socket.remotePort || 0,
+    req.socket.localAddress || "unknown",
+    req.socket.localPort || 0,
+  ].join(":");
 }
 
 function canSendToSocket(socket) {
@@ -286,19 +451,88 @@ function canSendToSocket(socket) {
   return socket.readyState === 1;
 }
 
-function createMessageRouter(connectionManager) {
-  function routeMessage(envelope, senderSocket) {
+function createMessageRouter(connectionManager, options = {}) {
+  const diagnostics = options.diagnostics || null;
+  const dispatchTable = options.dispatchTable || {};
+
+  async function routeMessage(envelope, senderSocket) {
     const senderRegistration = connectionManager.lookupSocket(senderSocket);
-    if (!senderRegistration || !senderRegistration.sessionId || !senderRegistration.role) {
+    const hasSenderSessionBinding = Boolean(
+      senderRegistration && senderRegistration.sessionId && senderRegistration.role,
+    );
+    const isBootstrapMessage = BOOTSTRAP_MESSAGE_TYPES.has(envelope.type);
+    const dispatchHandler = dispatchTable[envelope.type] || null;
+
+    if (!hasSenderSessionBinding && !isBootstrapMessage) {
+      if (diagnostics) {
+        diagnostics.log("message_router_dispatch", {
+          socketId: senderRegistration ? senderRegistration.connectionId : null,
+          messageType: envelope.type || null,
+          sessionId: envelope.sessionId || null,
+          routed: false,
+          reason: "missing_sender_registration",
+        });
+      }
+
       return false;
     }
 
+    if (dispatchHandler) {
+      await dispatchHandler(senderSocket, envelope);
+
+      if (diagnostics) {
+        diagnostics.log("message_router_dispatch", {
+          socketId: senderRegistration.connectionId,
+          messageType: envelope.type || null,
+          sessionId: envelope.sessionId || null,
+          routed: true,
+          reason: "dispatch_table_handler",
+        });
+      }
+
+      return true;
+    }
+
+    if (isBootstrapMessage) {
+      if (diagnostics) {
+        diagnostics.log("message_router_dispatch", {
+          socketId: senderRegistration ? senderRegistration.connectionId : null,
+          messageType: envelope.type || null,
+          sessionId: envelope.sessionId || null,
+          routed: true,
+          reason: "bootstrap_message_allowed",
+        });
+      }
+
+      return true;
+    }
+
     if (senderRegistration.sessionId !== envelope.sessionId) {
+      if (diagnostics) {
+        diagnostics.log("message_router_dispatch", {
+          socketId: senderRegistration.connectionId,
+          messageType: envelope.type || null,
+          sessionId: envelope.sessionId || null,
+          routed: false,
+          reason: "session_mismatch",
+        });
+      }
+
       return false;
     }
 
     const session = connectionManager.lookupConnection(envelope.sessionId);
     if (!session) {
+      if (diagnostics) {
+        diagnostics.log("message_router_dispatch", {
+          socketId: senderRegistration.connectionId,
+          messageType: envelope.type || null,
+          sessionId: envelope.sessionId || null,
+          routed: false,
+          reason: "session_not_bound",
+        });
+      }
+
       return false;
     }
 
@@ -306,10 +540,31 @@ function createMessageRouter(connectionManager) {
       senderRegistration.role === "mobile" ? session.webSocket : session.mobileSocket;
 
     if (!canSendToSocket(destinationSocket)) {
+      if (diagnostics) {
+        diagnostics.log("message_router_dispatch", {
+          socketId: senderRegistration.connectionId,
+          messageType: envelope.type || null,
+          sessionId: envelope.sessionId || null,
+          routed: false,
+          reason: "destination_unavailable",
+        });
+      }
+
       return false;
     }
 
     destinationSocket.send(JSON.stringify(envelope));
+
+    if (diagnostics) {
+      diagnostics.log("message_router_dispatch", {
+        socketId: senderRegistration.connectionId,
+        messageType: envelope.type || null,
+        sessionId: envelope.sessionId || null,
+        routed: true,
+        reason: null,
+      });
+    }
+
     return true;
   }
 
@@ -323,11 +578,39 @@ function writeUpgradeRejection(socket, statusCode, statusText) {
   socket.destroy();
 }
 
+function writeControlError(socket, reason, onSent) {
+  socket.send(
+    JSON.stringify({
+      type: "control_error",
+      payload: {
+        reason,
+      },
+    }),
+    onSent,
+  );
+}
+
 function mergeConfiguration(configOverrides = {}) {
   const baseConfig = loadRelayConfiguration(configOverrides);
   return {
     ...baseConfig,
     ...configOverrides,
+    pairing: {
+      ...baseConfig.pairing,
+      ...(configOverrides.pairing || {}),
+    },
+    rateLimiting: {
+      ...baseConfig.rateLimiting,
+      ...(configOverrides.rateLimiting || {}),
+    },
+    diagnostics: {
+      ...baseConfig.diagnostics,
+      ...(configOverrides.diagnostics || {}),
+      ingress: {
+        ...(baseConfig.diagnostics ? baseConfig.diagnostics.ingress : {}),
+        ...((configOverrides.diagnostics && configOverrides.diagnostics.ingress) || {}),
+      },
+    },
     tls: {
       ...baseConfig.tls,
       ...(configOverrides.tls || {}),
@@ -337,11 +620,51 @@ function mergeConfiguration(configOverrides = {}) {
 
 function createRelayServer(configOverrides = {}) {
   const config = mergeConfiguration(configOverrides);
-  const connectionManager = createConnectionManager();
-  const messageRouter = createMessageRouter(connectionManager);
+  const ingressDiagnostics = createRelayIngressDiagnostics({
+    ...(config.diagnostics && config.diagnostics.ingress),
+  });
+  const connectionManager = createConnectionManager({ diagnostics: ingressDiagnostics });
   const events = new EventEmitter();
+  const relayRateLimiter = createRelayRateLimiter(config.rateLimiting);
+  const sessionRegistry = config.sessionRegistry || null;
+  const sessionLifecycleManager = sessionRegistry
+    ? createSessionLifecycleManager({
+        sessionRegistry,
+        connectionManager,
+        events,
+      })
+    : null;
+  const qrPairingSystem = sessionRegistry
+    ? createQRPairingSystem({
+        connectionManager,
+        diagnostics: ingressDiagnostics,
+        sessionLifecycleManager,
+        sessionRegistry,
+        pairingTtlMs: config.pairing.ttlMs,
+        events,
+      })
+    : null;
+  const messageRouter = createMessageRouter(connectionManager, {
+    diagnostics: ingressDiagnostics,
+    dispatchTable: qrPairingSystem
+      ? {
+          qr_session_create: (senderSocket, envelope) =>
+            qrPairingSystem.handleQrSessionCreate(senderSocket, envelope),
+          pair_request: (senderSocket, envelope) => qrPairingSystem.handlePairRequest(senderSocket, envelope),
+        }
+      : {},
+  });
 
   let relayServer;
+
+  function handleRateLimitViolation(socket, connectionId, remoteAddress, reason) {
+    events.emit("rateLimitViolation", { connectionId, remoteAddress, reason });
+    writeControlError(socket, reason, () => {
+      if (typeof socket.close === "function") {
+        socket.close(1008, reason);
+      }
+    });
+  }
 
   const requestHandler = (req, res) => {
     if (req.method === "GET" && req.url === "/health") {
@@ -397,26 +720,63 @@ function createRelayServer(configOverrides = {}) {
 
   wsServer.on("connection", (socket, req) => {
     const remoteAddress = req.socket.remoteAddress || "unknown";
-    connectionManager.registerConnection(socket);
+    const connectionId = buildConnectionId(req);
+    connectionManager.registerConnection(socket, { connectionId, remoteAddress });
     events.emit("connection", { remoteAddress });
 
-    socket.on("message", (rawMessage, isBinary) => {
+    socket.on("message", async (rawMessage, isBinary) => {
       if (isBinary) {
         socket.send(createTransportEnvelopeError("binary_frames_not_supported", config.protocolVersion));
+        return;
+      }
+
+      ingressDiagnostics.log("ws_message_received", {
+        socketId: connectionId,
+        messageType: null,
+        sessionId: null,
+        rawMessageBytes: Buffer.byteLength(rawMessage),
+      });
+
+      const inboundViolation = relayRateLimiter.evaluateInboundMessage({
+        socketId: connectionId,
+        payloadSize: Buffer.byteLength(rawMessage),
+      });
+      if (inboundViolation) {
+        handleRateLimitViolation(socket, connectionId, remoteAddress, inboundViolation.reason);
         return;
       }
 
       let parsed;
       try {
         parsed = JSON.parse(rawMessage.toString("utf8"));
+        ingressDiagnostics.log("json_parse_success", {
+          socketId: connectionId,
+          messageType: parsed.type || null,
+          sessionId: parsed.sessionId || null,
+        });
       } catch {
+        ingressDiagnostics.log("json_parse_failure", {
+          socketId: connectionId,
+          messageType: null,
+          sessionId: null,
+        });
         socket.send(createTransportEnvelopeError("invalid_json", config.protocolVersion));
         return;
+      }
+
+      if (parsed.type === "qr_session_create") {
+        const sessionCreationViolation = relayRateLimiter.recordSessionCreation(remoteAddress);
+        if (sessionCreationViolation) {
+          handleRateLimitViolation(socket, connectionId, remoteAddress, sessionCreationViolation.reason);
+          return;
+        }
       }
 
       const validation = validateTransportEnvelope(parsed, {
         protocolVersion: config.protocolVersion,
         maxPayloadBytes: config.maxPayloadBytes,
+        diagnostics: ingressDiagnostics,
+        socketId: connectionId,
       });
       if (!validation.valid) {
         socket.send(createTransportEnvelopeError(validation.reason, config.protocolVersion));
@@ -428,7 +788,26 @@ function createRelayServer(configOverrides = {}) {
         remoteAddress,
       });
 
-      const routed = messageRouter.routeMessage(parsed, socket);
+      let routed;
+      try {
+        routed = await messageRouter.routeMessage(parsed, socket);
+      } catch (error) {
+        events.emit("controlMessageError", {
+          error,
+          message: parsed,
+          remoteAddress,
+        });
+        socket.send(
+          JSON.stringify({
+            type: "control_error",
+            payload: {
+              reason: error.message,
+            },
+          }),
+        );
+        return;
+      }
+
       if (routed) {
         events.emit("messageRouted", {
           envelope: parsed,
@@ -444,6 +823,12 @@ function createRelayServer(configOverrides = {}) {
     });
 
     socket.on("close", () => {
+      if (sessionLifecycleManager) {
+        sessionLifecycleManager.handleDisconnect(connectionId).catch((error) => {
+          events.emit("sessionDisconnectError", { connectionId, remoteAddress, error });
+        });
+      }
+
       connectionManager.removeConnection(socket);
       events.emit("disconnect", { remoteAddress });
     });
@@ -458,6 +843,11 @@ function createRelayServer(configOverrides = {}) {
     connectionManager,
     events,
     messageRouter,
+    qrPairingSystem,
+    relayRateLimiter,
+    ingressDiagnostics,
+    sessionLifecycleManager,
+    sessionRegistry,
     server,
     wsServer,
     start() {
@@ -491,8 +881,25 @@ function createRelayServer(configOverrides = {}) {
   return relayServer;
 }
 
-async function startRelayServer() {
-  const relayServer = createRelayServer();
+async function startRelayServer(configOverrides = {}) {
+  const config = mergeConfiguration(configOverrides);
+  let sessionRegistry = config.sessionRegistry || null;
+
+  console.log("[chano_relay] Relay starting");
+
+  if (!sessionRegistry) {
+    if (!config.redisUrl) {
+      throw new Error("REDIS_URL is required for relay startup");
+    }
+
+    sessionRegistry = await RedisSessionRegistry.connect(config.redisUrl);
+    console.log("[chano_relay] Redis connected");
+  }
+
+  const relayServer = createRelayServer({
+    ...configOverrides,
+    sessionRegistry,
+  });
   await relayServer.start();
 
   const address = relayServer.server.address();
@@ -514,9 +921,26 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_PROTOCOL_VERSION,
   DEFAULT_MAX_PAYLOAD_BYTES,
+  DEFAULT_PAIRING_TTL_MS,
+  DEFAULT_MAX_COMMANDS_PER_SECOND,
+  DEFAULT_MAX_PAYLOAD_SIZE,
+  DEFAULT_MAX_SESSIONS_PER_IP,
+  BOOTSTRAP_MESSAGE_TYPES,
+  QRPairingSystem,
+  RelayRateLimiter,
+  SessionLifecycleManager,
+  SESSION_STATES,
+  RedisSessionRegistry,
+  connectRedisSessionRegistry,
+  createRelayIngressDiagnostics,
   createConnectionManager,
   createMessageRouter,
+  createQRPairingSystem,
+  createRelayRateLimiter,
+  createRedisSessionRegistry,
   createRelayServer,
+  createSessionLifecycleManager,
+  getRedisSessionKey,
   loadRelayConfiguration,
   startRelayServer,
   validateTransportEnvelope,

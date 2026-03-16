@@ -252,17 +252,17 @@ class QRPairingSystem {
       return this.rejectPairRequest(senderSocket, envelope, "web_connection_not_available");
     }
 
-    const attachedSession = await this.sessionLifecycleManager.attachMobile(
+    const pairedSession = await this.sessionLifecycleManager.transitionToPaired(
       envelope.sessionId,
       senderRegistration.connectionId,
     );
-    this.logger("[relay_session] mobile attached");
+    this.logger("[relay_session] state=paired");
 
-    if (!attachedSession.webSocketId || !attachedSession.mobileSocketId) {
+    if (!pairedSession.webSocketId || !pairedSession.mobileSocketId) {
       return this.rejectPairRequest(senderSocket, envelope, "session_not_ready");
     }
 
-    const activeSession = await this.sessionLifecycleManager.activateSession(envelope.sessionId);
+    const activeSession = await this.sessionLifecycleManager.transitionToActive(envelope.sessionId);
     this.logger("[relay_session] state=active");
 
     const approvalEnvelope = createTransportResponseEnvelope(envelope, "pair_approved", envelope.sessionId, {

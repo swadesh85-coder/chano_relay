@@ -454,6 +454,7 @@ function canSendToSocket(socket) {
 function createMessageRouter(connectionManager, options = {}) {
   const diagnostics = options.diagnostics || null;
   const dispatchTable = options.dispatchTable || {};
+  const sessionRegistry = options.sessionRegistry || null;
 
   async function routeMessage(envelope, senderSocket) {
     const senderRegistration = connectionManager.lookupSocket(senderSocket);
@@ -534,6 +535,38 @@ function createMessageRouter(connectionManager, options = {}) {
       }
 
       return false;
+    }
+
+    if (sessionRegistry) {
+      const persistedSession = await sessionRegistry.getSession(envelope.sessionId);
+
+      if (!persistedSession) {
+        if (diagnostics) {
+          diagnostics.log("message_router_dispatch", {
+            socketId: senderRegistration.connectionId,
+            messageType: envelope.type || null,
+            sessionId: envelope.sessionId || null,
+            routed: false,
+            reason: "session_not_found",
+          });
+        }
+
+        return false;
+      }
+
+      if (persistedSession.state !== SESSION_STATES.ACTIVE) {
+        if (diagnostics) {
+          diagnostics.log("message_router_dispatch", {
+            socketId: senderRegistration.connectionId,
+            messageType: envelope.type || null,
+            sessionId: envelope.sessionId || null,
+            routed: false,
+            reason: "session_not_active",
+          });
+        }
+
+        return false;
+      }
     }
 
     const destinationSocket =
@@ -646,6 +679,7 @@ function createRelayServer(configOverrides = {}) {
     : null;
   const messageRouter = createMessageRouter(connectionManager, {
     diagnostics: ingressDiagnostics,
+    sessionRegistry,
     dispatchTable: qrPairingSystem
       ? {
           qr_session_create: (senderSocket, envelope) =>

@@ -27,6 +27,7 @@ class SessionLifecycleManager {
       setTimer = (callback, delay) => setTimeout(callback, delay),
       clearTimer = (handle) => clearTimeout(handle),
       events,
+      logger = console.log,
     } = options || {};
 
     if (!sessionRegistry) {
@@ -43,6 +44,7 @@ class SessionLifecycleManager {
     this.setTimer = setTimer;
     this.clearTimer = clearTimer;
     this.events = events;
+    this.logger = typeof logger === "function" ? logger : console.log;
     this.sessionSocketIds = new Map();
     this.socketSessionIds = new Map();
     this.expirationTimers = new Map();
@@ -55,10 +57,11 @@ class SessionLifecycleManager {
     const session = await this.sessionRegistry.createSession(sessionId, webSocketId, expiresAt);
     this.indexSession(session);
     this.scheduleExpiration(session.sessionId, session.expiresAt);
+    this.logger("SESSION_CREATE state=waiting");
     return session;
   }
 
-  async attachMobile(sessionId, mobileSocketId) {
+  async transitionToPaired(sessionId, mobileSocketId) {
     assertNonEmptyString(sessionId, "sessionId");
     assertNonEmptyString(mobileSocketId, "mobileSocketId");
 
@@ -67,13 +70,21 @@ class SessionLifecycleManager {
       throw new Error(`Session not found for ${sessionId}`);
     }
 
-    const sessionWithMobile = await this.sessionRegistry.attachMobileSocket(sessionId, mobileSocketId);
+    if (session.state !== SESSION_STATES.WAITING) {
+      throw new Error(`Session ${sessionId} must be waiting before pairing`);
+    }
+
+    const sessionWithMobile = await this.sessionRegistry.updateSession(sessionId, {
+      mobileSocketId,
+      state: SESSION_STATES.PAIRED,
+    });
 
     this.indexSession(sessionWithMobile);
+    this.logger("SESSION_PAIR_REQUEST state=paired");
     return sessionWithMobile;
   }
 
-  async activateSession(sessionId) {
+  async transitionToActive(sessionId) {
     assertNonEmptyString(sessionId, "sessionId");
 
     const session = await this.sessionRegistry.getSession(sessionId);
@@ -81,17 +92,24 @@ class SessionLifecycleManager {
       throw new Error(`Session not found for ${sessionId}`);
     }
 
+    if (session.state !== SESSION_STATES.PAIRED) {
+      throw new Error(`Session ${sessionId} must be paired before activation`);
+    }
+
     if (!session.mobileSocketId || !session.webSocketId) {
       throw new Error(`Session ${sessionId} requires mobile and web sockets before activation`);
     }
 
     this.bindLiveSockets(session);
-    const activeSession = await this.sessionRegistry.updateState(sessionId, SESSION_STATES.ACTIVE);
+    const activeSession = await this.sessionRegistry.updateSession(sessionId, {
+      state: SESSION_STATES.ACTIVE,
+    });
     this.indexSession(activeSession);
+    this.logger("SESSION_ACTIVATED state=active");
     return activeSession;
   }
 
-  async closeSession(sessionId, reason) {
+  async transitionToClosed(sessionId, reason) {
     assertNonEmptyString(sessionId, "sessionId");
     assertNonEmptyString(reason, "reason");
 
@@ -103,12 +121,16 @@ class SessionLifecycleManager {
 
     this.clearExpiration(sessionId);
 
+    let closedSession = session;
     if (session.state !== SESSION_STATES.CLOSED) {
-      await this.sessionRegistry.updateState(sessionId, SESSION_STATES.CLOSED);
+      closedSession = await this.sessionRegistry.updateSession(sessionId, {
+        state: SESSION_STATES.CLOSED,
+      });
     }
 
-    this.notifySessionClosed(session, reason);
-    this.unindexSession(session);
+    this.notifySessionClosed(closedSession, reason);
+    this.unindexSession(closedSession);
+    this.logger(`SESSION_CLOSED reason=${reason}`);
 
     if (this.events) {
       this.events.emit("sessionClosed", { sessionId, reason });
@@ -125,7 +147,19 @@ class SessionLifecycleManager {
       return false;
     }
 
-    return this.closeSession(sessionId, "disconnect");
+    return this.transitionToClosed(sessionId, "disconnect");
+  }
+
+  async attachMobile(sessionId, mobileSocketId) {
+    return this.transitionToPaired(sessionId, mobileSocketId);
+  }
+
+  async activateSession(sessionId) {
+    return this.transitionToActive(sessionId);
+  }
+
+  async closeSession(sessionId, reason) {
+    return this.transitionToClosed(sessionId, reason);
   }
 
   indexSession(session) {
@@ -169,7 +203,7 @@ class SessionLifecycleManager {
     this.clearExpiration(sessionId);
     const delayMs = Math.max(0, expiresAt - this.now());
     const timer = this.setTimer(() => {
-      return this.closeSession(sessionId, "expired").catch((error) => {
+      return this.transitionToClosed(sessionId, "timeout").catch((error) => {
         if (this.events) {
           this.events.emit("sessionExpirationError", { sessionId, error });
         }

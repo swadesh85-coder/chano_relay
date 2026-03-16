@@ -346,28 +346,48 @@ test("attach_mobile_socket", async () => {
   assert.deepEqual(await sessionRegistry.getSession(sessionId), updatedSession);
 });
 
-test("activate_session", async () => {
+test("session_waiting_to_paired", async () => {
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
   const sessionId = "8d2dd03d-e2de-477d-947a-08fab41dbc7a";
 
   await sessionRegistry.createSession(sessionId, redisClient.nowMs + 60_000);
   await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
-  const waitingSession = await sessionRegistry.attachMobileSocket(sessionId, "mobile-socket-state");
+  await sessionRegistry.attachMobileSocket(sessionId, "mobile-socket-state");
+  const pairedSession = await sessionRegistry.updateSession(sessionId, {
+    state: SESSION_STATES.PAIRED,
+  });
 
-  assert.equal(waitingSession.state, SESSION_STATES.WAITING);
-  assert.equal(waitingSession.webSocketId, "web-socket-state");
-  assert.equal(waitingSession.mobileSocketId, "mobile-socket-state");
+  assert.equal(pairedSession.state, SESSION_STATES.PAIRED);
+  assert.equal(pairedSession.webSocketId, "web-socket-state");
+  assert.equal(pairedSession.mobileSocketId, "mobile-socket-state");
 
-  const activeSession = await sessionRegistry.setSessionState(sessionId, SESSION_STATES.ACTIVE);
+  await assert.rejects(
+    () => sessionRegistry.setSessionState(sessionId, SESSION_STATES.WAITING),
+    /Invalid session state transition/,
+  );
+});
 
+test("session_paired_to_active", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const sessionId = "18e8f865-336f-4d15-a0e8-acd0a62bad55";
+
+  await sessionRegistry.createSession(sessionId, redisClient.nowMs + 60_000);
+  await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
+  await sessionRegistry.attachMobileSocket(sessionId, "mobile-socket-state");
+  const pairedSession = await sessionRegistry.updateSession(sessionId, {
+    state: SESSION_STATES.PAIRED,
+  });
+  const activeSession = await sessionRegistry.updateSession(sessionId, {
+    state: SESSION_STATES.ACTIVE,
+  });
+
+  assert.equal(pairedSession.state, SESSION_STATES.PAIRED);
   assert.equal(activeSession.state, SESSION_STATES.ACTIVE);
   assert.equal(activeSession.webSocketId, "web-socket-state");
   assert.equal(activeSession.mobileSocketId, "mobile-socket-state");
 
-  const closedSession = await sessionRegistry.setSessionState(sessionId, SESSION_STATES.CLOSED);
-
-  assert.equal(closedSession.state, SESSION_STATES.CLOSED);
   await assert.rejects(
     () => sessionRegistry.setSessionState(sessionId, SESSION_STATES.WAITING),
     /Invalid session state transition/,
@@ -377,13 +397,13 @@ test("activate_session", async () => {
 test("state_update", async () => {
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
-  const sessionId = "18e8f865-336f-4d15-a0e8-acd0a62bad55";
+  const sessionId = "19f8f865-336f-4d15-a0e8-acd0a62bad56";
 
   await sessionRegistry.createSession(sessionId, redisClient.nowMs + 60_000);
   await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
-  const pairedSession = await sessionRegistry.setSessionState(sessionId, SESSION_STATES.PAIRED);
   await sessionRegistry.attachMobileSocket(sessionId, "mobile-socket-state");
-  const activeSession = await sessionRegistry.setSessionState(sessionId, SESSION_STATES.ACTIVE);
+  const pairedSession = await sessionRegistry.updateSession(sessionId, { state: SESSION_STATES.PAIRED });
+  const activeSession = await sessionRegistry.updateSession(sessionId, { state: SESSION_STATES.ACTIVE });
   const closedSession = await sessionRegistry.updateState(sessionId, SESSION_STATES.CLOSED);
 
   assert.equal(pairedSession.state, SESSION_STATES.PAIRED);
@@ -624,7 +644,7 @@ test("session_create", async () => {
   assert.equal(scheduler.handles.length, 1);
 });
 
-test("session_activate", async () => {
+test("session_paired_to_active_lifecycle", async () => {
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
   const connectionManager = createConnectionManager();
@@ -641,16 +661,17 @@ test("session_activate", async () => {
   connectionManager.registerConnection(mobileSocket, { connectionId: "mobile-lifecycle-activate" });
 
   await sessionLifecycleManager.createSession(sessionId, "web-lifecycle-activate", redisClient.nowMs + 60_000);
-  await sessionLifecycleManager.attachMobile(sessionId, "mobile-lifecycle-activate");
-  const activeSession = await sessionLifecycleManager.activateSession(sessionId);
+  const pairedSession = await sessionLifecycleManager.transitionToPaired(sessionId, "mobile-lifecycle-activate");
+  const activeSession = await sessionLifecycleManager.transitionToActive(sessionId);
   const binding = connectionManager.lookupConnection(sessionId);
 
+  assert.equal(pairedSession.state, SESSION_STATES.PAIRED);
   assert.equal(activeSession.state, SESSION_STATES.ACTIVE);
   assert.equal(binding.webSocket, webSocket);
   assert.equal(binding.mobileSocket, mobileSocket);
 });
 
-test("session_close", async () => {
+test("session_active_to_closed", async () => {
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
   const connectionManager = createConnectionManager();
@@ -667,8 +688,9 @@ test("session_close", async () => {
   connectionManager.registerConnection(mobileSocket, { connectionId: "mobile-lifecycle-close" });
 
   await sessionLifecycleManager.createSession(sessionId, "web-lifecycle-close", redisClient.nowMs + 60_000);
-  await sessionLifecycleManager.attachMobile(sessionId, "mobile-lifecycle-close");
-  await sessionLifecycleManager.closeSession(sessionId, "manual_close");
+  await sessionLifecycleManager.transitionToPaired(sessionId, "mobile-lifecycle-close");
+  await sessionLifecycleManager.transitionToActive(sessionId);
+  await sessionLifecycleManager.transitionToClosed(sessionId, "manual_logout");
 
   const session = await sessionRegistry.getSession(sessionId);
 
@@ -676,13 +698,13 @@ test("session_close", async () => {
   assert.deepEqual(JSON.parse(webSocket.sentMessages[0]), {
     type: "session_close",
     payload: {
-      reason: "manual_close",
+      reason: "manual_logout",
     },
   });
   assert.deepEqual(JSON.parse(mobileSocket.sentMessages[0]), {
     type: "session_close",
     payload: {
-      reason: "manual_close",
+      reason: "manual_logout",
     },
   });
 });
@@ -704,7 +726,8 @@ test("disconnect_cleanup", async () => {
   connectionManager.registerConnection(mobileSocket, { connectionId: "mobile-lifecycle-disconnect" });
 
   await sessionLifecycleManager.createSession(sessionId, "web-lifecycle-disconnect", redisClient.nowMs + 60_000);
-  await sessionLifecycleManager.attachMobile(sessionId, "mobile-lifecycle-disconnect");
+  await sessionLifecycleManager.transitionToPaired(sessionId, "mobile-lifecycle-disconnect");
+  await sessionLifecycleManager.transitionToActive(sessionId);
   const handled = await sessionLifecycleManager.handleDisconnect("mobile-lifecycle-disconnect");
   const session = await sessionRegistry.getSession(sessionId);
 
@@ -745,7 +768,7 @@ test("session_expiration_cleanup", async () => {
   assert.deepEqual(JSON.parse(webSocket.sentMessages[0]), {
     type: "session_close",
     payload: {
-      reason: "expired",
+      reason: "timeout",
     },
   });
 });
@@ -1140,6 +1163,61 @@ test("router_dispatch_registered", async () => {
   connectionManager.registerConnection(mobileSocket, { connectionId: "registered-mobile" });
   connectionManager.registerConnection(webSocket, { connectionId: "registered-web" });
   connectionManager.bindSessionSockets("registered-dispatch-session", mobileSocket, webSocket);
+
+  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+
+  assert.equal(routed, true);
+  assert.equal(webSocket.sentMessages[0], JSON.stringify(envelope));
+});
+
+test("router_rejects_non_active_session", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, { sessionRegistry });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "0a7fd6af-2a78-47a4-884d-a2ef10b7d161";
+  const envelope = createEnvelope({ sessionId, type: "event_stream" });
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "router-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "router-web" });
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await sessionRegistry.createSession(sessionId, "router-web", redisClient.nowMs + 60_000);
+  await sessionRegistry.updateSession(sessionId, {
+    mobileSocketId: "router-mobile",
+    state: SESSION_STATES.PAIRED,
+  });
+
+  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+
+  assert.equal(routed, false);
+  assert.equal(webSocket.sentMessages.length, 0);
+});
+
+test("router_allows_active_session", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, { sessionRegistry });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "3eb4cf16-0cd3-4c6e-90d9-080bf46c5ddb";
+  const envelope = createEnvelope({ sessionId, type: "event_stream", payload: { opaque: true } });
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "router-active-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "router-active-web" });
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await sessionRegistry.createSession(sessionId, "router-active-web", redisClient.nowMs + 60_000);
+  await sessionRegistry.updateSession(sessionId, {
+    mobileSocketId: "router-active-mobile",
+    state: SESSION_STATES.PAIRED,
+  });
+  await sessionRegistry.updateSession(sessionId, {
+    state: SESSION_STATES.ACTIVE,
+  });
 
   const routed = await messageRouter.routeMessage(envelope, mobileSocket);
 

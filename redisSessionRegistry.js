@@ -12,7 +12,6 @@ const ALLOWED_STATE_TRANSITIONS = Object.freeze({
   [SESSION_STATES.WAITING]: new Set([
     SESSION_STATES.WAITING,
     SESSION_STATES.PAIRED,
-    SESSION_STATES.ACTIVE,
     SESSION_STATES.CLOSED,
   ]),
   [SESSION_STATES.PAIRED]: new Set([SESSION_STATES.PAIRED, SESSION_STATES.ACTIVE, SESSION_STATES.CLOSED]),
@@ -114,6 +113,55 @@ function deriveAttachedState(session) {
   return session.state || SESSION_STATES.WAITING;
 }
 
+function buildUpdatedSession(session, updates) {
+  if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
+    throw new Error("updates must be an object");
+  }
+
+  const nextSession = {
+    ...session,
+  };
+
+  if (Object.prototype.hasOwnProperty.call(updates, "webSocketId")) {
+    if (updates.webSocketId !== null) {
+      assertSocketId(updates.webSocketId, "webSocketId");
+    }
+
+    nextSession.webSocketId = updates.webSocketId || null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "mobileSocketId")) {
+    if (updates.mobileSocketId !== null) {
+      assertSocketId(updates.mobileSocketId, "mobileSocketId");
+    }
+
+    nextSession.mobileSocketId = updates.mobileSocketId || null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "expiresAt")) {
+    nextSession.expiresAt = normalizeExpiresAt(updates.expiresAt);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "state")) {
+    assertState(updates.state);
+
+    const allowedTransitions = ALLOWED_STATE_TRANSITIONS[session.state];
+    if (!allowedTransitions || !allowedTransitions.has(updates.state)) {
+      throw new Error(`Invalid session state transition from ${session.state} to ${updates.state}`);
+    }
+
+    nextSession.state = updates.state;
+  }
+
+  if (nextSession.state === SESSION_STATES.ACTIVE && (!nextSession.webSocketId || !nextSession.mobileSocketId)) {
+    throw new Error(
+      `Session ${session.sessionId} requires webSocketId and mobileSocketId before activation`,
+    );
+  }
+
+  return nextSession;
+}
+
 class RedisSessionRegistry {
   constructor(redisClient) {
     if (!redisClient) {
@@ -188,30 +236,20 @@ class RedisSessionRegistry {
     assertSessionId(sessionId);
     assertSocketId(webSocketId, "webSocketId");
 
-    const session = await this.requireSession(sessionId);
-    const updatedSession = {
-      ...session,
+    return this.updateSession(sessionId, {
       webSocketId,
-    };
-
-    updatedSession.state = deriveAttachedState(updatedSession);
-    await this.writeSession(updatedSession);
-    return updatedSession;
+      state: deriveAttachedState(await this.requireSession(sessionId)),
+    });
   }
 
   async attachMobileSocket(sessionId, mobileSocketId) {
     assertSessionId(sessionId);
     assertSocketId(mobileSocketId, "mobileSocketId");
 
-    const session = await this.requireSession(sessionId);
-    const updatedSession = {
-      ...session,
+    return this.updateSession(sessionId, {
       mobileSocketId,
-    };
-
-    updatedSession.state = deriveAttachedState(updatedSession);
-    await this.writeSession(updatedSession);
-    return updatedSession;
+      state: deriveAttachedState(await this.requireSession(sessionId)),
+    });
   }
 
   async getSession(sessionId) {
@@ -221,31 +259,20 @@ class RedisSessionRegistry {
   }
 
   async setSessionState(sessionId, state) {
+    return this.updateSession(sessionId, { state });
+  }
+
+  async updateSession(sessionId, updates) {
     assertSessionId(sessionId);
-    assertState(state);
 
     const session = await this.requireSession(sessionId);
-    const allowedTransitions = ALLOWED_STATE_TRANSITIONS[session.state];
-
-    if (!allowedTransitions || !allowedTransitions.has(state)) {
-      throw new Error(`Invalid session state transition from ${session.state} to ${state}`);
-    }
-
-    if (state === SESSION_STATES.ACTIVE && (!session.webSocketId || !session.mobileSocketId)) {
-      throw new Error(`Session ${sessionId} requires webSocketId and mobileSocketId before activation`);
-    }
-
-    const updatedSession = {
-      ...session,
-      state,
-    };
+    const updatedSession = buildUpdatedSession(session, updates);
     await this.writeSession(updatedSession);
-
     return updatedSession;
   }
 
   async updateState(sessionId, state) {
-    return this.setSessionState(sessionId, state);
+    return this.updateSession(sessionId, { state });
   }
 
   async attachMobile(sessionId, mobileSocketId) {

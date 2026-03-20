@@ -57,7 +57,7 @@ class SessionLifecycleManager {
     const session = await this.sessionRegistry.createSession(sessionId, webSocketId, expiresAt);
     this.indexSession(session);
     this.scheduleExpiration(session.sessionId, session.expiresAt);
-    this.logger("SESSION_CREATE state=waiting");
+    this.logger("SESSION_CREATE persisted");
     return session;
   }
 
@@ -74,13 +74,10 @@ class SessionLifecycleManager {
       throw new Error(`Session ${sessionId} must be waiting before pairing`);
     }
 
-    const sessionWithMobile = await this.sessionRegistry.updateSession(sessionId, {
-      mobileSocketId,
-      state: SESSION_STATES.PAIRED,
-    });
+    const sessionWithMobile = await this.sessionRegistry.updateSessionOnPair(sessionId, mobileSocketId);
 
     this.indexSession(sessionWithMobile);
-    this.logger("SESSION_PAIR_REQUEST state=paired");
+    this.logger("SESSION_UPDATE paired");
     return sessionWithMobile;
   }
 
@@ -101,11 +98,9 @@ class SessionLifecycleManager {
     }
 
     this.bindLiveSockets(session);
-    const activeSession = await this.sessionRegistry.updateSession(sessionId, {
-      state: SESSION_STATES.ACTIVE,
-    });
+    const activeSession = await this.sessionRegistry.activateSession(sessionId);
     this.indexSession(activeSession);
-    this.logger("SESSION_ACTIVATED state=active");
+    this.logger("SESSION_UPDATE active");
     return activeSession;
   }
 

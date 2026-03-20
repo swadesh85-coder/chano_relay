@@ -16,13 +16,19 @@ class FakeRedisClient {
     this.nowMs = nowMs;
   }
 
+  purgeAllExpired() {
+    for (const key of this.entries.keys()) {
+      this.purgeExpired(key);
+    }
+  }
+
   purgeExpired(key) {
     const entry = this.entries.get(key);
     if (!entry) {
       return;
     }
 
-    if (entry.expiresAtSeconds !== null && entry.expiresAtSeconds * 1000 <= this.nowMs) {
+    if (entry.expiresAtMs !== null && entry.expiresAtMs <= this.nowMs) {
       this.entries.delete(key);
     }
   }
@@ -32,31 +38,82 @@ class FakeRedisClient {
     return this.entries.has(key) ? 1 : 0;
   }
 
-  async set(key, value) {
+  async hSet(key, fields) {
     this.purgeExpired(key);
-    const entry = this.entries.get(key) || { value: null, expiresAtSeconds: null };
-    entry.value = String(value);
+    const entry = this.entries.get(key) || { type: "hash", value: {}, expiresAtMs: null };
+
+    if (entry.type !== "hash") {
+      throw new Error(`WRONGTYPE Operation against a key holding the wrong kind of value: ${key}`);
+    }
+
+    let addedFields = 0;
+
+    for (const [field, value] of Object.entries(fields)) {
+      if (!Object.prototype.hasOwnProperty.call(entry.value, field)) {
+        addedFields += 1;
+      }
+
+      entry.value[field] = String(value);
+    }
+
     this.entries.set(key, entry);
-    return "OK";
+    return addedFields;
   }
 
-  async get(key) {
+  async hGetAll(key) {
     this.purgeExpired(key);
     const entry = this.entries.get(key);
-    return entry ? entry.value : null;
+
+    if (!entry || entry.type !== "hash") {
+      return {};
+    }
+
+    return { ...entry.value };
   }
 
-  async expireAt(key, epochSeconds) {
+  async expire(key, ttlSeconds) {
     this.purgeExpired(key);
     const entry = this.entries.get(key);
     if (!entry) {
       return 0;
     }
 
-    entry.expiresAtSeconds = Number(epochSeconds);
+    entry.expiresAtMs = this.nowMs + Number(ttlSeconds) * 1000;
     this.entries.set(key, entry);
     this.purgeExpired(key);
     return this.entries.has(key) ? 1 : 0;
+  }
+
+  async ttl(key) {
+    this.purgeExpired(key);
+    const entry = this.entries.get(key);
+
+    if (!entry) {
+      return -2;
+    }
+
+    if (entry.expiresAtMs === null) {
+      return -1;
+    }
+
+    return Math.max(0, Math.ceil((entry.expiresAtMs - this.nowMs) / 1000));
+  }
+
+  async type(key) {
+    this.purgeExpired(key);
+    const entry = this.entries.get(key);
+    return entry ? entry.type : "none";
+  }
+
+  async keys(pattern = "*") {
+    this.purgeAllExpired();
+    const escapedPattern = pattern
+      .split("*")
+      .map((segment) => segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join(".*");
+    const matcher = new RegExp(`^${escapedPattern}$`);
+
+    return [...this.entries.keys()].filter((key) => matcher.test(key));
   }
 
   async del(key) {
@@ -235,25 +292,33 @@ function observeSessionRegistry(sessionRegistry) {
   const transitions = [];
   const createSession = sessionRegistry.createSession.bind(sessionRegistry);
   const updateSession = sessionRegistry.updateSession.bind(sessionRegistry);
+  const updateSessionOnPair = sessionRegistry.updateSessionOnPair.bind(sessionRegistry);
+  const activateSession = sessionRegistry.activateSession.bind(sessionRegistry);
 
-  sessionRegistry.createSession = async (...args) => {
-    const session = await createSession(...args);
+  function recordTransition(session) {
     transitions.push({
       state: session.state,
       sessionId: session.sessionId,
       snapshot: { ...session },
     });
+
     return session;
+  }
+
+  sessionRegistry.createSession = async (...args) => {
+    return recordTransition(await createSession(...args));
   };
 
   sessionRegistry.updateSession = async (...args) => {
-    const session = await updateSession(...args);
-    transitions.push({
-      state: session.state,
-      sessionId: session.sessionId,
-      snapshot: { ...session },
-    });
-    return session;
+    return recordTransition(await updateSession(...args));
+  };
+
+  sessionRegistry.updateSessionOnPair = async (...args) => {
+    return recordTransition(await updateSessionOnPair(...args));
+  };
+
+  sessionRegistry.activateSession = async (...args) => {
+    return recordTransition(await activateSession(...args));
   };
 
   return transitions;
@@ -418,7 +483,11 @@ async function runRelayRuntimeAudit(options = {}) {
 
     await Promise.all([webApprovalMessage, mobileApprovalMessage]);
     const activeSession = await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.ACTIVE);
-    const redisSessionRecord = JSON.parse(await redisClient.get(getRedisSessionKey(sessionId)));
+    const redisKey = getRedisSessionKey(sessionId);
+    const redisSessionRecord = await redisClient.hGetAll(redisKey);
+    const redisSessionKeys = await redisClient.keys("*");
+    const redisSessionType = await redisClient.type(redisKey);
+    const redisSessionTtl = await redisClient.ttl(redisKey);
 
     const routeEnvelopeOne = createEnvelope({
       type: "snapshot_start",
@@ -542,6 +611,11 @@ async function runRelayRuntimeAudit(options = {}) {
     const results = {
       startupEvidence,
       redisSessionRecord: formatSessionRecord(activeSession),
+      redisChecks: {
+        keys: redisSessionKeys,
+        type: redisSessionType,
+        ttl: redisSessionTtl,
+      },
       routingEvidence,
       validationEvidence: {
         validAccepted: {
@@ -574,6 +648,9 @@ async function runRelayRuntimeAudit(options = {}) {
     record("RELAY_STARTING");
     record("REDIS_CONNECTED");
     record(`RELAY_LISTENING ${relayListenUrl}`);
+    record(`REDIS_KEYS ${redisSessionKeys.join(",")}`);
+    record(`REDIS_TYPE ${redisSessionType}`);
+    record(`REDIS_TTL ${redisSessionTtl}`);
     record(JSON.stringify(formatSessionRecord(activeSession), null, 2));
     record(`VALID_ENVELOPE_ACCEPTED sequence=1 type=protocol_handshake`);
     record(`INVALID_ENVELOPE_REJECTED reason=${invalidEnvelope.payload.reason}`);

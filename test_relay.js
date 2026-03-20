@@ -39,13 +39,19 @@ class FakeRedisClient {
     this.nowMs += ms;
   }
 
+  purgeAllExpired() {
+    for (const key of this.entries.keys()) {
+      this.purgeExpired(key);
+    }
+  }
+
   purgeExpired(key) {
     const entry = this.entries.get(key);
     if (!entry) {
       return;
     }
 
-    if (entry.expiresAtSeconds !== null && entry.expiresAtSeconds * 1000 <= this.nowMs) {
+    if (entry.expiresAtMs !== null && entry.expiresAtMs <= this.nowMs) {
       this.entries.delete(key);
     }
   }
@@ -55,48 +61,82 @@ class FakeRedisClient {
     return this.entries.has(key) ? 1 : 0;
   }
 
-  async set(key, value) {
-    this.purgeExpired(key);
-    const entry = this.entries.get(key) || { value: null, expiresAtSeconds: null };
-
-    entry.value = String(value);
-    this.entries.set(key, entry);
-    return "OK";
-  }
-
-  async get(key) {
-    this.purgeExpired(key);
-    const entry = this.entries.get(key);
-    return entry ? entry.value : null;
-  }
-
   async hSet(key, fields) {
-    const currentValue = await this.get(key);
-    const currentHash = currentValue ? JSON.parse(currentValue) : {};
-    const nextHash = {
-      ...currentHash,
-      ...fields,
-    };
-    await this.set(key, JSON.stringify(nextHash));
-    return Object.keys(fields).length;
+    this.purgeExpired(key);
+    const entry = this.entries.get(key) || { type: "hash", value: {}, expiresAtMs: null };
+
+    if (entry.type !== "hash") {
+      throw new Error(`WRONGTYPE Operation against a key holding the wrong kind of value: ${key}`);
+    }
+
+    let addedFields = 0;
+
+    for (const [field, value] of Object.entries(fields)) {
+      if (!Object.prototype.hasOwnProperty.call(entry.value, field)) {
+        addedFields += 1;
+      }
+
+      entry.value[field] = String(value);
+    }
+
+    this.entries.set(key, entry);
+    return addedFields;
   }
 
   async hGetAll(key) {
-    const currentValue = await this.get(key);
-    return currentValue ? JSON.parse(currentValue) : {};
+    this.purgeExpired(key);
+    const entry = this.entries.get(key);
+
+    if (!entry || entry.type !== "hash") {
+      return {};
+    }
+
+    return { ...entry.value };
   }
 
-  async expireAt(key, epochSeconds) {
+  async expire(key, ttlSeconds) {
     this.purgeExpired(key);
     const entry = this.entries.get(key);
     if (!entry) {
       return 0;
     }
 
-    entry.expiresAtSeconds = Number(epochSeconds);
+    entry.expiresAtMs = this.nowMs + Number(ttlSeconds) * 1000;
     this.entries.set(key, entry);
     this.purgeExpired(key);
     return this.entries.has(key) ? 1 : 0;
+  }
+
+  async ttl(key) {
+    this.purgeExpired(key);
+    const entry = this.entries.get(key);
+
+    if (!entry) {
+      return -2;
+    }
+
+    if (entry.expiresAtMs === null) {
+      return -1;
+    }
+
+    return Math.max(0, Math.ceil((entry.expiresAtMs - this.nowMs) / 1000));
+  }
+
+  async type(key) {
+    this.purgeExpired(key);
+    const entry = this.entries.get(key);
+    return entry ? entry.type : "none";
+  }
+
+  async keys(pattern = "*") {
+    this.purgeAllExpired();
+    const escapedPattern = pattern
+      .split("*")
+      .map((segment) => segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join(".*");
+    const matcher = new RegExp(`^${escapedPattern}$`);
+
+    return [...this.entries.keys()].filter((key) => matcher.test(key));
   }
 
   async del(key) {
@@ -277,15 +317,18 @@ function findDiagnosticsEntry(entries, stage) {
   return entries.find((entry) => entry.stage === stage);
 }
 
-test("create_session", async () => {
+test("redis_session_create", async () => {
   const redisClient = new FakeRedisClient();
-  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+  });
   const sessionId = "4d92f0cf-a044-4ae3-9e83-6e7dd53fd4ab";
-  const expiresAt = redisClient.nowMs + 60_000;
+  const expiresAt = redisClient.nowMs + 120_000;
+  const redisKey = getRedisSessionKey(sessionId);
 
   const session = await sessionRegistry.createSession(sessionId, expiresAt);
   const storedSession = await sessionRegistry.getSession(sessionId);
-  const rawSession = JSON.parse(await redisClient.get(getRedisSessionKey(sessionId)));
+  const rawSession = await redisClient.hGetAll(redisKey);
 
   assert.equal(session.sessionId, sessionId);
   assert.equal(session.mobileSocketId, null);
@@ -293,15 +336,25 @@ test("create_session", async () => {
   assert.equal(session.expiresAt, expiresAt);
   assert.equal(session.state, SESSION_STATES.WAITING);
   assert.deepEqual(storedSession, session);
-  assert.deepEqual(rawSession, session);
-  assert.equal(await redisClient.exists(getRedisSessionKey(sessionId)), 1);
+  assert.equal(await redisClient.exists(redisKey), 1);
+  assert.deepEqual(await redisClient.keys("*"), [redisKey]);
+  assert.equal(await redisClient.type(redisKey), "hash");
+  assert.equal(await redisClient.ttl(redisKey), 120);
+  assert.deepEqual(rawSession, {
+    sessionId,
+    webSocketId: "null",
+    mobileSocketId: "null",
+    createdAt: String(session.createdAt),
+    expiresAt: String(expiresAt),
+    state: SESSION_STATES.WAITING,
+  });
 });
 
-test("session_lookup", async () => {
+test("redis_session_persist", async () => {
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
   const sessionId = "56b8b39a-9ca7-44d8-a928-b0ef1126d2f4";
-  const expiresAt = redisClient.nowMs + 60_000;
+  const expiresAt = redisClient.nowMs + 120_000;
 
   await sessionRegistry.createSession(sessionId, expiresAt);
   await sessionRegistry.attachWebSocket(sessionId, "web-socket-lookup");
@@ -346,21 +399,22 @@ test("attach_mobile_socket", async () => {
   assert.deepEqual(await sessionRegistry.getSession(sessionId), updatedSession);
 });
 
-test("session_waiting_to_paired", async () => {
+test("redis_session_pair_update", async () => {
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
   const sessionId = "8d2dd03d-e2de-477d-947a-08fab41dbc7a";
+  const redisKey = getRedisSessionKey(sessionId);
 
-  await sessionRegistry.createSession(sessionId, redisClient.nowMs + 60_000);
+  await sessionRegistry.createSession(sessionId, redisClient.nowMs + 120_000);
   await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
-  await sessionRegistry.attachMobileSocket(sessionId, "mobile-socket-state");
-  const pairedSession = await sessionRegistry.updateSession(sessionId, {
-    state: SESSION_STATES.PAIRED,
-  });
+  const pairedSession = await sessionRegistry.updateSessionOnPair(sessionId, "mobile-socket-state");
+  const rawSession = await redisClient.hGetAll(redisKey);
 
   assert.equal(pairedSession.state, SESSION_STATES.PAIRED);
   assert.equal(pairedSession.webSocketId, "web-socket-state");
   assert.equal(pairedSession.mobileSocketId, "mobile-socket-state");
+  assert.equal(rawSession.mobileSocketId, "mobile-socket-state");
+  assert.equal(rawSession.state, SESSION_STATES.PAIRED);
 
   await assert.rejects(
     () => sessionRegistry.setSessionState(sessionId, SESSION_STATES.WAITING),
@@ -368,30 +422,42 @@ test("session_waiting_to_paired", async () => {
   );
 });
 
-test("session_paired_to_active", async () => {
+test("redis_session_activate", async () => {
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
   const sessionId = "18e8f865-336f-4d15-a0e8-acd0a62bad55";
+  const redisKey = getRedisSessionKey(sessionId);
 
-  await sessionRegistry.createSession(sessionId, redisClient.nowMs + 60_000);
+  await sessionRegistry.createSession(sessionId, redisClient.nowMs + 120_000);
   await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
-  await sessionRegistry.attachMobileSocket(sessionId, "mobile-socket-state");
-  const pairedSession = await sessionRegistry.updateSession(sessionId, {
-    state: SESSION_STATES.PAIRED,
-  });
-  const activeSession = await sessionRegistry.updateSession(sessionId, {
-    state: SESSION_STATES.ACTIVE,
-  });
+  await sessionRegistry.updateSessionOnPair(sessionId, "mobile-socket-state");
+  const activeSession = await sessionRegistry.activateSession(sessionId);
+  const rawSession = await redisClient.hGetAll(redisKey);
 
-  assert.equal(pairedSession.state, SESSION_STATES.PAIRED);
   assert.equal(activeSession.state, SESSION_STATES.ACTIVE);
   assert.equal(activeSession.webSocketId, "web-socket-state");
   assert.equal(activeSession.mobileSocketId, "mobile-socket-state");
+  assert.equal(rawSession.state, SESSION_STATES.ACTIVE);
 
   await assert.rejects(
     () => sessionRegistry.setSessionState(sessionId, SESSION_STATES.WAITING),
     /Invalid session state transition/,
   );
+});
+
+test("redis_session_ttl_valid", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+  });
+  const sessionId = "18e8f865-336f-4d15-a0e8-acd0a62bad56";
+  const redisKey = getRedisSessionKey(sessionId);
+
+  const session = await sessionRegistry.createSession(sessionId, "ttl-web-socket");
+
+  assert.equal(session.expiresAt, redisClient.nowMs + 120_000);
+  assert.equal(await redisClient.ttl(redisKey), 120);
+  assert.equal(await redisClient.type(redisKey), "hash");
 });
 
 test("state_update", async () => {
@@ -570,7 +636,9 @@ test("pair_request_requires_existing_session", async () => {
 
 test("pair_request_expired", async () => {
   const redisClient = new FakeRedisClient(1_000);
-  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+  });
   const connectionManager = createConnectionManager();
   const sessionLifecycleManager = createSessionLifecycleManager({
     sessionRegistry,
@@ -625,15 +693,20 @@ test("session_create", async () => {
   const redisClient = new FakeRedisClient();
   const connectionManager = createConnectionManager();
   const scheduler = new ManualScheduler(() => redisClient.nowMs);
+  const logs = [];
   const sessionLifecycleManager = createSessionLifecycleManager({
-    sessionRegistry: createRedisSessionRegistry(redisClient),
+    sessionRegistry: createRedisSessionRegistry(redisClient, {
+      now: () => redisClient.nowMs,
+      logger: (entry) => logs.push(entry),
+    }),
     connectionManager,
     now: () => redisClient.nowMs,
     setTimer: (callback, delay) => scheduler.setTimeout(callback, delay),
     clearTimer: (handle) => scheduler.clearTimeout(handle),
+    logger: (entry) => logs.push(entry),
   });
   const sessionId = "32d0e189-e11d-42e5-819a-a9f528ef1b0a";
-  const expiresAt = redisClient.nowMs + 60_000;
+  const expiresAt = redisClient.nowMs + 120_000;
 
   const session = await sessionLifecycleManager.createSession(sessionId, "web-lifecycle-1", expiresAt);
 
@@ -642,11 +715,16 @@ test("session_create", async () => {
   assert.equal(session.mobileSocketId, null);
   assert.equal(session.state, SESSION_STATES.WAITING);
   assert.equal(scheduler.handles.length, 1);
+  assert.equal(logs.includes("SESSION_CREATE persisted"), true);
 });
 
 test("session_paired_to_active_lifecycle", async () => {
   const redisClient = new FakeRedisClient();
-  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const logs = [];
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+    logger: (entry) => logs.push(entry),
+  });
   const connectionManager = createConnectionManager();
   const webSocket = new MockSocket();
   const mobileSocket = new MockSocket();
@@ -654,13 +732,14 @@ test("session_paired_to_active_lifecycle", async () => {
     sessionRegistry,
     connectionManager,
     now: () => redisClient.nowMs,
+    logger: (entry) => logs.push(entry),
   });
   const sessionId = "a54fa7f0-2b0d-4663-af29-0d53c53380a1";
 
   connectionManager.registerConnection(webSocket, { connectionId: "web-lifecycle-activate" });
   connectionManager.registerConnection(mobileSocket, { connectionId: "mobile-lifecycle-activate" });
 
-  await sessionLifecycleManager.createSession(sessionId, "web-lifecycle-activate", redisClient.nowMs + 60_000);
+  await sessionLifecycleManager.createSession(sessionId, "web-lifecycle-activate", redisClient.nowMs + 120_000);
   const pairedSession = await sessionLifecycleManager.transitionToPaired(sessionId, "mobile-lifecycle-activate");
   const activeSession = await sessionLifecycleManager.transitionToActive(sessionId);
   const binding = connectionManager.lookupConnection(sessionId);
@@ -669,6 +748,8 @@ test("session_paired_to_active_lifecycle", async () => {
   assert.equal(activeSession.state, SESSION_STATES.ACTIVE);
   assert.equal(binding.webSocket, webSocket);
   assert.equal(binding.mobileSocket, mobileSocket);
+  assert.equal(logs.includes("SESSION_UPDATE paired"), true);
+  assert.equal(logs.includes("SESSION_UPDATE active"), true);
 });
 
 test("session_active_to_closed", async () => {
@@ -743,7 +824,9 @@ test("disconnect_cleanup", async () => {
 
 test("session_expiration_cleanup", async () => {
   const redisClient = new FakeRedisClient(5_000);
-  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+  });
   const connectionManager = createConnectionManager();
   const webSocket = new MockSocket();
   const scheduler = new ManualScheduler(() => redisClient.nowMs);

@@ -20,6 +20,8 @@ const ALLOWED_STATE_TRANSITIONS = Object.freeze({
 });
 
 const REDIS_CLIENT_PACKAGE_NAME = "redis";
+const DEFAULT_SESSION_TTL_MS = 2 * 60 * 1000;
+const NULL_REDIS_FIELD_VALUE = "null";
 
 function assertNonEmptyString(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -69,39 +71,135 @@ function assertSocketId(socketId, label) {
   assertNonEmptyString(socketId, label);
 }
 
-function toRedisEpochSeconds(expiresAtMs) {
-  return Math.ceil(expiresAtMs / 1000);
+function toRedisTtlSeconds(expiresAtMs, nowMs, options = {}) {
+  const allowExpired = Boolean(options.allowExpired);
+  const ttlSeconds = Math.ceil((expiresAtMs - nowMs) / 1000);
+
+  if (!Number.isInteger(ttlSeconds)) {
+    throw new Error("expiresAt must be in the future");
+  }
+
+  if (ttlSeconds <= 0) {
+    if (allowExpired) {
+      return 1;
+    }
+
+    throw new Error("expiresAt must be in the future");
+  }
+
+  return ttlSeconds;
 }
 
 function getRedisSessionKey(sessionId) {
   return `session:${sessionId}`;
 }
 
-function serializeSession(session) {
-  return JSON.stringify({
-    sessionId: session.sessionId,
-    webSocketId: session.webSocketId || null,
-    mobileSocketId: session.mobileSocketId || null,
-    createdAt: session.createdAt,
-    expiresAt: session.expiresAt,
-    state: session.state,
-  });
+function serializeRedisFieldValue(value) {
+  if (value === null || value === undefined) {
+    return NULL_REDIS_FIELD_VALUE;
+  }
+
+  return String(value);
 }
 
-function deserializeSession(serializedSession) {
-  if (!serializedSession) {
+function deserializeRedisFieldValue(value) {
+  if (value === undefined || value === null || value === "" || value === NULL_REDIS_FIELD_VALUE) {
     return null;
   }
 
-  const session = JSON.parse(serializedSession);
+  return value;
+}
+
+function serializeSessionHash(session) {
+  return {
+    sessionId: serializeRedisFieldValue(session.sessionId),
+    webSocketId: serializeRedisFieldValue(session.webSocketId),
+    mobileSocketId: serializeRedisFieldValue(session.mobileSocketId),
+    createdAt: serializeRedisFieldValue(session.createdAt),
+    expiresAt: serializeRedisFieldValue(session.expiresAt),
+    state: serializeRedisFieldValue(session.state),
+  };
+}
+
+function deserializeSessionHash(serializedSession) {
+  if (!serializedSession || Object.keys(serializedSession).length === 0) {
+    return null;
+  }
+
+  const sessionId = deserializeRedisFieldValue(serializedSession.sessionId);
+  const state = deserializeRedisFieldValue(serializedSession.state);
+  const createdAt = Number(deserializeRedisFieldValue(serializedSession.createdAt));
+  const expiresAt = Number(deserializeRedisFieldValue(serializedSession.expiresAt));
+
+  if (!sessionId || !state || !Number.isFinite(createdAt) || !Number.isFinite(expiresAt)) {
+    throw new Error("Stored Redis session hash is invalid");
+  }
 
   return {
-    sessionId: session.sessionId,
-    webSocketId: session.webSocketId || null,
-    mobileSocketId: session.mobileSocketId || null,
-    createdAt: Number(session.createdAt),
-    expiresAt: Number(session.expiresAt),
-    state: session.state,
+    sessionId,
+    webSocketId: deserializeRedisFieldValue(serializedSession.webSocketId),
+    mobileSocketId: deserializeRedisFieldValue(serializedSession.mobileSocketId),
+    createdAt,
+    expiresAt,
+    state,
+  };
+}
+
+function buildRedisHashUpdates(updates) {
+  const redisHashUpdates = {};
+
+  if (Object.prototype.hasOwnProperty.call(updates, "webSocketId")) {
+    redisHashUpdates.webSocketId = serializeRedisFieldValue(updates.webSocketId);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "mobileSocketId")) {
+    redisHashUpdates.mobileSocketId = serializeRedisFieldValue(updates.mobileSocketId);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "expiresAt")) {
+    redisHashUpdates.expiresAt = serializeRedisFieldValue(updates.expiresAt);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "state")) {
+    redisHashUpdates.state = serializeRedisFieldValue(updates.state);
+  }
+
+  return redisHashUpdates;
+}
+
+function resolveCreateSessionArguments(now, webSocketIdOrExpiresAt, maybeExpiresAt) {
+  if (maybeExpiresAt !== undefined) {
+    return {
+      webSocketId: webSocketIdOrExpiresAt,
+      expiresAtMs: normalizeExpiresAt(maybeExpiresAt),
+    };
+  }
+
+  if (webSocketIdOrExpiresAt === undefined || webSocketIdOrExpiresAt === null) {
+    return {
+      webSocketId: null,
+      expiresAtMs: now + DEFAULT_SESSION_TTL_MS,
+    };
+  }
+
+  if (typeof webSocketIdOrExpiresAt === "string") {
+    const parsedTimestamp = Date.parse(webSocketIdOrExpiresAt);
+    if (Number.isFinite(parsedTimestamp)) {
+      return {
+        webSocketId: null,
+        expiresAtMs: parsedTimestamp,
+      };
+    }
+
+    return {
+      webSocketId: webSocketIdOrExpiresAt,
+      expiresAtMs: now + DEFAULT_SESSION_TTL_MS,
+    };
+  }
+
+  return {
+    webSocketId: null,
+    expiresAtMs: normalizeExpiresAt(webSocketIdOrExpiresAt),
   };
 }
 
@@ -163,18 +261,20 @@ function buildUpdatedSession(session, updates) {
 }
 
 class RedisSessionRegistry {
-  constructor(redisClient) {
+  constructor(redisClient, options = {}) {
     if (!redisClient) {
       throw new Error("redisClient is required");
     }
 
-    for (const methodName of ["exists", "get", "set", "expireAt", "del"]) {
+    for (const methodName of ["exists", "hGetAll", "hSet", "expire", "del"]) {
       if (typeof redisClient[methodName] !== "function") {
         throw new Error(`redisClient.${methodName} must be a function`);
       }
     }
 
     this.redisClient = redisClient;
+    this.logger = typeof options.logger === "function" ? options.logger : console.log;
+    this.now = typeof options.now === "function" ? options.now : () => Date.now();
   }
 
   static async connect(redisUrl) {
@@ -199,10 +299,11 @@ class RedisSessionRegistry {
   async createSession(sessionId, webSocketIdOrExpiresAt, maybeExpiresAt) {
     assertSessionId(sessionId);
 
-    const expiresAtMs = normalizeExpiresAt(
-      maybeExpiresAt === undefined ? webSocketIdOrExpiresAt : maybeExpiresAt,
+    const { webSocketId, expiresAtMs } = resolveCreateSessionArguments(
+      this.now(),
+      webSocketIdOrExpiresAt,
+      maybeExpiresAt,
     );
-    const webSocketId = maybeExpiresAt === undefined ? null : webSocketIdOrExpiresAt;
 
     if (webSocketId !== null && webSocketId !== undefined) {
       assertSocketId(webSocketId, "webSocketId");
@@ -213,7 +314,7 @@ class RedisSessionRegistry {
       sessionId,
       mobileSocketId: null,
       webSocketId: webSocketId || null,
-      createdAt: Date.now(),
+      createdAt: this.now(),
       expiresAt: expiresAtMs,
       state: SESSION_STATES.WAITING,
     };
@@ -222,14 +323,52 @@ class RedisSessionRegistry {
       throw new Error(`Session already exists for ${sessionId}`);
     }
 
-    await this.redisClient.set(key, serializeSession(session));
-
-    if (!(await this.redisClient.expireAt(key, toRedisEpochSeconds(expiresAtMs)))) {
-      await this.redisClient.del(key);
-      throw new Error(`Failed to set TTL for ${sessionId}`);
-    }
+    await this.writeSession(session, "create", true);
 
     return session;
+  }
+
+  async updateSessionOnPair(sessionId, mobileSocketId) {
+    assertSessionId(sessionId);
+    assertSocketId(mobileSocketId, "mobileSocketId");
+
+    const session = await this.requireSession(sessionId);
+    const updatedSession = buildUpdatedSession(session, {
+      mobileSocketId,
+      state: SESSION_STATES.PAIRED,
+    });
+
+    await this.writeSessionFields(
+      updatedSession.sessionId,
+      {
+        mobileSocketId: updatedSession.mobileSocketId,
+        state: updatedSession.state,
+      },
+      updatedSession.expiresAt,
+      "pair",
+    );
+
+    return updatedSession;
+  }
+
+  async activateSession(sessionId) {
+    assertSessionId(sessionId);
+
+    const session = await this.requireSession(sessionId);
+    const updatedSession = buildUpdatedSession(session, {
+      state: SESSION_STATES.ACTIVE,
+    });
+
+    await this.writeSessionFields(
+      updatedSession.sessionId,
+      {
+        state: updatedSession.state,
+      },
+      updatedSession.expiresAt,
+      "activate",
+    );
+
+    return updatedSession;
   }
 
   async attachWebSocket(sessionId, webSocketId) {
@@ -254,8 +393,8 @@ class RedisSessionRegistry {
 
   async getSession(sessionId) {
     assertSessionId(sessionId);
-    const serializedSession = await this.redisClient.get(getRedisSessionKey(sessionId));
-    return deserializeSession(serializedSession);
+    const serializedSession = await this.redisClient.hGetAll(getRedisSessionKey(sessionId));
+    return deserializeSessionHash(serializedSession);
   }
 
   async setSessionState(sessionId, state) {
@@ -265,9 +404,33 @@ class RedisSessionRegistry {
   async updateSession(sessionId, updates) {
     assertSessionId(sessionId);
 
+    if (
+      updates &&
+      updates.state === SESSION_STATES.PAIRED &&
+      Object.keys(updates).every((key) => key === "mobileSocketId" || key === "state") &&
+      Object.prototype.hasOwnProperty.call(updates, "mobileSocketId")
+    ) {
+      return this.updateSessionOnPair(sessionId, updates.mobileSocketId);
+    }
+
+    if (
+      updates &&
+      updates.state === SESSION_STATES.ACTIVE &&
+      Object.keys(updates).length === 1
+    ) {
+      return this.activateSession(sessionId);
+    }
+
     const session = await this.requireSession(sessionId);
     const updatedSession = buildUpdatedSession(session, updates);
-    await this.writeSession(updatedSession);
+    const allowExpiredTtl = updatedSession.state === SESSION_STATES.CLOSED;
+    await this.writeSessionFields(
+      updatedSession.sessionId,
+      buildRedisHashUpdates(updatedSession),
+      updatedSession.expiresAt,
+      "update",
+      allowExpiredTtl,
+    );
     return updatedSession;
   }
 
@@ -279,16 +442,65 @@ class RedisSessionRegistry {
     return this.attachMobileSocket(sessionId, mobileSocketId);
   }
 
-  async writeSession(session) {
+  async writeSession(session, action = "write", deleteOnExpireFailure = false, allowExpiredTtl = false) {
     const key = getRedisSessionKey(session.sessionId);
-    await this.redisClient.set(key, serializeSession(session));
+    const ttlSeconds = toRedisTtlSeconds(session.expiresAt, this.now(), {
+      allowExpired: allowExpiredTtl,
+    });
 
-    if (!(await this.redisClient.expireAt(key, toRedisEpochSeconds(session.expiresAt)))) {
-      await this.redisClient.del(key);
-      throw new Error(`Failed to set TTL for ${session.sessionId}`);
+    try {
+      await this.redisClient.hSet(key, serializeSessionHash(session));
+
+      if (!(await this.redisClient.expire(key, ttlSeconds))) {
+        if (deleteOnExpireFailure) {
+          await this.redisClient.del(key);
+        }
+
+        throw new Error(`Failed to set TTL for ${session.sessionId}`);
+      }
+
+      this.logRedisWrite("success", action, session.sessionId, ttlSeconds);
+    } catch (error) {
+      this.logRedisWrite("failure", action, session.sessionId, ttlSeconds, error);
+      throw error;
     }
 
     return session;
+  }
+
+  async writeSessionFields(sessionId, updates, expiresAt, action, allowExpiredTtl = false) {
+    const key = getRedisSessionKey(sessionId);
+    const ttlSeconds = toRedisTtlSeconds(expiresAt, this.now(), {
+      allowExpired: allowExpiredTtl,
+    });
+
+    try {
+      await this.redisClient.hSet(key, buildRedisHashUpdates(updates));
+
+      if (!(await this.redisClient.expire(key, ttlSeconds))) {
+        throw new Error(`Failed to set TTL for ${sessionId}`);
+      }
+
+      this.logRedisWrite("success", action, sessionId, ttlSeconds);
+    } catch (error) {
+      this.logRedisWrite("failure", action, sessionId, ttlSeconds, error);
+      throw error;
+    }
+  }
+
+  logRedisWrite(status, action, sessionId, ttlSeconds, error) {
+    const parts = [
+      `[redis_session_registry] status=${status}`,
+      `action=${action}`,
+      `sessionId=${sessionId}`,
+      `ttlSeconds=${ttlSeconds}`,
+    ];
+
+    if (error) {
+      parts.push(`error=${error.message}`);
+    }
+
+    this.logger(parts.join(" "));
   }
 
   async deleteSession(sessionId) {
@@ -307,8 +519,8 @@ class RedisSessionRegistry {
   }
 }
 
-function createRedisSessionRegistry(redisClient) {
-  return new RedisSessionRegistry(redisClient);
+function createRedisSessionRegistry(redisClient, options) {
+  return new RedisSessionRegistry(redisClient, options);
 }
 
 async function connectRedisSessionRegistry(redisUrl) {

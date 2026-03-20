@@ -42,6 +42,19 @@ test("redis_session_registry_runtime", async () => {
     "state",
     "webSocketId",
   ]);
+  assert.equal(auditResult.redisChecks.keys.some((key) => key === `session:${sessionRecord.sessionId}`), true);
+  assert.equal(auditResult.redisChecks.type, "hash");
+  assert.equal(auditResult.redisChecks.ttl, 120);
+  assert.equal(auditResult.rawRedisSessionRecord.sessionId, sessionRecord.sessionId);
+  assert.equal(auditResult.rawRedisSessionRecord.state, "active");
+});
+
+test("redis_session_logs_runtime", async () => {
+  const auditResult = await auditResultPromise;
+
+  assert.equal(auditResult.startupLogs.some((entry) => entry.includes("SESSION_CREATE persisted")), true);
+  assert.equal(auditResult.startupLogs.some((entry) => entry.includes("SESSION_UPDATE paired")), true);
+  assert.equal(auditResult.startupLogs.some((entry) => entry.includes("SESSION_UPDATE active")), true);
 });
 
 test("relay_message_routing_runtime", async () => {

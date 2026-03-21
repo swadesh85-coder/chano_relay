@@ -16,7 +16,9 @@ const {
   SessionLifecycleManager,
   createSessionLifecycleManager,
 } = require("./sessionLifecycleManager");
+const { createSessionQueueManager } = require("./session_queue_manager");
 const {
+  DEFAULT_SESSION_TTL_MS,
   SESSION_STATES,
   RedisSessionRegistry,
   connectRedisSessionRegistry,
@@ -28,7 +30,6 @@ const DEFAULT_PROTOCOL_VERSION = 2;
 const DEFAULT_MAX_PAYLOAD_BYTES = DEFAULT_MAX_PAYLOAD_SIZE;
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "relay.config.json");
 const BOOTSTRAP_MESSAGE_TYPES = new Set(["protocol_handshake", "qr_session_create", "pair_request"]);
-
 function createRelayIngressDiagnostics(options = {}) {
   const enabled = Boolean(options.enabled);
   const logger =
@@ -54,6 +55,32 @@ function createRelayIngressDiagnostics(options = {}) {
     enabled,
     log,
   };
+}
+
+function formatAuditValue(value, fallback = "unknown") {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  if (typeof value === "string") {
+    return value.trim() === "" ? fallback : value;
+  }
+
+  return String(value);
+}
+
+function formatRawAuditPreview(rawMessage, maxChars = 200) {
+  const rawText = Buffer.isBuffer(rawMessage) ? rawMessage.toString("utf8") : String(rawMessage);
+  return rawText.slice(0, maxChars).replace(/\r/g, "\\r").replace(/\n/g, "\\n");
+}
+
+function logRelayAudit(diagnostics, label, fields = []) {
+  if (!diagnostics || !diagnostics.enabled) {
+    return;
+  }
+
+  const suffix = fields.map(([key, value]) => `${key}=${formatAuditValue(value)}`).join(" ");
+  console.log(`${label}${suffix ? ` ${suffix}` : ""}`);
 }
 
 function parseBoolean(value, fallback = false) {
@@ -330,7 +357,12 @@ function createConnectionManager(options = {}) {
       });
     }
 
-    socket.once("close", onClose);
+    if (typeof socket.once === "function") {
+      socket.once("close", onClose);
+    } else if (typeof socket.on === "function") {
+      socket.on("close", onClose);
+    }
+
     return registration;
   }
 
@@ -455,14 +487,75 @@ function createMessageRouter(connectionManager, options = {}) {
   const diagnostics = options.diagnostics || null;
   const dispatchTable = options.dispatchTable || {};
   const sessionRegistry = options.sessionRegistry || null;
+  const sessionLifecycleManager = options.sessionLifecycleManager || null;
+  const logger = typeof options.logger === "function" ? options.logger : console.log;
+  const sessionQueueManager = createSessionQueueManager({
+    logger,
+    forwardEnvelope: (envelope, metadata) => routeEnvelope(envelope, metadata.senderSocket),
+  });
 
-  async function routeMessage(envelope, senderSocket) {
-    const senderRegistration = connectionManager.lookupSocket(senderSocket);
+  function getRouteDirection(senderRole) {
+    return senderRole === "mobile" ? "mobile→web" : "web→mobile";
+  }
+
+  function ensureNoPayloadMutation(envelope, payloadReference) {
+    const isReferenceEqual = envelope.payload === payloadReference;
+    logger(`PAYLOAD_REFERENCE_EQUALITY ${isReferenceEqual}`);
+    return isReferenceEqual;
+  }
+
+  function forwardEnvelopeAsIs(envelope, destinationSocket) {
+    const payloadReference = envelope.payload;
+    destinationSocket.send(JSON.stringify(envelope));
+    ensureNoPayloadMutation(envelope, payloadReference);
+  }
+
+  function forwardSnapshotStart(envelope, destinationSocket, senderRegistration) {
+    forwardEnvelopeAsIs(envelope, destinationSocket);
+    logger(`RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_start`);
+  }
+
+  function forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, chunkIndex) {
+    forwardEnvelopeAsIs(envelope, destinationSocket);
+    logger(
+      `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_chunk index=${chunkIndex === null ? 0 : chunkIndex}`,
+    );
+  }
+
+  function forwardSnapshotComplete(envelope, destinationSocket, senderRegistration) {
+    forwardEnvelopeAsIs(envelope, destinationSocket);
+    logger(`RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_complete`);
+  }
+
+  async function routeEnvelope(envelope, senderSocket, senderRegistration = connectionManager.lookupSocket(senderSocket)) {
     const hasSenderSessionBinding = Boolean(
       senderRegistration && senderRegistration.sessionId && senderRegistration.role,
     );
     const isBootstrapMessage = BOOTSTRAP_MESSAGE_TYPES.has(envelope.type);
     const dispatchHandler = dispatchTable[envelope.type] || null;
+
+    logRelayAudit(diagnostics, "DISPATCH_LOOKUP", [
+      ["type", envelope.type || null],
+      ["sessionId", envelope.sessionId || null],
+      ["handlerExists", Boolean(dispatchHandler)],
+    ]);
+
+    function logRoutingDecision(routed, reason) {
+      logRelayAudit(diagnostics, "ROUTING_DECISION", [
+        ["type", envelope.type || null],
+        ["sessionId", envelope.sessionId || null],
+        ["routed", routed],
+        ["reason", reason || "none"],
+      ]);
+    }
+
+    function logMessageDropped(reason) {
+      logRelayAudit(diagnostics, "MESSAGE_DROPPED", [
+        ["type", envelope.type || null],
+        ["sessionId", envelope.sessionId || null],
+        ["reason", reason],
+      ]);
+    }
 
     if (!hasSenderSessionBinding && !isBootstrapMessage) {
       if (diagnostics) {
@@ -474,6 +567,9 @@ function createMessageRouter(connectionManager, options = {}) {
           reason: "missing_sender_registration",
         });
       }
+
+      logRoutingDecision(false, "missing_sender_registration");
+      logMessageDropped("missing_sender_registration");
 
       return false;
     }
@@ -491,10 +587,12 @@ function createMessageRouter(connectionManager, options = {}) {
         });
       }
 
+      logRoutingDecision(true, "dispatch_table_handler");
+
       return true;
     }
 
-    if (isBootstrapMessage) {
+    if (isBootstrapMessage && !hasSenderSessionBinding) {
       if (diagnostics) {
         diagnostics.log("message_router_dispatch", {
           socketId: senderRegistration ? senderRegistration.connectionId : null,
@@ -504,6 +602,8 @@ function createMessageRouter(connectionManager, options = {}) {
           reason: "bootstrap_message_allowed",
         });
       }
+
+      logRoutingDecision(true, "bootstrap_message_allowed");
 
       return true;
     }
@@ -519,11 +619,21 @@ function createMessageRouter(connectionManager, options = {}) {
         });
       }
 
+      logRoutingDecision(false, "session_mismatch");
+      logMessageDropped("session_mismatch");
+
       return false;
     }
 
     const session = connectionManager.lookupConnection(envelope.sessionId);
     if (!session) {
+      logRelayAudit(diagnostics, "SESSION_LOOKUP", [
+        ["type", envelope.type || null],
+        ["sessionId", envelope.sessionId || null],
+        ["found", false],
+        ["state", "unbound"],
+      ]);
+
       if (diagnostics) {
         diagnostics.log("message_router_dispatch", {
           socketId: senderRegistration.connectionId,
@@ -534,11 +644,21 @@ function createMessageRouter(connectionManager, options = {}) {
         });
       }
 
+      logRoutingDecision(false, "session_not_bound");
+      logMessageDropped("session_not_bound");
+
       return false;
     }
 
     if (sessionRegistry) {
       const persistedSession = await sessionRegistry.getSession(envelope.sessionId);
+
+      logRelayAudit(diagnostics, "SESSION_LOOKUP", [
+        ["type", envelope.type || null],
+        ["sessionId", envelope.sessionId || null],
+        ["found", Boolean(persistedSession)],
+        ["state", persistedSession ? persistedSession.state : "not_found"],
+      ]);
 
       if (!persistedSession) {
         if (diagnostics) {
@@ -550,6 +670,9 @@ function createMessageRouter(connectionManager, options = {}) {
             reason: "session_not_found",
           });
         }
+
+        logRoutingDecision(false, "session_not_found");
+        logMessageDropped("session_not_found");
 
         return false;
       }
@@ -565,8 +688,18 @@ function createMessageRouter(connectionManager, options = {}) {
           });
         }
 
+        logRoutingDecision(false, "session_not_active");
+        logMessageDropped("session_not_active");
+
         return false;
       }
+    } else {
+      logRelayAudit(diagnostics, "SESSION_LOOKUP", [
+        ["type", envelope.type || null],
+        ["sessionId", envelope.sessionId || null],
+        ["found", true],
+        ["state", "runtime_bound"],
+      ]);
     }
 
     const destinationSocket =
@@ -583,10 +716,37 @@ function createMessageRouter(connectionManager, options = {}) {
         });
       }
 
+      logRoutingDecision(false, "destination_unavailable");
+      logMessageDropped("destination_unavailable");
+
       return false;
     }
 
-    destinationSocket.send(JSON.stringify(envelope));
+    if (sessionLifecycleManager) {
+      await sessionLifecycleManager.persistBeforeRouting(() =>
+        sessionLifecycleManager.refreshSessionActivity(envelope.sessionId, envelope.type),
+      );
+    }
+
+    if (envelope.type === "snapshot_start") {
+      forwardSnapshotStart(envelope, destinationSocket, senderRegistration);
+    } else if (envelope.type === "snapshot_chunk") {
+      const sessionQueue = sessionQueueManager.initializeSessionQueue(envelope.sessionId);
+      const chunkIndex = Math.max(sessionQueue.snapshotChunkIndex - 1, 0);
+      forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, chunkIndex);
+    } else if (envelope.type === "snapshot_complete") {
+      forwardSnapshotComplete(envelope, destinationSocket, senderRegistration);
+    } else {
+      destinationSocket.send(JSON.stringify(envelope));
+    }
+
+    const targetRegistration = connectionManager.lookupSocket(destinationSocket);
+
+    logRelayAudit(diagnostics, "FORWARD_MESSAGE", [
+      ["type", envelope.type || null],
+      ["sessionId", envelope.sessionId || null],
+      ["targetSocket", targetRegistration ? targetRegistration.connectionId : null],
+    ]);
 
     if (diagnostics) {
       diagnostics.log("message_router_dispatch", {
@@ -598,11 +758,24 @@ function createMessageRouter(connectionManager, options = {}) {
       });
     }
 
+    logRoutingDecision(true, "forwarded");
+
     return true;
+  }
+
+  async function routeMessage(envelope, senderSocket) {
+    if (typeof envelope.sessionId === "string" && envelope.sessionId.trim() !== "") {
+      return sessionQueueManager.enqueueMessage(envelope.sessionId, envelope, { senderSocket });
+    }
+
+    return routeEnvelope(envelope, senderSocket);
   }
 
   return {
     routeMessage,
+    enqueueMessage: sessionQueueManager.enqueueMessage,
+    initializeSessionQueue: sessionQueueManager.initializeSessionQueue,
+    processQueue: sessionQueueManager.processQueue,
   };
 }
 
@@ -680,6 +853,7 @@ function createRelayServer(configOverrides = {}) {
   const messageRouter = createMessageRouter(connectionManager, {
     diagnostics: ingressDiagnostics,
     sessionRegistry,
+    sessionLifecycleManager,
     dispatchTable: qrPairingSystem
       ? {
           qr_session_create: (senderSocket, envelope) =>
@@ -759,7 +933,22 @@ function createRelayServer(configOverrides = {}) {
     events.emit("connection", { remoteAddress });
 
     socket.on("message", async (rawMessage, isBinary) => {
+      const rawMessageBytes = Buffer.byteLength(rawMessage);
+      const rawPreview = formatRawAuditPreview(rawMessage);
+
+      logRelayAudit(ingressDiagnostics, "RAW_WS_MESSAGE", [
+        ["bytes", rawMessageBytes],
+        ["raw", rawPreview],
+        ["type", "unknown"],
+        ["sessionId", "unknown"],
+      ]);
+
       if (isBinary) {
+        logRelayAudit(ingressDiagnostics, "MESSAGE_DROPPED", [
+          ["type", "unknown"],
+          ["sessionId", "unknown"],
+          ["reason", "binary_frames_not_supported"],
+        ]);
         socket.send(createTransportEnvelopeError("binary_frames_not_supported", config.protocolVersion));
         return;
       }
@@ -768,14 +957,19 @@ function createRelayServer(configOverrides = {}) {
         socketId: connectionId,
         messageType: null,
         sessionId: null,
-        rawMessageBytes: Buffer.byteLength(rawMessage),
+        rawMessageBytes,
       });
 
       const inboundViolation = relayRateLimiter.evaluateInboundMessage({
         socketId: connectionId,
-        payloadSize: Buffer.byteLength(rawMessage),
+        payloadSize: rawMessageBytes,
       });
       if (inboundViolation) {
+        logRelayAudit(ingressDiagnostics, "MESSAGE_DROPPED", [
+          ["type", "unknown"],
+          ["sessionId", "unknown"],
+          ["reason", inboundViolation.reason],
+        ]);
         handleRateLimitViolation(socket, connectionId, remoteAddress, inboundViolation.reason);
         return;
       }
@@ -783,17 +977,31 @@ function createRelayServer(configOverrides = {}) {
       let parsed;
       try {
         parsed = JSON.parse(rawMessage.toString("utf8"));
+        logRelayAudit(ingressDiagnostics, "JSON_PARSE_SUCCESS", [
+          ["type", parsed.type || null],
+          ["sessionId", parsed.sessionId || null],
+        ]);
         ingressDiagnostics.log("json_parse_success", {
           socketId: connectionId,
           messageType: parsed.type || null,
           sessionId: parsed.sessionId || null,
         });
       } catch {
+        logRelayAudit(ingressDiagnostics, "JSON_PARSE_ERROR", [
+          ["type", "unknown"],
+          ["sessionId", "unknown"],
+          ["raw", rawPreview],
+        ]);
         ingressDiagnostics.log("json_parse_failure", {
           socketId: connectionId,
           messageType: null,
           sessionId: null,
         });
+        logRelayAudit(ingressDiagnostics, "MESSAGE_DROPPED", [
+          ["type", "unknown"],
+          ["sessionId", "unknown"],
+          ["reason", "invalid_json"],
+        ]);
         socket.send(createTransportEnvelopeError("invalid_json", config.protocolVersion));
         return;
       }
@@ -801,6 +1009,11 @@ function createRelayServer(configOverrides = {}) {
       if (parsed.type === "qr_session_create") {
         const sessionCreationViolation = relayRateLimiter.recordSessionCreation(remoteAddress);
         if (sessionCreationViolation) {
+          logRelayAudit(ingressDiagnostics, "MESSAGE_DROPPED", [
+            ["type", parsed.type || null],
+            ["sessionId", parsed.sessionId || null],
+            ["reason", sessionCreationViolation.reason],
+          ]);
           handleRateLimitViolation(socket, connectionId, remoteAddress, sessionCreationViolation.reason);
           return;
         }
@@ -812,7 +1025,18 @@ function createRelayServer(configOverrides = {}) {
         diagnostics: ingressDiagnostics,
         socketId: connectionId,
       });
+      logRelayAudit(ingressDiagnostics, "ENVELOPE_VALIDATION", [
+        ["type", parsed.type || null],
+        ["sessionId", parsed.sessionId || null],
+        ["valid", validation.valid],
+        ["reason", validation.reason || "none"],
+      ]);
       if (!validation.valid) {
+        logRelayAudit(ingressDiagnostics, "MESSAGE_DROPPED", [
+          ["type", parsed.type || null],
+          ["sessionId", parsed.sessionId || null],
+          ["reason", validation.reason],
+        ]);
         socket.send(createTransportEnvelopeError(validation.reason, config.protocolVersion));
         return;
       }
@@ -826,6 +1050,17 @@ function createRelayServer(configOverrides = {}) {
       try {
         routed = await messageRouter.routeMessage(parsed, socket);
       } catch (error) {
+        logRelayAudit(ingressDiagnostics, "ROUTING_DECISION", [
+          ["type", parsed.type || null],
+          ["sessionId", parsed.sessionId || null],
+          ["routed", false],
+          ["reason", error.message],
+        ]);
+        logRelayAudit(ingressDiagnostics, "MESSAGE_DROPPED", [
+          ["type", parsed.type || null],
+          ["sessionId", parsed.sessionId || null],
+          ["reason", error.message],
+        ]);
         events.emit("controlMessageError", {
           error,
           message: parsed,
@@ -853,6 +1088,7 @@ function createRelayServer(configOverrides = {}) {
       events.emit("messageDropped", {
         envelope: parsed,
         remoteAddress,
+        reason: "route_returned_false",
       });
     });
 
@@ -956,6 +1192,7 @@ module.exports = {
   DEFAULT_PROTOCOL_VERSION,
   DEFAULT_MAX_PAYLOAD_BYTES,
   DEFAULT_PAIRING_TTL_MS,
+  DEFAULT_SESSION_TTL_MS,
   DEFAULT_MAX_COMMANDS_PER_SECOND,
   DEFAULT_MAX_PAYLOAD_SIZE,
   DEFAULT_MAX_SESSIONS_PER_IP,
@@ -973,6 +1210,7 @@ module.exports = {
   createRelayRateLimiter,
   createRedisSessionRegistry,
   createRelayServer,
+  createSessionQueueManager,
   createSessionLifecycleManager,
   getRedisSessionKey,
   loadRelayConfiguration,

@@ -185,8 +185,6 @@ class QRPairingSystem {
     this.logInvocation(envelope, senderSocket);
     this.logger("[relay_ingress] qr_session_create received");
 
-    assertNonEmptyString(envelope.sessionId, "sessionId");
-
     const senderRegistration = this.connectionManager.lookupSocket(senderSocket);
     if (!senderRegistration || !senderRegistration.connectionId) {
       throw new Error("Web connection is not registered for pairing");
@@ -197,7 +195,11 @@ class QRPairingSystem {
     const sessionId = envelope.sessionId;
     const expiresAt = this.now() + this.pairingTtlMs;
 
-    await this.sessionLifecycleManager.createSession(sessionId, senderRegistration.connectionId, expiresAt);
+    await this.sessionLifecycleManager.onQrSessionCreate(
+      envelope,
+      senderRegistration.connectionId,
+      expiresAt,
+    );
     this.logger("[relay_session] session created");
 
     senderSocket.send(
@@ -219,8 +221,6 @@ class QRPairingSystem {
   async handlePairRequest(senderSocket, envelope) {
     this.logInvocation(envelope, senderSocket);
     this.logger("[relay_ingress] pair_request received");
-
-    assertNonEmptyString(envelope.sessionId, "sessionId");
 
     const senderRegistration = this.connectionManager.lookupSocket(senderSocket);
     if (!senderRegistration || !senderRegistration.connectionId) {
@@ -252,9 +252,8 @@ class QRPairingSystem {
       return this.rejectPairRequest(senderSocket, envelope, "web_connection_not_available");
     }
 
-    const pairedSession = await this.sessionLifecycleManager.transitionToPaired(
-      envelope.sessionId,
-      senderRegistration.connectionId,
+    const pairedSession = await this.sessionLifecycleManager.persistBeforeRouting(() =>
+      this.sessionLifecycleManager.onPairRequest(envelope, senderRegistration.connectionId),
     );
     this.logger("[relay_session] state=paired");
 
@@ -262,7 +261,9 @@ class QRPairingSystem {
       return this.rejectPairRequest(senderSocket, envelope, "session_not_ready");
     }
 
-    const activeSession = await this.sessionLifecycleManager.transitionToActive(envelope.sessionId);
+    const activeSession = await this.sessionLifecycleManager.persistBeforeRouting(() =>
+      this.sessionLifecycleManager.onPairApproved(envelope.sessionId),
+    );
     this.logger("[relay_session] state=active");
 
     const approvalEnvelope = createTransportResponseEnvelope(envelope, "pair_approved", envelope.sessionId, {
@@ -272,6 +273,7 @@ class QRPairingSystem {
 
     senderSocket.send(JSON.stringify(approvalEnvelope));
     webRegistration.socket.send(JSON.stringify(approvalEnvelope));
+  this.logger("RELAY_ROUTE mobile→web type=pair_approved");
     this.logger(`[relay_router] routing enabled for session ${activeSession.sessionId}`);
 
     if (this.events) {

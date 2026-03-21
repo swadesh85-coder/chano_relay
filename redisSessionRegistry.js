@@ -71,6 +71,12 @@ function assertSocketId(socketId, label) {
   assertNonEmptyString(socketId, label);
 }
 
+function assertPositiveInteger(value, label) {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${label} must be a positive integer`);
+  }
+}
+
 function toRedisTtlSeconds(expiresAtMs, nowMs, options = {}) {
   const allowExpired = Boolean(options.allowExpired);
   const ttlSeconds = Math.ceil((expiresAtMs - nowMs) / 1000);
@@ -275,6 +281,9 @@ class RedisSessionRegistry {
     this.redisClient = redisClient;
     this.logger = typeof options.logger === "function" ? options.logger : console.log;
     this.now = typeof options.now === "function" ? options.now : () => Date.now();
+    this.sessionTtlMs =
+      options.sessionTtlMs === undefined ? DEFAULT_SESSION_TTL_MS : Number(options.sessionTtlMs);
+    assertPositiveInteger(this.sessionTtlMs, "sessionTtlMs");
   }
 
   static async connect(redisUrl) {
@@ -357,15 +366,38 @@ class RedisSessionRegistry {
     const session = await this.requireSession(sessionId);
     const updatedSession = buildUpdatedSession(session, {
       state: SESSION_STATES.ACTIVE,
+      expiresAt: this.computeExpiresAt(),
     });
 
     await this.writeSessionFields(
       updatedSession.sessionId,
       {
         state: updatedSession.state,
+        expiresAt: updatedSession.expiresAt,
       },
       updatedSession.expiresAt,
       "activate",
+    );
+
+    return updatedSession;
+  }
+
+  async refreshSessionTtl(sessionId, action = "refresh") {
+    assertSessionId(sessionId);
+    assertNonEmptyString(action, "action");
+
+    const session = await this.requireSession(sessionId);
+    const updatedSession = buildUpdatedSession(session, {
+      expiresAt: this.computeExpiresAt(),
+    });
+
+    await this.writeSessionFields(
+      updatedSession.sessionId,
+      {
+        expiresAt: updatedSession.expiresAt,
+      },
+      updatedSession.expiresAt,
+      action,
     );
 
     return updatedSession;
@@ -440,6 +472,14 @@ class RedisSessionRegistry {
 
   async attachMobile(sessionId, mobileSocketId) {
     return this.attachMobileSocket(sessionId, mobileSocketId);
+  }
+
+  getSessionTtlMs() {
+    return this.sessionTtlMs;
+  }
+
+  computeExpiresAt(nowMs = this.now()) {
+    return nowMs + this.sessionTtlMs;
   }
 
   async writeSession(session, action = "write", deleteOnExpireFailure = false, allowExpiredTtl = false) {
@@ -528,6 +568,7 @@ async function connectRedisSessionRegistry(redisUrl) {
 }
 
 module.exports = {
+  DEFAULT_SESSION_TTL_MS,
   SESSION_STATES,
   RedisSessionRegistry,
   connectRedisSessionRegistry,

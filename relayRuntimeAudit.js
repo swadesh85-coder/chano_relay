@@ -1,11 +1,16 @@
 const WebSocket = require("ws");
+const { EventEmitter } = require("events");
 
 const {
   DEFAULT_PAIRING_TTL_MS,
   DEFAULT_PROTOCOL_VERSION,
+  DEFAULT_SESSION_TTL_MS,
   RedisSessionRegistry,
   SESSION_STATES,
+  createConnectionManager,
+  createMessageRouter,
   createRedisSessionRegistry,
+  createSessionLifecycleManager,
   getRedisSessionKey,
   startRelayServer,
 } = require("./server");
@@ -14,6 +19,10 @@ class FakeRedisClient {
   constructor(nowMs = Date.now()) {
     this.entries = new Map();
     this.nowMs = nowMs;
+  }
+
+  advanceTime(ms) {
+    this.nowMs += ms;
   }
 
   purgeAllExpired() {
@@ -335,6 +344,219 @@ function formatSessionRecord(session) {
   };
 }
 
+function ttlDriftSeconds(ttlSeconds) {
+  return Math.max(0, DEFAULT_SESSION_TTL_MS / 1000 - ttlSeconds);
+}
+
+async function auditSessionCreation(redisClient, sessionId) {
+  const ttlSeconds = await redisClient.ttl(getRedisSessionKey(sessionId));
+
+  return {
+    ttlSeconds,
+    nearZero: ttlSeconds <= 1,
+    driftSeconds: ttlDriftSeconds(ttlSeconds),
+    evidence: `SESSION_CREATE ttlSeconds=${ttlSeconds}`,
+  };
+}
+
+async function auditSessionActivation(redisClient, sessionId, ttlBeforeActivation) {
+  const ttlSeconds = await redisClient.ttl(getRedisSessionKey(sessionId));
+
+  return {
+    ttlSeconds,
+    extended: ttlSeconds >= ttlBeforeActivation,
+    abnormalDecrease: ttlSeconds < ttlBeforeActivation,
+    evidence: `SESSION_UPDATE active ttlSeconds=${ttlSeconds}`,
+  };
+}
+
+async function auditTTLRefresh(redisClient, sessionId, messageType) {
+  const ttlSeconds = await redisClient.ttl(getRedisSessionKey(sessionId));
+
+  return {
+    messageType,
+    ttlSeconds,
+    refreshedToFullDuration: ttlSeconds >= DEFAULT_SESSION_TTL_MS / 1000 - 1,
+    evidence: `MESSAGE_RECEIVED ttlSeconds=${ttlSeconds}`,
+  };
+}
+
+async function auditSessionExpiry() {
+  class AuditSocket extends EventEmitter {
+    constructor() {
+      super();
+      this.readyState = 1;
+      this.sentMessages = [];
+    }
+
+    send(message) {
+      this.sentMessages.push(message);
+    }
+  }
+
+  const redisClient = new FakeRedisClient(25_000);
+  const scheduler = {
+    handles: [],
+    setTimeout(callback, delay) {
+      const handle = {
+        callback,
+        runAt: redisClient.nowMs + delay,
+        cleared: false,
+      };
+
+      this.handles.push(handle);
+      return handle;
+    },
+    clearTimeout(handle) {
+      if (handle) {
+        handle.cleared = true;
+      }
+    },
+    async runDueTasks() {
+      const dueHandles = this.handles.filter((handle) => !handle.cleared && handle.runAt <= redisClient.nowMs);
+      this.handles = this.handles.filter((handle) => handle.cleared || handle.runAt > redisClient.nowMs);
+
+      for (const handle of dueHandles) {
+        await handle.callback();
+      }
+    },
+  };
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+    sessionTtlMs: 2_000,
+  });
+  const connectionManager = createConnectionManager();
+  const sessionLifecycleManager = createSessionLifecycleManager({
+    sessionRegistry,
+    connectionManager,
+    now: () => redisClient.nowMs,
+    setTimer: (callback, delay) => scheduler.setTimeout(callback, delay),
+    clearTimer: (handle) => scheduler.clearTimeout(handle),
+    logger: () => {},
+  });
+  const messageRouter = createMessageRouter(connectionManager, {
+    sessionRegistry,
+    sessionLifecycleManager,
+  });
+  const mobileSocket = new AuditSocket();
+  const webSocket = new AuditSocket();
+  const sessionId = "44444444-4444-4444-8444-444444444444";
+
+  connectionManager.registerConnection(webSocket, { connectionId: "expiry-web" });
+  connectionManager.registerConnection(mobileSocket, { connectionId: "expiry-mobile" });
+
+  await sessionLifecycleManager.createSession(sessionId, "expiry-web", redisClient.nowMs + 2_000);
+  await sessionLifecycleManager.transitionToPaired(sessionId, "expiry-mobile");
+  await sessionLifecycleManager.transitionToActive(sessionId);
+
+  redisClient.advanceTime(1_500);
+  await scheduler.runDueTasks();
+  const stillActiveBeforeRefresh = await sessionRegistry.getSession(sessionId);
+
+  await messageRouter.routeMessage(
+    {
+      protocolVersion: DEFAULT_PROTOCOL_VERSION,
+      type: "event_stream",
+      sessionId,
+      timestamp: redisClient.nowMs,
+      sequence: 1,
+      payload: { opaque: true },
+    },
+    mobileSocket,
+  );
+
+  redisClient.advanceTime(1_500);
+  await scheduler.runDueTasks();
+  const stillActiveAfterRefresh = await sessionRegistry.getSession(sessionId);
+
+  redisClient.advanceTime(400);
+  await scheduler.runDueTasks();
+  const stillBeforeFullInactivityWindow = await sessionRegistry.getSession(sessionId);
+
+  redisClient.advanceTime(200);
+  await scheduler.runDueTasks();
+  const closedSession = await sessionRegistry.getSession(sessionId);
+  const timeoutNotified =
+    mobileSocket.sentMessages.some((message) => JSON.parse(message).payload.reason === "timeout") &&
+    webSocket.sentMessages.some((message) => JSON.parse(message).payload.reason === "timeout");
+
+  return {
+    ttlSeconds: await redisClient.ttl(getRedisSessionKey(sessionId)),
+    remainedActiveBeforeRefresh: Boolean(
+      stillActiveBeforeRefresh && stillActiveBeforeRefresh.state === SESSION_STATES.ACTIVE,
+    ),
+    remainedActiveAfterRefresh: Boolean(
+      stillActiveAfterRefresh && stillActiveAfterRefresh.state === SESSION_STATES.ACTIVE,
+    ),
+    noPrematureExpiry: Boolean(
+      stillBeforeFullInactivityWindow && stillBeforeFullInactivityWindow.state === SESSION_STATES.ACTIVE,
+    ),
+    expiredAfterFullInactivityWindow: Boolean(
+      closedSession === null || (closedSession && closedSession.state === SESSION_STATES.CLOSED),
+    ),
+    timeoutNotified,
+  };
+}
+
+function auditTimerEvidence(startupLogs, sessionId) {
+  const timerSetEntries = startupLogs.filter((entry) => entry.includes(`TIMER_SET sessionId=${sessionId}`));
+  const timerResetEntries = startupLogs.filter((entry) => entry.includes(`TIMER_RESET sessionId=${sessionId}`));
+  const timerClearEntries = startupLogs.filter((entry) => entry.includes("TIMER_CLEAR previousHandle="));
+  const closeCycleClearEntries = [];
+  let pendingClearEntries = [];
+
+  for (const entry of startupLogs) {
+    if (entry.includes("TIMER_CLEAR previousHandle=")) {
+      pendingClearEntries.push(entry);
+      continue;
+    }
+
+    if (entry.includes("SESSION_CLOSED reason=")) {
+      closeCycleClearEntries.push(...pendingClearEntries);
+      pendingClearEntries = [];
+      continue;
+    }
+
+    pendingClearEntries = [];
+  }
+
+  return {
+    setCount: timerSetEntries.length,
+    resetCount: timerResetEntries.length,
+    clearCount: timerClearEntries.length,
+    clearTrueCount: timerClearEntries.filter((entry) => entry === "TIMER_CLEAR previousHandle=true").length,
+    clearFalseCount: timerClearEntries.filter((entry) => entry === "TIMER_CLEAR previousHandle=false").length,
+    setEntries: timerSetEntries,
+    resetEntries: timerResetEntries,
+    clearEntries: timerClearEntries,
+    closeCycleClearEntries,
+  };
+}
+
+async function auditTTLComputation() {
+  const redisClient = new FakeRedisClient(10_000);
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+    sessionTtlMs: DEFAULT_SESSION_TTL_MS,
+  });
+  const sessionId = "55555555-5555-4555-8555-555555555555";
+
+  await sessionRegistry.createSession(sessionId, "ttl-computation-web");
+  const beforeRefresh = await sessionRegistry.getSession(sessionId);
+
+  redisClient.advanceTime(DEFAULT_SESSION_TTL_MS - 1_000);
+  const refreshedSession = await sessionRegistry.refreshSessionTtl(sessionId, "activity");
+  const ttlSeconds = await redisClient.ttl(getRedisSessionKey(sessionId));
+
+  return {
+    previousExpiresAt: beforeRefresh.expiresAt,
+    refreshedExpiresAt: refreshedSession.expiresAt,
+    ttlSeconds,
+    usesFixedDurationReset: refreshedSession.expiresAt - redisClient.nowMs === DEFAULT_SESSION_TTL_MS,
+    staleExpiryBypassed: refreshedSession.expiresAt > beforeRefresh.expiresAt,
+  };
+}
+
 async function runRelayRuntimeAudit(options = {}) {
   const host = options.host || "0.0.0.0";
   const clientHost = options.clientHost || "127.0.0.1";
@@ -383,6 +605,11 @@ async function runRelayRuntimeAudit(options = {}) {
       port,
       wsPath,
       maxPayloadBytes: 2048,
+      diagnostics: {
+        ingress: {
+          enabled: true,
+        },
+      },
       env: {
         REDIS_URL: redisUrl,
       },
@@ -458,6 +685,7 @@ async function runRelayRuntimeAudit(options = {}) {
     await sessionReadyMessage;
 
     const waitingSession = await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.WAITING);
+    const sessionCreationAudit = await auditSessionCreation(redisClient, sessionId);
 
     const webApprovalMessage = waitForSocketMessage(
       webSocket,
@@ -483,6 +711,11 @@ async function runRelayRuntimeAudit(options = {}) {
 
     await Promise.all([webApprovalMessage, mobileApprovalMessage]);
     const activeSession = await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.ACTIVE);
+    const sessionActivationAudit = await auditSessionActivation(
+      redisClient,
+      sessionId,
+      sessionCreationAudit.ttlSeconds,
+    );
     const redisKey = getRedisSessionKey(sessionId);
     const redisSessionRecord = await redisClient.hGetAll(redisKey);
     const redisSessionKeys = await redisClient.keys("*");
@@ -515,6 +748,14 @@ async function runRelayRuntimeAudit(options = {}) {
         delta: "opaque-event",
       },
     });
+    const routeEnvelopeFour = createEnvelope({
+      type: "snapshot_complete",
+      sessionId,
+      sequence: 10,
+      payload: {
+        snapshotChunk: "omega",
+      },
+    });
 
     const routedToWebOne = waitForSocketMessage(
       webSocket,
@@ -522,6 +763,7 @@ async function runRelayRuntimeAudit(options = {}) {
     );
     mobileSocket.send(JSON.stringify(routeEnvelopeOne));
     const routedEnvelopeOne = await routedToWebOne;
+    const routeEnvelopeOneAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeOne.type);
 
     const routedToMobile = waitForSocketMessage(
       mobileSocket,
@@ -529,6 +771,7 @@ async function runRelayRuntimeAudit(options = {}) {
     );
     webSocket.send(JSON.stringify(routeEnvelopeTwo));
     const routedEnvelopeTwo = await routedToMobile;
+    const routeEnvelopeTwoAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeTwo.type);
 
     const routedToWebThree = waitForSocketMessage(
       webSocket,
@@ -536,6 +779,15 @@ async function runRelayRuntimeAudit(options = {}) {
     );
     mobileSocket.send(JSON.stringify(routeEnvelopeThree));
     const routedEnvelopeThree = await routedToWebThree;
+    const routeEnvelopeThreeAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeThree.type);
+
+    const routedToWebFour = waitForSocketMessage(
+      webSocket,
+      (message) => message.type === routeEnvelopeFour.type && message.sequence === routeEnvelopeFour.sequence,
+    );
+    mobileSocket.send(JSON.stringify(routeEnvelopeFour));
+    const routedEnvelopeFour = await routedToWebFour;
+    const routeEnvelopeFourAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeFour.type);
 
     const orderProbeOne = createEnvelope({
       type: "event_stream",
@@ -561,6 +813,8 @@ async function runRelayRuntimeAudit(options = {}) {
     mobileSocket.close();
     await waitForClose(mobileSocket);
     const closedSession = await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.CLOSED);
+    const sessionExpiryAudit = await auditSessionExpiry();
+    const ttlComputationAudit = await auditTTLComputation();
 
     if (webSocket.readyState === WebSocket.OPEN) {
       webSocket.close();
@@ -616,6 +870,20 @@ async function runRelayRuntimeAudit(options = {}) {
         type: redisSessionType,
         ttl: redisSessionTtl,
       },
+      ttlEvidence: {
+        sessionCreation: sessionCreationAudit,
+        sessionActivation: sessionActivationAudit,
+        messageFlow: [
+          routeEnvelopeOneAudit,
+          routeEnvelopeTwoAudit,
+          routeEnvelopeThreeAudit,
+          routeEnvelopeFourAudit,
+        ],
+        sessionExpiry: sessionExpiryAudit,
+        ttlComputation: ttlComputationAudit,
+      },
+      timerEvidence: auditTimerEvidence(startupLogs, sessionId),
+      runtimeEvidence: ["protocol_handshake", routeEnvelopeOne.type, routeEnvelopeFour.type],
       routingEvidence,
       validationEvidence: {
         validAccepted: {
@@ -651,6 +919,21 @@ async function runRelayRuntimeAudit(options = {}) {
     record(`REDIS_KEYS ${redisSessionKeys.join(",")}`);
     record(`REDIS_TYPE ${redisSessionType}`);
     record(`REDIS_TTL ${redisSessionTtl}`);
+    record(sessionCreationAudit.evidence);
+    record(sessionActivationAudit.evidence);
+    record(routeEnvelopeOneAudit.evidence);
+    record(routeEnvelopeTwoAudit.evidence);
+    record(routeEnvelopeThreeAudit.evidence);
+    record(routeEnvelopeFourAudit.evidence);
+    for (const entry of auditTimerEvidence(startupLogs, sessionId).setEntries) {
+      record(entry);
+    }
+    for (const entry of auditTimerEvidence(startupLogs, sessionId).resetEntries) {
+      record(entry);
+    }
+    for (const entry of auditTimerEvidence(startupLogs, sessionId).clearEntries) {
+      record(entry);
+    }
     record(JSON.stringify(formatSessionRecord(activeSession), null, 2));
     record(`VALID_ENVELOPE_ACCEPTED sequence=1 type=protocol_handshake`);
     record(`INVALID_ENVELOPE_REJECTED reason=${invalidEnvelope.payload.reason}`);
@@ -699,6 +982,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+  auditSessionCreation,
+  auditSessionActivation,
+  auditTTLRefresh,
+  auditSessionExpiry,
+  auditTTLComputation,
   FakeRedisClient,
   runRelayRuntimeAudit,
 };

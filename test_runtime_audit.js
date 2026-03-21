@@ -45,8 +45,38 @@ test("redis_session_registry_runtime", async () => {
   assert.equal(auditResult.redisChecks.keys.some((key) => key === `session:${sessionRecord.sessionId}`), true);
   assert.equal(auditResult.redisChecks.type, "hash");
   assert.equal(auditResult.redisChecks.ttl, 120);
+  assert.equal(auditResult.ttlEvidence.sessionCreation.ttlSeconds, 120);
+  assert.equal(auditResult.ttlEvidence.sessionActivation.ttlSeconds, 120);
   assert.equal(auditResult.rawRedisSessionRecord.sessionId, sessionRecord.sessionId);
   assert.equal(auditResult.rawRedisSessionRecord.state, "active");
+});
+
+test("relay_session_ttl_runtime", async () => {
+  const auditResult = await auditResultPromise;
+
+  assert.equal(auditResult.ttlEvidence.sessionCreation.nearZero, false);
+  assert.equal(auditResult.ttlEvidence.sessionActivation.extended, true);
+  assert.equal(auditResult.ttlEvidence.sessionActivation.abnormalDecrease, false);
+  assert.deepEqual(
+    auditResult.ttlEvidence.messageFlow.map((entry) => entry.messageType),
+    ["snapshot_start", "mutation_command", "event_stream", "snapshot_complete"],
+  );
+  assert.equal(
+    auditResult.ttlEvidence.messageFlow.every((entry) => entry.refreshedToFullDuration),
+    true,
+  );
+  assert.equal(auditResult.ttlEvidence.sessionExpiry.remainedActiveBeforeRefresh, true);
+  assert.equal(auditResult.ttlEvidence.sessionExpiry.remainedActiveAfterRefresh, true);
+  assert.equal(auditResult.ttlEvidence.sessionExpiry.noPrematureExpiry, true);
+  assert.equal(auditResult.ttlEvidence.sessionExpiry.expiredAfterFullInactivityWindow, true);
+  assert.equal(auditResult.ttlEvidence.sessionExpiry.timeoutNotified, true);
+  assert.equal(auditResult.ttlEvidence.ttlComputation.usesFixedDurationReset, true);
+  assert.equal(auditResult.ttlEvidence.ttlComputation.staleExpiryBypassed, true);
+  assert.equal(auditResult.timerEvidence.setCount >= 3, true);
+  assert.equal(auditResult.timerEvidence.resetCount >= 2, true);
+  assert.equal(auditResult.timerEvidence.clearCount >= 1, true);
+  assert.deepEqual(auditResult.timerEvidence.closeCycleClearEntries, ["TIMER_CLEAR previousHandle=true"]);
+  assert.deepEqual(auditResult.runtimeEvidence, ["protocol_handshake", "snapshot_start", "snapshot_complete"]);
 });
 
 test("redis_session_logs_runtime", async () => {
@@ -55,6 +85,70 @@ test("redis_session_logs_runtime", async () => {
   assert.equal(auditResult.startupLogs.some((entry) => entry.includes("SESSION_CREATE persisted")), true);
   assert.equal(auditResult.startupLogs.some((entry) => entry.includes("SESSION_UPDATE paired")), true);
   assert.equal(auditResult.startupLogs.some((entry) => entry.includes("SESSION_UPDATE active")), true);
+  assert.equal(auditResult.startupLogs.some((entry) => entry.includes("MESSAGE_RECEIVED type=snapshot_start")), true);
+  assert.equal(auditResult.startupLogs.some((entry) => entry.includes("RAW_WS_MESSAGE bytes=")), true);
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("JSON_PARSE_SUCCESS type=snapshot_start") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("ENVELOPE_VALIDATION type=snapshot_start") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("valid=true"),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("DISPATCH_LOOKUP type=snapshot_start") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("handlerExists=false"),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("SESSION_LOOKUP type=snapshot_start") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("found=true") &&
+        entry.includes("state=active"),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("FORWARD_MESSAGE type=snapshot_start") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("ROUTING_DECISION type=snapshot_start") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("routed=true") &&
+        entry.includes("reason=forwarded"),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("MESSAGE_DROPPED type=snapshot_start") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`),
+    ),
+    false,
+  );
 });
 
 test("relay_message_routing_runtime", async () => {

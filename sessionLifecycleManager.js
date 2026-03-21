@@ -6,6 +6,19 @@ function assertNonEmptyString(value, label) {
   }
 }
 
+function assertTransportEnvelope(envelope, expectedType) {
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) {
+    throw new Error("TransportEnvelope is required");
+  }
+
+  assertNonEmptyString(envelope.type, "type");
+  assertNonEmptyString(envelope.sessionId, "sessionId");
+
+  if (expectedType && envelope.type !== expectedType) {
+    throw new Error(`Expected transport envelope type ${expectedType}`);
+  }
+}
+
 function canSendToSocket(socket) {
   if (!socket || typeof socket.send !== "function") {
     return false;
@@ -47,7 +60,6 @@ class SessionLifecycleManager {
     this.logger = typeof logger === "function" ? logger : console.log;
     this.sessionSocketIds = new Map();
     this.socketSessionIds = new Map();
-    this.expirationTimers = new Map();
   }
 
   async createSession(sessionId, webSocketId, expiresAt) {
@@ -56,9 +68,16 @@ class SessionLifecycleManager {
 
     const session = await this.sessionRegistry.createSession(sessionId, webSocketId, expiresAt);
     this.indexSession(session);
-    this.scheduleExpiration(session.sessionId, session.expiresAt);
+    this.scheduleTimeout(session.sessionId, this.resolveTimeoutDelayMs(session));
     this.logger("SESSION_CREATE persisted");
     return session;
+  }
+
+  async onQrSessionCreate(envelope, webSocketId, expiresAt) {
+    assertTransportEnvelope(envelope, "qr_session_create");
+    assertNonEmptyString(webSocketId, "webSocketId");
+
+    return this.createSession(envelope.sessionId, webSocketId, expiresAt);
   }
 
   async transitionToPaired(sessionId, mobileSocketId) {
@@ -81,6 +100,13 @@ class SessionLifecycleManager {
     return sessionWithMobile;
   }
 
+  async onPairRequest(envelope, mobileSocketId) {
+    assertTransportEnvelope(envelope, "pair_request");
+    assertNonEmptyString(mobileSocketId, "mobileSocketId");
+
+    return this.transitionToPaired(envelope.sessionId, mobileSocketId);
+  }
+
   async transitionToActive(sessionId) {
     assertNonEmptyString(sessionId, "sessionId");
 
@@ -100,31 +126,95 @@ class SessionLifecycleManager {
     this.bindLiveSockets(session);
     const activeSession = await this.sessionRegistry.activateSession(sessionId);
     this.indexSession(activeSession);
+    this.scheduleTimeout(activeSession.sessionId, this.getFullSessionTtlMs());
     this.logger("SESSION_UPDATE active");
     return activeSession;
   }
 
+  async onPairApproved(sessionId) {
+    assertNonEmptyString(sessionId, "sessionId");
+
+    return this.transitionToActive(sessionId);
+  }
+
+  async persistBeforeRouting(operation) {
+    if (typeof operation !== "function") {
+      throw new Error("operation must be a function");
+    }
+
+    return await operation();
+  }
+
+  async refreshSessionActivity(sessionId, messageType = "activity") {
+    assertNonEmptyString(sessionId, "sessionId");
+    assertNonEmptyString(messageType, "messageType");
+
+    const session = await this.sessionRegistry.getSession(sessionId);
+    if (!session) {
+      throw new Error(`Session not found for ${sessionId}`);
+    }
+
+    if (session.state !== SESSION_STATES.ACTIVE) {
+      throw new Error(`Session ${sessionId} must be active before refreshing TTL`);
+    }
+
+    const refreshedSession = await this.sessionRegistry.refreshSessionTtl(sessionId, "activity");
+    this.scheduleTimeout(refreshedSession.sessionId, this.getFullSessionTtlMs());
+    this.logger(`MESSAGE_RECEIVED type=${messageType}`);
+
+    if (this.events) {
+      this.events.emit("sessionActivity", {
+        sessionId,
+        messageType,
+        expiresAt: refreshedSession.expiresAt,
+      });
+    }
+
+    return refreshedSession;
+  }
+
   async transitionToClosed(sessionId, reason) {
+    return this.closeSession(sessionId, reason);
+  }
+
+  async closeSession(sessionId, reason) {
     assertNonEmptyString(sessionId, "sessionId");
     assertNonEmptyString(reason, "reason");
 
     const session = await this.sessionRegistry.getSession(sessionId);
     if (!session) {
-      this.clearExpiration(sessionId);
+      const indexedSession = this.getIndexedSession(sessionId);
+      this.clearPreviousTimer(sessionId);
+
+      if (!indexedSession) {
+        return false;
+      }
+
+      this.notifySessionClosed(indexedSession, reason);
+      this.unindexSession(indexedSession, { clearTimer: false });
+      this.logger(`SESSION_CLOSED reason=${reason}`);
+
+      if (this.events) {
+        this.events.emit("sessionClosed", { sessionId, reason });
+      }
+
+      return true;
+    }
+
+    if (session.state === SESSION_STATES.CLOSED) {
+      this.unindexSession(session, { clearTimer: false });
       return false;
     }
 
-    this.clearExpiration(sessionId);
+    this.clearPreviousTimer(sessionId);
 
     let closedSession = session;
-    if (session.state !== SESSION_STATES.CLOSED) {
-      closedSession = await this.sessionRegistry.updateSession(sessionId, {
-        state: SESSION_STATES.CLOSED,
-      });
-    }
+    closedSession = await this.sessionRegistry.updateSession(sessionId, {
+      state: SESSION_STATES.CLOSED,
+    });
 
     this.notifySessionClosed(closedSession, reason);
-    this.unindexSession(closedSession);
+    this.unindexSession(closedSession, { clearTimer: false });
     this.logger(`SESSION_CLOSED reason=${reason}`);
 
     if (this.events) {
@@ -142,7 +232,7 @@ class SessionLifecycleManager {
       return false;
     }
 
-    return this.transitionToClosed(sessionId, "disconnect");
+    return this.closeSession(sessionId, "disconnect");
   }
 
   async attachMobile(sessionId, mobileSocketId) {
@@ -153,15 +243,10 @@ class SessionLifecycleManager {
     return this.transitionToActive(sessionId);
   }
 
-  async closeSession(sessionId, reason) {
-    return this.transitionToClosed(sessionId, reason);
-  }
-
   indexSession(session) {
-    this.sessionSocketIds.set(session.sessionId, {
-      webSocketId: session.webSocketId,
-      mobileSocketId: session.mobileSocketId,
-    });
+    const runtimeSession = this.getOrCreateRuntimeSession(session.sessionId);
+    runtimeSession.webSocketId = session.webSocketId || null;
+    runtimeSession.mobileSocketId = session.mobileSocketId || null;
 
     this.socketSessionIds.set(session.webSocketId, session.sessionId);
     if (session.mobileSocketId) {
@@ -169,7 +254,12 @@ class SessionLifecycleManager {
     }
   }
 
-  unindexSession(session) {
+  unindexSession(session, options = {}) {
+    const shouldClearTimer = options.clearTimer !== false;
+    if (shouldClearTimer) {
+      this.clearPreviousTimer(session.sessionId);
+    }
+
     this.sessionSocketIds.delete(session.sessionId);
     if (session.webSocketId) {
       this.socketSessionIds.delete(session.webSocketId);
@@ -177,6 +267,35 @@ class SessionLifecycleManager {
     if (session.mobileSocketId) {
       this.socketSessionIds.delete(session.mobileSocketId);
     }
+  }
+
+  getIndexedSession(sessionId) {
+    const runtimeSession = this.sessionSocketIds.get(sessionId);
+    if (!runtimeSession) {
+      return null;
+    }
+
+    return {
+      sessionId,
+      state: SESSION_STATES.CLOSED,
+      webSocketId: runtimeSession.webSocketId || null,
+      mobileSocketId: runtimeSession.mobileSocketId || null,
+    };
+  }
+
+  getOrCreateRuntimeSession(sessionId) {
+    let runtimeSession = this.sessionSocketIds.get(sessionId);
+    if (!runtimeSession) {
+      runtimeSession = {
+        sessionId,
+        webSocketId: null,
+        mobileSocketId: null,
+        timeoutHandle: null,
+      };
+      this.sessionSocketIds.set(sessionId, runtimeSession);
+    }
+
+    return runtimeSession;
   }
 
   bindLiveSockets(session) {
@@ -194,28 +313,65 @@ class SessionLifecycleManager {
     this.connectionManager.bindSessionSockets(session.sessionId, mobileRegistration.socket, webRegistration.socket);
   }
 
-  scheduleExpiration(sessionId, expiresAt) {
-    this.clearExpiration(sessionId);
-    const delayMs = Math.max(0, expiresAt - this.now());
+  storeTimerHandle(sessionId, timeoutHandle) {
+    const runtimeSession = this.getOrCreateRuntimeSession(sessionId);
+    runtimeSession.timeoutHandle = timeoutHandle;
+  }
+
+  clearPreviousTimer(sessionId) {
+    const runtimeSession = this.sessionSocketIds.get(sessionId);
+    const previousHandle = runtimeSession ? runtimeSession.timeoutHandle : null;
+
+    this.logger(`TIMER_CLEAR previousHandle=${Boolean(previousHandle)}`);
+
+    if (!previousHandle) {
+      return false;
+    }
+
+    this.clearTimer(previousHandle);
+    runtimeSession.timeoutHandle = null;
+    return true;
+  }
+
+  scheduleTimeout(sessionId, ttlMs) {
+    const reset = this.clearPreviousTimer(sessionId);
+    if (reset) {
+      this.logger(`TIMER_RESET sessionId=${sessionId}`);
+    }
+
+    const boundedTtlMs = Math.max(0, ttlMs);
     const timer = this.setTimer(() => {
-      return this.transitionToClosed(sessionId, "timeout").catch((error) => {
+      return this.closeSession(sessionId, "timeout").catch((error) => {
         if (this.events) {
           this.events.emit("sessionExpirationError", { sessionId, error });
         }
       });
-    }, delayMs);
+    }, boundedTtlMs);
 
-    this.expirationTimers.set(sessionId, timer);
+    this.storeTimerHandle(sessionId, timer);
+    this.logger(`TIMER_SET sessionId=${sessionId} ttlMs=${boundedTtlMs}`);
+    return timer;
   }
 
-  clearExpiration(sessionId) {
-    const timer = this.expirationTimers.get(sessionId);
-    if (!timer) {
-      return;
+  resolveTimeoutDelayMs(session) {
+    if (session.state === SESSION_STATES.ACTIVE) {
+      return this.getFullSessionTtlMs();
     }
 
-    this.clearTimer(timer);
-    this.expirationTimers.delete(sessionId);
+    return Math.max(0, session.expiresAt - this.now());
+  }
+
+  getFullSessionTtlMs() {
+    if (typeof this.sessionRegistry.getSessionTtlMs === "function") {
+      return this.sessionRegistry.getSessionTtlMs();
+    }
+
+    return 0;
+  }
+
+  getTimerHandle(sessionId) {
+    const runtimeSession = this.sessionSocketIds.get(sessionId);
+    return runtimeSession ? runtimeSession.timeoutHandle : null;
   }
 
   notifySessionClosed(session, reason) {

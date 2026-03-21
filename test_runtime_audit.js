@@ -59,7 +59,7 @@ test("relay_session_ttl_runtime", async () => {
   assert.equal(auditResult.ttlEvidence.sessionActivation.abnormalDecrease, false);
   assert.deepEqual(
     auditResult.ttlEvidence.messageFlow.map((entry) => entry.messageType),
-    ["snapshot_start", "mutation_command", "event_stream", "snapshot_complete"],
+    ["snapshot_start", "mutation_command", "command_result", "event_stream", "snapshot_complete"],
   );
   assert.equal(
     auditResult.ttlEvidence.messageFlow.every((entry) => entry.refreshedToFullDuration),
@@ -154,12 +154,13 @@ test("redis_session_logs_runtime", async () => {
 test("relay_message_routing_runtime", async () => {
   const auditResult = await auditResultPromise;
 
-  assert.equal(auditResult.routingEvidence.length, 3);
+  assert.equal(auditResult.routingEvidence.length, 4);
   assert.deepEqual(
     auditResult.routingEvidence.map((entry) => `${entry.direction}:${entry.type}`),
     [
       "mobile->web:snapshot_start",
       "web->mobile:mutation_command",
+      "mobile->web:command_result",
       "mobile->web:event_stream",
     ],
   );
@@ -168,6 +169,35 @@ test("relay_message_routing_runtime", async () => {
     true,
   );
   assert.equal(auditResult.routingEvidence.every((entry) => entry.unchanged), true);
+});
+
+test("relay_mutation_transport_runtime", async () => {
+  const auditResult = await auditResultPromise;
+
+  assert.deepEqual(
+    auditResult.mutationAudit.inbound.slice(0, 2),
+    [
+      { sequence: 6, type: "mutation_command", commandId: "cmd-101" },
+      { sequence: 7, type: "command_result", commandId: "cmd-101" },
+    ],
+  );
+  assert.deepEqual(
+    auditResult.mutationAudit.outbound.slice(0, 2),
+    [
+      { sequence: 6, type: "mutation_command", commandId: "cmd-101" },
+      { sequence: 7, type: "command_result", commandId: "cmd-101" },
+    ],
+  );
+  assert.equal(
+    auditResult.mutationAudit.routingLogs.includes("INBOUND seq=20 type=mutation_command cmd=cmd-201"),
+    true,
+  );
+  assert.equal(
+    auditResult.mutationAudit.routingLogs.includes("OUTBOUND seq=21 type=command_result cmd=cmd-201"),
+    true,
+  );
+  assert.equal(auditResult.mutationAudit.payloadReferenceEquality.every(Boolean), true);
+  assert.deepEqual(auditResult.orderingEvidence, [20, 21, 22]);
 });
 
 test("transport_envelope_validation_runtime", async () => {

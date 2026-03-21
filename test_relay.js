@@ -294,6 +294,41 @@ function createDeferred() {
   };
 }
 
+async function sendOrderedMessages({ messageRouter, senderSocket, sessionId, sequences, eventVersions }) {
+  const routePromises = [];
+
+  for (let index = 0; index < sequences.length; index += 1) {
+    routePromises.push(
+      messageRouter.routeMessage(
+        createEnvelope({
+          type: "event_stream",
+          sessionId,
+          sequence: sequences[index],
+          timestamp: Date.now() + index,
+          payload: {
+            eventVersion: eventVersions[index],
+            opaque: `event-${eventVersions[index]}`,
+          },
+        }),
+        senderSocket,
+      ),
+    );
+  }
+
+  return Promise.all(routePromises);
+}
+
+function captureForwardedMessages(socket) {
+  return socket.sentMessages.map((message) => JSON.parse(message));
+}
+
+function validateRelayOrdering(messages, expectedSequences) {
+  assert.deepEqual(
+    messages.map((message) => message.sequence),
+    expectedSequences,
+  );
+}
+
 async function withStartedServer(config, callback) {
   const relayServer = createRelayServer(config);
   await relayServer.start();
@@ -2478,7 +2513,7 @@ test("snapshot_complete_forward", async () => {
   assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_complete"), true);
 });
 
-test("payload_opacity_validation", async () => {
+test("relay_payload_opaque", async () => {
   const logs = [];
   const connectionManager = createConnectionManager();
   const messageRouter = createMessageRouter(connectionManager, {
@@ -2486,24 +2521,88 @@ test("payload_opacity_validation", async () => {
   });
   const mobileSocket = new MockSocket();
   const webSocket = new MockSocket();
+  const sessionId = "relay-payload-opaque";
   const payload = { nested: { opaque: true } };
   const envelope = createEnvelope({
-    type: "snapshot_chunk",
-    sessionId: "payload-opacity-session",
+    type: "event_stream",
+    sessionId,
     sequence: 11,
-    payload,
+    payload: { eventVersion: 101, nested: payload.nested },
   });
+  const eventAudit = messageRouter.enableEventAudit(sessionId);
   const originalPayloadReference = envelope.payload;
-  const originalPayloadSnapshot = JSON.stringify(payload);
+  const originalPayloadSnapshot = JSON.stringify(envelope.payload);
 
-  connectionManager.bindSessionSockets("payload-opacity-session", mobileSocket, webSocket);
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   const routed = await messageRouter.routeMessage(envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(envelope.payload, originalPayloadReference);
   assert.equal(JSON.stringify(envelope.payload), originalPayloadSnapshot);
+  assert.deepEqual(eventAudit.payloadReferenceEquality, [true]);
   assert.equal(logs.includes("PAYLOAD_REFERENCE_EQUALITY true"), true);
+});
+
+test("relay_event_forward_order", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "relay-event-forward-order";
+  const eventAudit = messageRouter.enableEventAudit(sessionId);
+  const envelopes = [
+    createEnvelope({
+      sessionId,
+      sequence: 10,
+      payload: { eventVersion: 101, opaque: "event-10" },
+    }),
+    createEnvelope({
+      sessionId,
+      sequence: 11,
+      payload: { eventVersion: 102, opaque: "event-11" },
+    }),
+    createEnvelope({
+      sessionId,
+      sequence: 12,
+      payload: { eventVersion: 103, opaque: "event-12" },
+    }),
+  ];
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  for (const envelope of envelopes) {
+    await messageRouter.routeMessage(envelope, mobileSocket);
+  }
+
+  assert.deepEqual(
+    eventAudit.inbound.map((entry) => [entry.sequence, entry.eventVersion]),
+    [
+      [10, 101],
+      [11, 102],
+      [12, 103],
+    ],
+  );
+  assert.deepEqual(
+    eventAudit.outbound.map((entry) => [entry.sequence, entry.eventVersion]),
+    [
+      [10, 101],
+      [11, 102],
+      [12, 103],
+    ],
+  );
+  assert.deepEqual(
+    webSocket.sentMessages.map((message) => JSON.parse(message).sequence),
+    [10, 11, 12],
+  );
+  assert.equal(eventAudit.inbound.length, eventAudit.outbound.length);
+  assert.equal(logs.includes("INBOUND seq=10 eventVersion=101"), true);
+  assert.equal(logs.includes("OUTBOUND seq=10 eventVersion=101"), true);
+  assert.equal(logs.includes("INBOUND seq=11 eventVersion=102"), true);
+  assert.equal(logs.includes("OUTBOUND seq=11 eventVersion=102"), true);
 });
 
 test("ordering_preserved", async () => {
@@ -2561,7 +2660,7 @@ test("ordering_preserved", async () => {
   });
 
   await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(startedSequences, [10]);
+  assert.deepEqual(startedSequences, [sequences[0]]);
   assert.equal(webSocket.sentMessages.length, 0);
 
   for (const sequence of sequences) {
@@ -2582,7 +2681,7 @@ test("relay_session_ordering", async () => {
   const startedSequences = [];
   const releases = new Map();
   const sendOrder = [13, 10, 12, 11];
-  const expectedOrder = [10, 11, 12, 13];
+  const expectedOrder = [...sendOrder];
   const connectionManager = createConnectionManager();
   const mobileSocket = new MockSocket();
   const webSocket = new MockSocket();
@@ -2602,7 +2701,7 @@ test("relay_session_ordering", async () => {
     async refreshSessionActivity(requestedSessionId, messageType) {
       assert.equal(requestedSessionId, sessionId);
       assert.equal(messageType, "event_stream");
-      const sequence = expectedOrder[startedSequences.length];
+      const sequence = sendOrder[startedSequences.length];
       startedSequences.push(sequence);
       await releases.get(sequence).promise;
       return { sessionId: requestedSessionId, state: SESSION_STATES.ACTIVE };
@@ -2634,7 +2733,7 @@ test("relay_session_ordering", async () => {
   });
 
   await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(startedSequences, [10]);
+  assert.deepEqual(startedSequences, [sendOrder[0]]);
 
   for (const sequence of expectedOrder) {
     releases.get(sequence).resolve();
@@ -2648,6 +2747,84 @@ test("relay_session_ordering", async () => {
     webSocket.sentMessages.map((message) => JSON.parse(message).sequence),
     expectedOrder,
   );
+});
+
+test("relay_no_reorder_async", async () => {
+  const logs = [];
+  const startedSequences = [];
+  const releases = new Map();
+  const sendOrder = [12, 10, 11];
+  const connectionManager = createConnectionManager();
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "relay-no-reorder-async";
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+    sessionRegistry: {
+      async getSession(requestedSessionId) {
+        assert.equal(requestedSessionId, sessionId);
+        return {
+          sessionId,
+          state: SESSION_STATES.ACTIVE,
+          webSocketId: "relay-no-reorder-async-web",
+          mobileSocketId: "relay-no-reorder-async-mobile",
+        };
+      },
+    },
+    sessionLifecycleManager: {
+      async refreshSessionActivity(requestedSessionId, messageType) {
+        assert.equal(requestedSessionId, sessionId);
+        assert.equal(messageType, "event_stream");
+        const sequence = sendOrder[startedSequences.length];
+        startedSequences.push(sequence);
+        await releases.get(sequence).promise;
+        return { sessionId: requestedSessionId, state: SESSION_STATES.ACTIVE };
+      },
+      async persistBeforeRouting(operation) {
+        return operation();
+      },
+    },
+  });
+  const eventAudit = messageRouter.enableEventAudit(sessionId);
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "relay-no-reorder-async-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "relay-no-reorder-async-web" });
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  const routePromises = sendOrder.map((sequence, index) => {
+    releases.set(sequence, createDeferred());
+    return messageRouter.routeMessage(
+      createEnvelope({
+        sessionId,
+        sequence,
+        timestamp: Date.now() + index,
+        payload: { eventVersion: 200 + sequence, opaque: `event-${sequence}` },
+      }),
+      mobileSocket,
+    );
+  });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(startedSequences, [12]);
+
+  for (const sequence of sendOrder) {
+    releases.get(sequence).resolve();
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+
+  await Promise.all(routePromises);
+
+  assert.deepEqual(startedSequences, sendOrder);
+  assert.deepEqual(
+    eventAudit.outbound.map((entry) => entry.sequence),
+    sendOrder,
+  );
+  assert.deepEqual(
+    webSocket.sentMessages.map((message) => JSON.parse(message).sequence),
+    sendOrder,
+  );
+  assert.equal(logs.includes("INBOUND seq=12 eventVersion=212"), true);
+  assert.equal(logs.includes("OUTBOUND seq=11 eventVersion=211"), true);
 });
 
 test("snapshot_contiguity_enforced", async () => {
@@ -2711,12 +2888,236 @@ test("no_event_interleaving_during_snapshot", async () => {
   ]);
 });
 
+test("relay_snapshot_event_isolation", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "relay-snapshot-event-isolation";
+  const eventAudit = messageRouter.enableEventAudit(sessionId);
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await Promise.all([
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 10 }), mobileSocket),
+    messageRouter.routeMessage(
+      createEnvelope({
+        type: "event_stream",
+        sessionId,
+        sequence: 13,
+        payload: { eventVersion: 103, opaque: "blocked-during-snapshot" },
+      }),
+      mobileSocket,
+    ),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 11 }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 12 }), mobileSocket),
+  ]);
+
+  assert.deepEqual(
+    webSocket.sentMessages.map((message) => JSON.parse(message).type),
+    ["snapshot_start", "snapshot_chunk", "snapshot_complete", "event_stream"],
+  );
+  assert.deepEqual(eventAudit.inbound.map((entry) => entry.sequence), [13]);
+  assert.deepEqual(eventAudit.outbound.map((entry) => entry.sequence), [13]);
+  assert.equal(logs.includes("INBOUND seq=13 eventVersion=103"), true);
+  assert.equal(logs.includes("OUTBOUND seq=13 eventVersion=103"), true);
+});
+
+test("relay_fifo_ordering", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "abc";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await sendOrderedMessages({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+    sequences: [101, 102, 103],
+    eventVersions: [101, 102, 103],
+  });
+
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  validateRelayOrdering(forwardedMessages, [101, 102, 103]);
+  assert.deepEqual(
+    forwardedMessages.map((message) => `${message.type} ${message.payload.eventVersion}`),
+    ["event_stream 101", "event_stream 102", "event_stream 103"],
+  );
+  assert.deepEqual(
+    logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc")),
+    [
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=102",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=103",
+    ],
+  );
+});
+
+test("relay_async_order_preservation", async () => {
+  const logs = [];
+  const startedSequences = [];
+  const releases = new Map();
+  const sendOrder = [101, 102, 103];
+  const connectionManager = createConnectionManager();
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "abc";
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+    sessionRegistry: {
+      async getSession(requestedSessionId) {
+        assert.equal(requestedSessionId, sessionId);
+        return {
+          sessionId,
+          state: SESSION_STATES.ACTIVE,
+          webSocketId: "relay-async-order-web",
+          mobileSocketId: "relay-async-order-mobile",
+        };
+      },
+    },
+    sessionLifecycleManager: {
+      async refreshSessionActivity(requestedSessionId, messageType) {
+        assert.equal(requestedSessionId, sessionId);
+        assert.equal(messageType, "event_stream");
+        const sequence = sendOrder[startedSequences.length];
+        startedSequences.push(sequence);
+        await releases.get(sequence).promise;
+        return { sessionId: requestedSessionId, state: SESSION_STATES.ACTIVE };
+      },
+      async persistBeforeRouting(operation) {
+        return operation();
+      },
+    },
+  });
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "relay-async-order-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "relay-async-order-web" });
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  for (const sequence of sendOrder) {
+    releases.set(sequence, createDeferred());
+  }
+
+  const routePromise = sendOrderedMessages({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+    sequences: sendOrder,
+    eventVersions: sendOrder,
+  });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(startedSequences, [101]);
+
+  for (const sequence of sendOrder) {
+    releases.get(sequence).resolve();
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+
+  await routePromise;
+
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  assert.deepEqual(startedSequences, sendOrder);
+  validateRelayOrdering(forwardedMessages, sendOrder);
+  assert.deepEqual(
+    logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc")),
+    [
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=102",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=103",
+    ],
+  );
+});
+
+test("snapshot_stream_contiguity", async () => {
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager);
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "snapshot-ordering";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await Promise.all([
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 2, payload: { opaque: "chunk-1" } }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "event_stream", sessionId, sequence: 5, payload: { eventVersion: 101, opaque: "blocked" } }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 3, payload: { opaque: "chunk-2" } }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 4 }), mobileSocket),
+  ]);
+
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  assert.deepEqual(
+    forwardedMessages.map((message) => message.type),
+    ["snapshot_start", "snapshot_chunk", "snapshot_chunk", "snapshot_complete", "event_stream"],
+  );
+  assert.deepEqual(
+    forwardedMessages.map((message) =>
+      message.type === "event_stream"
+        ? `EVENT_STREAM ${message.payload.eventVersion}`
+        : message.type === "snapshot_start"
+          ? "SNAPSHOT_START"
+          : message.type === "snapshot_complete"
+            ? "SNAPSHOT_COMPLETE"
+            : `SNAPSHOT_CHUNK ${message.sequence - 1}`,
+    ),
+    ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE", "EVENT_STREAM 101"],
+  );
+});
+
+test("event_block_during_snapshot", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "snapshot-blocked-event";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await Promise.all([
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 2, payload: { opaque: "chunk-1" } }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "event_stream", sessionId, sequence: 5, payload: { eventVersion: 101, opaque: "blocked" } }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 3, payload: { opaque: "chunk-2" } }), mobileSocket),
+    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 4 }), mobileSocket),
+  ]);
+
+  const queueLogs = logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=snapshot-blocked-event"));
+
+  assert.deepEqual(queueLogs, [
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_start sequence=1",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=2 index=0",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=3 index=1",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_complete sequence=4",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=event_stream sequence=5",
+  ]);
+  assert.deepEqual(
+    captureForwardedMessages(webSocket).map((message) => message.type),
+    ["snapshot_start", "snapshot_chunk", "snapshot_chunk", "snapshot_complete", "event_stream"],
+  );
+});
+
 test("queue_process_sequential", async () => {
   const startedSequences = [];
   const activeSequences = [];
   const releases = new Map();
   const sendOrder = [3, 1, 2];
-  const expectedOrder = [1, 2, 3];
+  const expectedOrder = [...sendOrder];
   const connectionManager = createConnectionManager();
   const mobileSocket = new MockSocket();
   const webSocket = new MockSocket();
@@ -2736,7 +3137,7 @@ test("queue_process_sequential", async () => {
     async refreshSessionActivity(requestedSessionId, messageType) {
       assert.equal(requestedSessionId, sessionId);
       assert.equal(messageType, "event_stream");
-      const sequence = expectedOrder[startedSequences.length];
+      const sequence = sendOrder[startedSequences.length];
       startedSequences.push(sequence);
       activeSequences.push(sequence);
       assert.equal(activeSequences.length, 1);
@@ -2771,7 +3172,7 @@ test("queue_process_sequential", async () => {
   });
 
   await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(startedSequences, [1]);
+  assert.deepEqual(startedSequences, [sendOrder[0]]);
 
   for (const sequence of expectedOrder) {
     releases.get(sequence).resolve();
@@ -2864,6 +3265,212 @@ test("relay_preserve_envelope_fields", async () => {
   assert.deepEqual(forwardedEnvelope, envelope);
   assert.equal(forwardedEnvelope.timestamp, envelope.timestamp);
   assert.equal(forwardedEnvelope.sequence, envelope.sequence);
+});
+
+test("relay_mutation_forward", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "relay-mutation-forward";
+  const mutationAudit = messageRouter.enableMutationAudit(sessionId);
+  const envelope = createEnvelope({
+    type: "mutation_command",
+    sessionId,
+    sequence: 20,
+    payload: {
+      commandId: "cmd-101",
+      patch: [{ op: "replace", path: "/profile/name", value: "Taboo" }],
+    },
+  });
+  const originalPayloadReference = envelope.payload;
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  const routed = await messageRouter.routeMessage(envelope, webSocket);
+
+  assert.equal(routed, true);
+  assert.equal(envelope.payload, originalPayloadReference);
+  assert.equal(mobileSocket.sentMessages.length, 1);
+  assert.deepEqual(JSON.parse(mobileSocket.sentMessages[0]), envelope);
+  assert.deepEqual(
+    mutationAudit.inbound.map((entry) => ({ sequence: entry.sequence, type: entry.type, commandId: entry.commandId })),
+    [{ sequence: 20, type: "mutation_command", commandId: "cmd-101" }],
+  );
+  assert.deepEqual(
+    mutationAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type, commandId: entry.commandId })),
+    [{ sequence: 20, type: "mutation_command", commandId: "cmd-101" }],
+  );
+  assert.deepEqual(mutationAudit.payloadReferenceEquality, [true]);
+  assert.equal(logs.includes("INBOUND seq=20 type=mutation_command cmd=cmd-101"), true);
+  assert.equal(logs.includes("OUTBOUND seq=20 type=mutation_command cmd=cmd-101"), true);
+});
+
+test("relay_command_result_routing", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocketOne = new MockSocket();
+  const webSocketOne = new MockSocket();
+  const mobileSocketTwo = new MockSocket();
+  const webSocketTwo = new MockSocket();
+  const sessionIdOne = "relay-command-result-routing-1";
+  const sessionIdTwo = "relay-command-result-routing-2";
+  const mutationAudit = messageRouter.enableMutationAudit(sessionIdOne);
+  const envelope = createEnvelope({
+    type: "command_result",
+    sessionId: sessionIdOne,
+    sequence: 21,
+    payload: {
+      commandId: "cmd-101",
+      status: "ok",
+      result: { applied: true },
+    },
+  });
+
+  connectionManager.bindSessionSockets(sessionIdOne, mobileSocketOne, webSocketOne);
+  connectionManager.bindSessionSockets(sessionIdTwo, mobileSocketTwo, webSocketTwo);
+
+  const routed = await messageRouter.routeMessage(envelope, mobileSocketOne);
+
+  assert.equal(routed, true);
+  assert.equal(webSocketOne.sentMessages.length, 1);
+  assert.equal(webSocketTwo.sentMessages.length, 0);
+  assert.equal(mobileSocketOne.sentMessages.length, 0);
+  assert.deepEqual(JSON.parse(webSocketOne.sentMessages[0]), envelope);
+  assert.deepEqual(
+    mutationAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type, commandId: entry.commandId })),
+    [{ sequence: 21, type: "command_result", commandId: "cmd-101" }],
+  );
+  assert.equal(logs.includes("INBOUND seq=21 type=command_result cmd=cmd-101"), true);
+  assert.equal(logs.includes("OUTBOUND seq=21 type=command_result cmd=cmd-101"), true);
+});
+
+test("relay_mutation_ordering", async () => {
+  const logs = [];
+  const startedSequences = [];
+  const releases = new Map();
+  const sendOrder = [20, 21, 22];
+  const connectionManager = createConnectionManager();
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "relay-mutation-ordering";
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+    sessionRegistry: {
+      async getSession(requestedSessionId) {
+        assert.equal(requestedSessionId, sessionId);
+        return {
+          sessionId,
+          state: SESSION_STATES.ACTIVE,
+          webSocketId: "relay-mutation-ordering-web",
+          mobileSocketId: "relay-mutation-ordering-mobile",
+        };
+      },
+    },
+    sessionLifecycleManager: {
+      async refreshSessionActivity(requestedSessionId, messageType) {
+        assert.equal(requestedSessionId, sessionId);
+        assert.equal(messageType, "mutation_command");
+        const sequence = sendOrder[startedSequences.length];
+        startedSequences.push(sequence);
+        await releases.get(sequence).promise;
+        return { sessionId: requestedSessionId, state: SESSION_STATES.ACTIVE };
+      },
+      async persistBeforeRouting(operation) {
+        return operation();
+      },
+    },
+  });
+  const mutationAudit = messageRouter.enableMutationAudit(sessionId);
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "relay-mutation-ordering-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "relay-mutation-ordering-web" });
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  const routePromises = sendOrder.map((sequence, index) => {
+    releases.set(sequence, createDeferred());
+    return messageRouter.routeMessage(
+      createEnvelope({
+        type: "mutation_command",
+        sessionId,
+        sequence,
+        timestamp: Date.now() + index,
+        payload: {
+          commandId: `cmd-${100 + sequence}`,
+          op: `mutation-${sequence}`,
+        },
+      }),
+      webSocket,
+    );
+  });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(startedSequences, [20]);
+
+  for (const sequence of sendOrder) {
+    releases.get(sequence).resolve();
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+
+  await Promise.all(routePromises);
+
+  assert.deepEqual(startedSequences, sendOrder);
+  assert.deepEqual(
+    mutationAudit.outbound.map((entry) => entry.sequence),
+    sendOrder,
+  );
+  assert.deepEqual(
+    mobileSocket.sentMessages.map((message) => JSON.parse(message).sequence),
+    sendOrder,
+  );
+  assert.equal(logs.includes("RELAY_QUEUE_PROCESS session=relay-mutation-ordering type=mutation_command sequence=20"), true);
+  assert.equal(logs.includes("RELAY_QUEUE_PROCESS session=relay-mutation-ordering type=mutation_command sequence=21"), true);
+  assert.equal(logs.includes("RELAY_QUEUE_PROCESS session=relay-mutation-ordering type=mutation_command sequence=22"), true);
+});
+
+test("relay_payload_opaque_mutation", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "relay-payload-opaque-mutation";
+  const mutationAudit = messageRouter.enableMutationAudit(sessionId);
+  const payload = {
+    commandId: "cmd-opaque",
+    nested: {
+      operations: [{ op: "add", path: "/vault/ref", value: "opaque" }],
+    },
+  };
+  const envelope = createEnvelope({
+    type: "mutation_command",
+    sessionId,
+    sequence: 22,
+    payload,
+  });
+  const originalPayloadReference = envelope.payload;
+  const originalPayloadSnapshot = JSON.stringify(envelope.payload);
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  const routed = await messageRouter.routeMessage(envelope, webSocket);
+
+  assert.equal(routed, true);
+  assert.equal(envelope.payload, originalPayloadReference);
+  assert.equal(JSON.stringify(envelope.payload), originalPayloadSnapshot);
+  assert.deepEqual(JSON.parse(mobileSocket.sentMessages[0]).payload, payload);
+  assert.deepEqual(mutationAudit.payloadReferenceEquality, [true]);
+  assert.equal(logs.includes("PAYLOAD_REFERENCE_EQUALITY true"), true);
+  assert.equal(logs.includes("INBOUND seq=22 type=mutation_command cmd=cmd-opaque"), true);
+  assert.equal(logs.includes("OUTBOUND seq=22 type=mutation_command cmd=cmd-opaque"), true);
 });
 
 test("relay_no_message_dispatch", async () => {

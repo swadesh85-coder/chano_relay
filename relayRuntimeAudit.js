@@ -575,6 +575,8 @@ async function runRelayRuntimeAudit(options = {}) {
   let relayServer;
   let webSocket;
   let mobileSocket;
+  let eventAudit;
+  let mutationAudit;
 
   function record(line) {
     rawAuditLines.push(line);
@@ -631,6 +633,9 @@ async function runRelayRuntimeAudit(options = {}) {
       redisUrl,
       redisConnectCalls: [...redisConnectCalls],
     };
+
+    eventAudit = relayServer.messageRouter.enableEventAudit(sessionId);
+    mutationAudit = relayServer.messageRouter.enableMutationAudit(sessionId);
 
     webSocket = new WebSocket(clientUrl);
     mobileSocket = new WebSocket(clientUrl);
@@ -735,14 +740,25 @@ async function runRelayRuntimeAudit(options = {}) {
       sessionId,
       sequence: 6,
       payload: {
+        commandId: "cmd-101",
         command: "apply_patch",
         target: "profile",
+      },
+    });
+    const routeEnvelopeResult = createEnvelope({
+      type: "command_result",
+      sessionId,
+      sequence: 7,
+      payload: {
+        commandId: "cmd-101",
+        status: "applied",
+        applied: true,
       },
     });
     const routeEnvelopeThree = createEnvelope({
       type: "event_stream",
       sessionId,
-      sequence: 7,
+      sequence: 8,
       payload: {
         eventVersion: 9001,
         delta: "opaque-event",
@@ -773,21 +789,76 @@ async function runRelayRuntimeAudit(options = {}) {
     const routedEnvelopeTwo = await routedToMobile;
     const routeEnvelopeTwoAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeTwo.type);
 
-    const routedToWebThree = waitForSocketMessage(
+    const routedToWebResult = waitForSocketMessage(
       webSocket,
-      (message) => message.type === routeEnvelopeThree.type && message.sequence === routeEnvelopeThree.sequence,
+      (message) => message.type === routeEnvelopeResult.type && message.sequence === routeEnvelopeResult.sequence,
+    );
+    mobileSocket.send(JSON.stringify(routeEnvelopeResult));
+    const routedEnvelopeResult = await routedToWebResult;
+    const routeEnvelopeResultAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeResult.type);
+
+    const routedSnapshotIsolationMessages = collectSocketMessages(
+      webSocket,
+      2,
+      (message) =>
+        message.sessionId === sessionId &&
+        ((message.type === routeEnvelopeThree.type && message.sequence === routeEnvelopeThree.sequence) ||
+          (message.type === routeEnvelopeFour.type && message.sequence === routeEnvelopeFour.sequence)),
     );
     mobileSocket.send(JSON.stringify(routeEnvelopeThree));
-    const routedEnvelopeThree = await routedToWebThree;
-    const routeEnvelopeThreeAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeThree.type);
-
-    const routedToWebFour = waitForSocketMessage(
-      webSocket,
+    mobileSocket.send(JSON.stringify(routeEnvelopeFour));
+    const routedPostSnapshotMessages = await routedSnapshotIsolationMessages;
+    const routedEnvelopeFour = routedPostSnapshotMessages.find(
       (message) => message.type === routeEnvelopeFour.type && message.sequence === routeEnvelopeFour.sequence,
     );
-    mobileSocket.send(JSON.stringify(routeEnvelopeFour));
-    const routedEnvelopeFour = await routedToWebFour;
+    const routedEnvelopeThree = routedPostSnapshotMessages.find(
+      (message) => message.type === routeEnvelopeThree.type && message.sequence === routeEnvelopeThree.sequence,
+    );
+    const routeEnvelopeThreeAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeThree.type);
     const routeEnvelopeFourAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeFour.type);
+
+    const mutationOrderingEnvelopeOne = createEnvelope({
+      type: "mutation_command",
+      sessionId,
+      sequence: 20,
+      payload: { commandId: "cmd-201", operation: "first" },
+    });
+    const mutationOrderingEnvelopeTwo = createEnvelope({
+      type: "command_result",
+      sessionId,
+      sequence: 21,
+      payload: { commandId: "cmd-201", status: "ok" },
+    });
+    const mutationOrderingEnvelopeThree = createEnvelope({
+      type: "mutation_command",
+      sessionId,
+      sequence: 22,
+      payload: { commandId: "cmd-202", operation: "second" },
+    });
+
+    const routedMutationTwenty = waitForSocketMessage(
+      mobileSocket,
+      (message) =>
+        message.type === mutationOrderingEnvelopeOne.type && message.sequence === mutationOrderingEnvelopeOne.sequence,
+    );
+    webSocket.send(JSON.stringify(mutationOrderingEnvelopeOne));
+    await routedMutationTwenty;
+
+    const routedMutationTwentyOne = waitForSocketMessage(
+      webSocket,
+      (message) =>
+        message.type === mutationOrderingEnvelopeTwo.type && message.sequence === mutationOrderingEnvelopeTwo.sequence,
+    );
+    mobileSocket.send(JSON.stringify(mutationOrderingEnvelopeTwo));
+    await routedMutationTwentyOne;
+
+    const routedMutationTwentyTwo = waitForSocketMessage(
+      mobileSocket,
+      (message) =>
+        message.type === mutationOrderingEnvelopeThree.type && message.sequence === mutationOrderingEnvelopeThree.sequence,
+    );
+    webSocket.send(JSON.stringify(mutationOrderingEnvelopeThree));
+    await routedMutationTwentyTwo;
 
     const orderProbeOne = createEnvelope({
       type: "event_stream",
@@ -836,6 +907,12 @@ async function runRelayRuntimeAudit(options = {}) {
       },
       {
         direction: "mobile->web",
+        type: routeEnvelopeResult.type,
+        sessionId,
+        unchanged: JSON.stringify(routedEnvelopeResult) === JSON.stringify(routeEnvelopeResult),
+      },
+      {
+        direction: "mobile->web",
         type: routeEnvelopeThree.type,
         sessionId,
         unchanged: JSON.stringify(routedEnvelopeThree) === JSON.stringify(routeEnvelopeThree),
@@ -876,6 +953,7 @@ async function runRelayRuntimeAudit(options = {}) {
         messageFlow: [
           routeEnvelopeOneAudit,
           routeEnvelopeTwoAudit,
+          routeEnvelopeResultAudit,
           routeEnvelopeThreeAudit,
           routeEnvelopeFourAudit,
         ],
@@ -885,6 +963,29 @@ async function runRelayRuntimeAudit(options = {}) {
       timerEvidence: auditTimerEvidence(startupLogs, sessionId),
       runtimeEvidence: ["protocol_handshake", routeEnvelopeOne.type, routeEnvelopeFour.type],
       routingEvidence,
+      eventAudit: {
+        routingLogs: [...eventAudit.routingLogs],
+        inbound: eventAudit.inbound.map((entry) => ({ sequence: entry.sequence, eventVersion: entry.eventVersion })),
+        outbound: eventAudit.outbound.map((entry) => ({ sequence: entry.sequence, eventVersion: entry.eventVersion })),
+        payloadReferenceEquality: [...eventAudit.payloadReferenceEquality],
+      },
+      mutationAudit: {
+        routingLogs: [...mutationAudit.routingLogs],
+        inbound: mutationAudit.inbound.map((entry) => ({
+          sequence: entry.sequence,
+          type: entry.type,
+          commandId: entry.commandId,
+        })),
+        outbound: mutationAudit.outbound.map((entry) => ({
+          sequence: entry.sequence,
+          type: entry.type,
+          commandId: entry.commandId,
+        })),
+        payloadReferenceEquality: [...mutationAudit.payloadReferenceEquality],
+      },
+      orderingEvidence: mutationAudit.outbound
+        .filter((entry) => entry.sequence >= 20 && entry.sequence <= 22)
+        .map((entry) => entry.sequence),
       validationEvidence: {
         validAccepted: {
           sequence: 1,
@@ -903,7 +1004,9 @@ async function runRelayRuntimeAudit(options = {}) {
       },
       constitution: {
         mobileAuthority: waitingSession.state === SESSION_STATES.WAITING && activeSession.state === SESSION_STATES.ACTIVE,
-        mutationBoundary: routingEvidence[1].unchanged && metadataOnly,
+        mutationBoundary: routingEvidence
+          .filter((entry) => entry.type === "mutation_command" || entry.type === "command_result")
+          .every((entry) => entry.unchanged) && metadataOnly,
         eventOrdering: orderPreserved,
         relayNeutrality: routingEvidence.every((entry) => entry.unchanged),
         projectionSafety: metadataOnly && invalidEnvelope.payload.reason === "missing_session_id",
@@ -923,6 +1026,7 @@ async function runRelayRuntimeAudit(options = {}) {
     record(sessionActivationAudit.evidence);
     record(routeEnvelopeOneAudit.evidence);
     record(routeEnvelopeTwoAudit.evidence);
+    record(routeEnvelopeResultAudit.evidence);
     record(routeEnvelopeThreeAudit.evidence);
     record(routeEnvelopeFourAudit.evidence);
     for (const entry of auditTimerEvidence(startupLogs, sessionId).setEntries) {
@@ -942,7 +1046,13 @@ async function runRelayRuntimeAudit(options = {}) {
     record(`SESSION_ACTIVE sessionId=${sessionId}`);
     record(`ROUTE mobile->web type=${routeEnvelopeOne.type} sessionId=${sessionId}`);
     record(`ROUTE web->mobile type=${routeEnvelopeTwo.type} sessionId=${sessionId}`);
+    record(`ROUTE mobile->web type=${routeEnvelopeResult.type} sessionId=${sessionId}`);
     record(`ROUTE mobile->web type=${routeEnvelopeThree.type} sessionId=${sessionId}`);
+    for (const entry of results.mutationAudit.routingLogs) {
+      record(entry);
+    }
+    record(`PAYLOAD_REFERENCE_EQUALITY ${results.mutationAudit.payloadReferenceEquality.every(Boolean)}`);
+    record(`seq: ${results.orderingEvidence.join(" → ")}`);
     record(`SESSION_CLOSED sessionId=${sessionId}`);
     record(`Mobile Authority -> ${results.constitution.mobileAuthority ? "PASS" : "FAIL"}`);
     record(`Mutation Boundary -> ${results.constitution.mutationBoundary ? "PASS" : "FAIL"}`);

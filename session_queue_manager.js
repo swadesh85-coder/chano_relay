@@ -48,37 +48,31 @@ function createSessionQueueManager(options = {}) {
     return queueState;
   }
 
-  function comparePendingEntries(left, right) {
-    if (left.envelope.sequence !== right.envelope.sequence) {
-      return left.envelope.sequence - right.envelope.sequence;
-    }
-
-    return left.arrivalOrder - right.arrivalOrder;
-  }
-
   function dequeueNextEnvelope(queueState) {
     if (queueState.pending.length === 0) {
       return null;
     }
 
-    const orderedEntries = queueState.pending
-      .map((entry, index) => ({ entry, index }))
-      .sort((left, right) => comparePendingEntries(left.entry, right.entry));
-
-    let nextEntry = orderedEntries[0] || null;
-
     if (queueState.inSnapshotMode) {
-      nextEntry =
-        orderedEntries.find(({ entry }) => typeof entry.envelope.type === "string" && entry.envelope.type.startsWith("snapshot")) ||
-        null;
+      const nextPendingEntry = queueState.pending[0] || null;
+
+      if (!nextPendingEntry || nextPendingEntry.envelope.type !== "event_stream") {
+        return queueState.pending.shift() || null;
+      }
+
+      const snapshotEntryIndex = queueState.pending.findIndex(
+        (entry) => typeof entry.envelope.type === "string" && entry.envelope.type.startsWith("snapshot"),
+      );
+
+      if (snapshotEntryIndex === -1) {
+        return null;
+      }
+
+      const [snapshotEntry] = queueState.pending.splice(snapshotEntryIndex, 1);
+      return snapshotEntry;
     }
 
-    if (!nextEntry) {
-      return null;
-    }
-
-    queueState.pending.splice(nextEntry.index, 1);
-    return nextEntry.entry;
+    return queueState.pending.shift() || null;
   }
 
   function snapshotContiguityGuard(queueState, envelope) {

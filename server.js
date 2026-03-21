@@ -489,6 +489,8 @@ function createMessageRouter(connectionManager, options = {}) {
   const sessionRegistry = options.sessionRegistry || null;
   const sessionLifecycleManager = options.sessionLifecycleManager || null;
   const logger = typeof options.logger === "function" ? options.logger : console.log;
+  const eventAudits = new Map();
+  const mutationAudits = new Map();
   const sessionQueueManager = createSessionQueueManager({
     logger,
     forwardEnvelope: (envelope, metadata) => routeEnvelope(envelope, metadata.senderSocket),
@@ -496,6 +498,157 @@ function createMessageRouter(connectionManager, options = {}) {
 
   function getRouteDirection(senderRole) {
     return senderRole === "mobile" ? "mobile→web" : "web→mobile";
+  }
+
+  function isMutationAuditEnvelope(envelope) {
+    return Boolean(
+      envelope && (envelope.type === "mutation_command" || envelope.type === "command_result"),
+    );
+  }
+
+  function extractEventVersion(payload) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return "unknown";
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(payload, "eventVersion")) {
+      return "unknown";
+    }
+
+    return payload.eventVersion;
+  }
+
+  function extractCommandId(payload) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return "unknown";
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(payload, "commandId")) {
+      return "unknown";
+    }
+
+    return payload.commandId;
+  }
+
+  function enableEventAudit(sessionId) {
+    if (typeof sessionId !== "string" || sessionId.trim() === "") {
+      throw new Error("sessionId is required");
+    }
+
+    const normalizedSessionId = sessionId.trim();
+    const existingAudit = eventAudits.get(normalizedSessionId);
+    if (existingAudit) {
+      return existingAudit;
+    }
+
+    const auditState = {
+      sessionId: normalizedSessionId,
+      inbound: [],
+      outbound: [],
+      routingLogs: [],
+      payloadReferenceEquality: [],
+    };
+
+    eventAudits.set(normalizedSessionId, auditState);
+    return auditState;
+  }
+
+  function enableMutationAudit(sessionId) {
+    if (typeof sessionId !== "string" || sessionId.trim() === "") {
+      throw new Error("sessionId is required");
+    }
+
+    const normalizedSessionId = sessionId.trim();
+    const existingAudit = mutationAudits.get(normalizedSessionId);
+    if (existingAudit) {
+      return existingAudit;
+    }
+
+    const auditState = {
+      sessionId: normalizedSessionId,
+      inbound: [],
+      outbound: [],
+      routingLogs: [],
+      payloadReferenceEquality: [],
+    };
+
+    mutationAudits.set(normalizedSessionId, auditState);
+    return auditState;
+  }
+
+  function getEventAudit(sessionId) {
+    if (typeof sessionId !== "string" || sessionId.trim() === "") {
+      return null;
+    }
+
+    return eventAudits.get(sessionId.trim()) || null;
+  }
+
+  function getMutationAudit(sessionId) {
+    if (typeof sessionId !== "string" || sessionId.trim() === "") {
+      return null;
+    }
+
+    return mutationAudits.get(sessionId.trim()) || null;
+  }
+
+  function recordEventAudit(direction, envelope, payloadReferenceEquality = null) {
+    if (!envelope || envelope.type !== "event_stream") {
+      return;
+    }
+
+    const auditState = getEventAudit(envelope.sessionId);
+    if (!auditState) {
+      return;
+    }
+
+    const entry = {
+      envelope,
+      sequence: envelope.sequence,
+      eventVersion: extractEventVersion(envelope.payload),
+      payloadReferenceEquality,
+    };
+    const logLine = `${direction} seq=${entry.sequence} eventVersion=${entry.eventVersion}`;
+
+    if (direction === "INBOUND") {
+      auditState.inbound.push(entry);
+    } else {
+      auditState.outbound.push(entry);
+      auditState.payloadReferenceEquality.push(payloadReferenceEquality === true);
+    }
+
+    auditState.routingLogs.push(logLine);
+    logger(logLine);
+  }
+
+  function recordMutationAudit(direction, envelope, payloadReferenceEquality = null) {
+    if (!isMutationAuditEnvelope(envelope)) {
+      return;
+    }
+
+    const auditState = getMutationAudit(envelope.sessionId);
+    if (!auditState) {
+      return;
+    }
+
+    const entry = {
+      envelope,
+      type: envelope.type,
+      sequence: envelope.sequence,
+      commandId: extractCommandId(envelope.payload),
+      payloadReferenceEquality,
+    };
+    const logLine = `${direction} seq=${entry.sequence} type=${entry.type} cmd=${entry.commandId}`;
+
+    if (direction === "INBOUND") {
+      auditState.inbound.push(entry);
+    } else {
+      auditState.outbound.push(entry);
+      auditState.payloadReferenceEquality.push(payloadReferenceEquality === true);
+    }
+
+    auditState.routingLogs.push(logLine);
+    logger(logLine);
   }
 
   function ensureNoPayloadMutation(envelope, payloadReference) {
@@ -507,12 +660,28 @@ function createMessageRouter(connectionManager, options = {}) {
   function forwardEnvelopeAsIs(envelope, destinationSocket) {
     const payloadReference = envelope.payload;
     destinationSocket.send(JSON.stringify(envelope));
-    ensureNoPayloadMutation(envelope, payloadReference);
+    return ensureNoPayloadMutation(envelope, payloadReference);
   }
 
   function forwardSnapshotStart(envelope, destinationSocket, senderRegistration) {
     forwardEnvelopeAsIs(envelope, destinationSocket);
     logger(`RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_start`);
+  }
+
+  function forwardEventStream(envelope, destinationSocket, senderRegistration) {
+    const payloadReferenceEquality = forwardEnvelopeAsIs(envelope, destinationSocket);
+    recordEventAudit("OUTBOUND", envelope, payloadReferenceEquality);
+    logger(
+      `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=event_stream sequence=${envelope.sequence}`,
+    );
+  }
+
+  function forwardMutationEnvelope(envelope, destinationSocket, senderRegistration) {
+    const payloadReferenceEquality = forwardEnvelopeAsIs(envelope, destinationSocket);
+    recordMutationAudit("OUTBOUND", envelope, payloadReferenceEquality);
+    logger(
+      `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=${envelope.type} sequence=${envelope.sequence}`,
+    );
   }
 
   function forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, chunkIndex) {
@@ -736,6 +905,10 @@ function createMessageRouter(connectionManager, options = {}) {
       forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, chunkIndex);
     } else if (envelope.type === "snapshot_complete") {
       forwardSnapshotComplete(envelope, destinationSocket, senderRegistration);
+    } else if (envelope.type === "event_stream") {
+      forwardEventStream(envelope, destinationSocket, senderRegistration);
+    } else if (isMutationAuditEnvelope(envelope)) {
+      forwardMutationEnvelope(envelope, destinationSocket, senderRegistration);
     } else {
       destinationSocket.send(JSON.stringify(envelope));
     }
@@ -764,6 +937,9 @@ function createMessageRouter(connectionManager, options = {}) {
   }
 
   async function routeMessage(envelope, senderSocket) {
+    recordEventAudit("INBOUND", envelope);
+    recordMutationAudit("INBOUND", envelope);
+
     if (typeof envelope.sessionId === "string" && envelope.sessionId.trim() !== "") {
       return sessionQueueManager.enqueueMessage(envelope.sessionId, envelope, { senderSocket });
     }
@@ -772,6 +948,10 @@ function createMessageRouter(connectionManager, options = {}) {
   }
 
   return {
+    enableEventAudit,
+    enableMutationAudit,
+    getEventAudit,
+    getMutationAudit,
     routeMessage,
     enqueueMessage: sessionQueueManager.enqueueMessage,
     initializeSessionQueue: sessionQueueManager.initializeSessionQueue,

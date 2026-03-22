@@ -19,6 +19,34 @@ function assertTransportEnvelope(envelope, expectedType) {
   }
 }
 
+function formatSessionAuditRecord(session) {
+  return JSON.stringify({
+    sessionId: session.sessionId,
+    token: session.token || null,
+    webSocketId: session.webSocketId || null,
+    mobileSocketId: session.mobileSocketId || null,
+    state: session.state,
+  });
+}
+
+function normalizeCreateSessionRequest(sessionIdOrOptions, webSocketId, expiresAt) {
+  if (sessionIdOrOptions && typeof sessionIdOrOptions === "object" && !Array.isArray(sessionIdOrOptions)) {
+    return {
+      sessionId: sessionIdOrOptions.sessionId,
+      token: sessionIdOrOptions.token,
+      webSocketId: sessionIdOrOptions.webSocketId,
+      expiresAt: sessionIdOrOptions.expiresAt,
+    };
+  }
+
+  return {
+    sessionId: sessionIdOrOptions,
+    token: null,
+    webSocketId,
+    expiresAt,
+  };
+}
+
 function canSendToSocket(socket) {
   if (!socket || typeof socket.send !== "function") {
     return false;
@@ -62,13 +90,16 @@ class SessionLifecycleManager {
     this.socketSessionIds = new Map();
   }
 
-  async createSession(sessionId, webSocketId, expiresAt) {
-    assertNonEmptyString(sessionId, "sessionId");
-    assertNonEmptyString(webSocketId, "webSocketId");
+  async createSession(sessionIdOrOptions, webSocketId, expiresAt) {
+    const createRequest = normalizeCreateSessionRequest(sessionIdOrOptions, webSocketId, expiresAt);
 
-    const session = await this.sessionRegistry.createSession(sessionId, webSocketId, expiresAt);
+    assertNonEmptyString(createRequest.sessionId, "sessionId");
+    assertNonEmptyString(createRequest.webSocketId, "webSocketId");
+
+    const session = await this.sessionRegistry.createSession(createRequest);
     this.indexSession(session);
     this.scheduleTimeout(session.sessionId, this.resolveTimeoutDelayMs(session));
+    this.logger(`RELAY_SESSION_CREATED session=${formatSessionAuditRecord(session)}`);
     this.logger("SESSION_CREATE persisted");
     return session;
   }
@@ -77,7 +108,12 @@ class SessionLifecycleManager {
     assertTransportEnvelope(envelope, "qr_session_create");
     assertNonEmptyString(webSocketId, "webSocketId");
 
-    return this.createSession(envelope.sessionId, webSocketId, expiresAt);
+    return this.createSession({
+      sessionId: envelope.sessionId,
+      token: envelope.payload && typeof envelope.payload === "object" ? envelope.payload.token : null,
+      webSocketId,
+      expiresAt,
+    });
   }
 
   async transitionToPaired(sessionId, mobileSocketId) {

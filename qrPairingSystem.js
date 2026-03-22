@@ -48,6 +48,22 @@ function canSendToSocket(socket) {
   return socket.readyState === 1;
 }
 
+function getPayloadToken(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+
+  if (typeof payload.token !== "string" || payload.token.trim() === "") {
+    return null;
+  }
+
+  return payload.token;
+}
+
+function formatPairingTokenValue(token) {
+  return token === null || token === undefined ? "null" : token;
+}
+
 function signPairingTokenPayload(payload, secret) {
   const payloadJson = JSON.stringify(payload);
   const payloadSegment = encodeTokenSegment(payloadJson);
@@ -247,6 +263,18 @@ class QRPairingSystem {
       return this.rejectPairRequest(senderSocket, envelope, "mobile_socket_required");
     }
 
+    const requestToken = getPayloadToken(envelope.payload);
+    const sessionToken = session.token || null;
+
+    this.logger(
+      `RELAY_PAIRING_VALIDATE sessionToken=${formatPairingTokenValue(sessionToken)} requestToken=${formatPairingTokenValue(requestToken)}`,
+    );
+
+    if (!sessionToken || sessionToken !== requestToken) {
+      this.logger("TOKEN_MISMATCH -> pairing rejected");
+      return this.rejectPairRequest(senderSocket, envelope, "INVALID_TOKEN");
+    }
+
     const webRegistration = this.connectionManager.lookupConnectionById(session.webSocketId);
     if (!webRegistration || !canSendToSocket(webRegistration.socket)) {
       return this.rejectPairRequest(senderSocket, envelope, "web_connection_not_available");
@@ -273,7 +301,8 @@ class QRPairingSystem {
 
     senderSocket.send(JSON.stringify(approvalEnvelope));
     webRegistration.socket.send(JSON.stringify(approvalEnvelope));
-  this.logger("RELAY_ROUTE mobile→web type=pair_approved");
+    this.logger("TOKEN_MATCH -> pairing approved");
+    this.logger("RELAY_ROUTE mobile→web type=pair_approved");
     this.logger(`[relay_router] routing enabled for session ${activeSession.sessionId}`);
 
     if (this.events) {

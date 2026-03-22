@@ -336,6 +336,7 @@ function observeSessionRegistry(sessionRegistry) {
 function formatSessionRecord(session) {
   return {
     sessionId: session.sessionId,
+    token: session.token || null,
     mobileSocketId: session.mobileSocketId,
     webSocketId: session.webSocketId,
     createdAt: session.createdAt,
@@ -600,6 +601,7 @@ async function runRelayRuntimeAudit(options = {}) {
 
   const sessionId = "22222222-2222-4222-8222-222222222222";
   const bootstrapSessionId = "33333333-3333-4333-8333-333333333333";
+  const pairingToken = "runtime-audit-token";
 
   try {
     relayServer = await startRelayServer({
@@ -683,7 +685,9 @@ async function runRelayRuntimeAudit(options = {}) {
           type: "qr_session_create",
           sessionId,
           sequence: 3,
-          payload: {},
+          payload: {
+            token: pairingToken,
+          },
         }),
       ),
     );
@@ -709,6 +713,7 @@ async function runRelayRuntimeAudit(options = {}) {
           sequence: 4,
           payload: {
             sessionId,
+            token: pairingToken,
           },
         }),
       ),
@@ -926,6 +931,7 @@ async function runRelayRuntimeAudit(options = {}) {
 
     const metadataOnlyKeys = [
       "sessionId",
+      "token",
       "mobileSocketId",
       "webSocketId",
       "createdAt",

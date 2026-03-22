@@ -768,6 +768,7 @@ test("session_expiration", async () => {
 
 test("qr_session_create", async () => {
   const redisClient = new FakeRedisClient();
+  const token = "qr-session-create-token";
   await withStartedServer(
     {
       host: "127.0.0.1",
@@ -789,7 +790,7 @@ test("qr_session_create", async () => {
           createEnvelope({
             type: "qr_session_create",
             sessionId: "11111111-1111-4111-8111-111111111111",
-            payload: {},
+            payload: { token },
           }),
         ),
       );
@@ -801,6 +802,7 @@ test("qr_session_create", async () => {
 
       const storedSession = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
       assert.equal(storedSession.state, SESSION_STATES.WAITING);
+      assert.equal(storedSession.token, token);
       assert.equal(storedSession.mobileSocketId, null);
       webSocket.close();
     },
@@ -809,6 +811,7 @@ test("qr_session_create", async () => {
 
 test("pair_request_attach_mobile", async () => {
   const redisClient = new FakeRedisClient();
+  const token = "pair-attach-token";
   await withStartedServer(
     {
       host: "127.0.0.1",
@@ -831,7 +834,7 @@ test("pair_request_attach_mobile", async () => {
           createEnvelope({
             type: "qr_session_create",
             sessionId: "22222222-2222-4222-8222-222222222222",
-            payload: {},
+            payload: { token },
           }),
         ),
       );
@@ -848,6 +851,7 @@ test("pair_request_attach_mobile", async () => {
           sequence: readyMessage.sequence + 1,
           payload: {
             sessionId: readyMessage.payload.sessionId,
+            token,
           },
         }),
       );
@@ -858,6 +862,66 @@ test("pair_request_attach_mobile", async () => {
       assert.equal(storedSession.state, SESSION_STATES.ACTIVE);
       assert.equal(typeof storedSession.mobileSocketId, "string");
       assert.ok(relayServer.connectionManager.lookupConnection(readyMessage.payload.sessionId));
+
+      webSocket.close();
+      mobileSocket.close();
+    },
+  );
+});
+
+test("pair_request_rejects_invalid_token", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionToken = "session-token-match";
+  const requestToken = "session-token-mismatch";
+
+  await withStartedServer(
+    {
+      host: "127.0.0.1",
+      port: 0,
+      wsPath: "/relay",
+      pairing: {
+        secret: "test-pairing-secret",
+        ttlMs: DEFAULT_PAIRING_TTL_MS,
+      },
+      sessionRegistry: createRedisSessionRegistry(redisClient),
+    },
+    async (relayServer) => {
+      const address = relayServer.server.address();
+      const webSocket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+      const mobileSocket = new WebSocket(`ws://127.0.0.1:${address.port}/relay`);
+
+      await Promise.all([waitForOpen(webSocket), waitForOpen(mobileSocket)]);
+      webSocket.send(
+        JSON.stringify(
+          createEnvelope({
+            type: "qr_session_create",
+            sessionId: "2f7451e1-e4a2-4db5-a60d-6f4349d16a5d",
+            payload: { token: sessionToken },
+          }),
+        ),
+      );
+      const readyMessage = await waitForMessage(webSocket);
+
+      mobileSocket.send(
+        JSON.stringify({
+          protocolVersion: DEFAULT_PROTOCOL_VERSION,
+          type: "pair_request",
+          sessionId: readyMessage.payload.sessionId,
+          timestamp: Date.now(),
+          sequence: readyMessage.sequence + 1,
+          payload: {
+            sessionId: readyMessage.payload.sessionId,
+            token: requestToken,
+          },
+        }),
+      );
+
+      const rejectionMessage = await waitForMessage(mobileSocket);
+      const storedSession = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
+
+      assert.equal(rejectionMessage.type, "pair_rejected");
+      assert.equal(rejectionMessage.payload.reason, "INVALID_TOKEN");
+      assert.equal(storedSession.state, SESSION_STATES.WAITING);
 
       webSocket.close();
       mobileSocket.close();
@@ -909,6 +973,7 @@ test("pair_request_requires_existing_session", async () => {
 
 test("pair_request_expired", async () => {
   const redisClient = new FakeRedisClient(1_000);
+  const token = "expired-pair-token";
   const sessionRegistry = createRedisSessionRegistry(redisClient, {
     now: () => redisClient.nowMs,
   });
@@ -926,7 +991,7 @@ test("pair_request_expired", async () => {
   connectionManager.registerConnection(webSocket, { connectionId: "web:1:relay:1" });
   connectionManager.registerConnection(mobileSocket, { connectionId: "mobile:1:relay:1" });
 
-  await sessionRegistry.createSession(sessionId, "web:1:relay:1", expiresAt);
+  await sessionRegistry.createSession(sessionId, "web:1:relay:1", expiresAt, token);
   const pairingSystem = createQRPairingSystem({
     connectionManager,
     sessionLifecycleManager,
@@ -942,7 +1007,7 @@ test("pair_request_expired", async () => {
     sessionId,
     timestamp: redisClient.nowMs,
     sequence: 1,
-    payload: { sessionId },
+    payload: { sessionId, token },
   });
 
   assert.equal(result.handled, true);
@@ -964,6 +1029,7 @@ test("pair_request_expired", async () => {
 
 test("session_create", async () => {
   const redisClient = new FakeRedisClient();
+  const token = "lifecycle-create-token";
   const connectionManager = createConnectionManager();
   const scheduler = new ManualScheduler(() => redisClient.nowMs);
   const logs = [];
@@ -981,9 +1047,15 @@ test("session_create", async () => {
   const sessionId = "32d0e189-e11d-42e5-819a-a9f528ef1b0a";
   const expiresAt = redisClient.nowMs + 120_000;
 
-  const session = await sessionLifecycleManager.createSession(sessionId, "web-lifecycle-1", expiresAt);
+  const session = await sessionLifecycleManager.createSession({
+    sessionId,
+    token,
+    webSocketId: "web-lifecycle-1",
+    expiresAt,
+  });
 
   assert.equal(session.sessionId, sessionId);
+  assert.equal(session.token, token);
   assert.equal(session.webSocketId, "web-lifecycle-1");
   assert.equal(session.mobileSocketId, null);
   assert.equal(session.state, SESSION_STATES.WAITING);
@@ -2149,6 +2221,7 @@ test("session_created_after_router", async () => {
 
 test("pair_approved_emitted", async () => {
   const redisClient = new FakeRedisClient();
+  const token = "pair-approved-token";
   await withStartedServer(
     {
       host: "127.0.0.1",
@@ -2173,7 +2246,7 @@ test("pair_approved_emitted", async () => {
           sessionId: "66666666-6666-4666-8666-666666666666",
           timestamp: Date.now(),
           sequence: 1,
-          payload: {},
+          payload: { token },
         }),
       );
       const readyMessage = await waitForMessage(webSocket);
@@ -2189,6 +2262,7 @@ test("pair_approved_emitted", async () => {
           sequence: readyMessage.sequence + 1,
           payload: {
             sessionId: readyMessage.payload.sessionId,
+            token,
           },
         }),
       );
@@ -4049,6 +4123,7 @@ test("qr_session_ready_sent", async () => {
 
 test("session_created_in_registry", async () => {
   const redisClient = new FakeRedisClient();
+  const token = "session-created-token";
   await withStartedServer(
     {
       host: "127.0.0.1",
@@ -4072,7 +4147,7 @@ test("session_created_in_registry", async () => {
           sessionId: "88888888-8888-4888-8888-888888888888",
           timestamp: Date.now(),
           sequence: 3,
-          payload: {},
+          payload: { token },
         }),
       );
 
@@ -4081,6 +4156,7 @@ test("session_created_in_registry", async () => {
 
       assert.equal(session.state, SESSION_STATES.WAITING);
       assert.equal(session.sessionId, readyMessage.payload.sessionId);
+      assert.equal(session.token, token);
 
       webSocket.close();
     },
@@ -4089,6 +4165,7 @@ test("session_created_in_registry", async () => {
 
 test("session_state_active", async () => {
   const redisClient = new FakeRedisClient();
+  const token = "session-state-token";
 
   await withStartedServer(
     {
@@ -4114,7 +4191,7 @@ test("session_state_active", async () => {
           sessionId: "99999999-9999-4999-8999-999999999999",
           timestamp: Date.now(),
           sequence: 1,
-          payload: {},
+          payload: { token },
         }),
       );
       const readyMessage = await waitForMessage(webSocket);
@@ -4130,6 +4207,7 @@ test("session_state_active", async () => {
           sequence: 2,
           payload: {
             sessionId: readyMessage.payload.sessionId,
+            token,
           },
         }),
       );
@@ -4148,6 +4226,7 @@ test("session_state_active", async () => {
 test("pair_request_routed", async () => {
   const diagnostics = createDiagnosticsCollector();
   const redisClient = new FakeRedisClient();
+  const token = "pair-routed-token";
 
   await withStartedServer(
     {
@@ -4179,7 +4258,7 @@ test("pair_request_routed", async () => {
           sessionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
           timestamp: Date.now(),
           sequence: 4,
-          payload: {},
+          payload: { token },
         }),
       );
       const readyMessage = await waitForMessage(webSocket);
@@ -4195,6 +4274,7 @@ test("pair_request_routed", async () => {
           sequence: 5,
           payload: {
             sessionId: readyMessage.payload.sessionId,
+            token,
           },
         }),
       );
@@ -4218,6 +4298,7 @@ test("pair_request_routed", async () => {
 
 test("routing_enabled_after_pairing", async () => {
   const redisClient = new FakeRedisClient();
+  const token = "routing-enabled-token";
 
   await withStartedServer(
     {
@@ -4243,7 +4324,7 @@ test("routing_enabled_after_pairing", async () => {
           sessionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           timestamp: Date.now(),
           sequence: 1,
-          payload: {},
+          payload: { token },
         }),
       );
       const readyMessage = await waitForMessage(webSocket);
@@ -4259,6 +4340,7 @@ test("routing_enabled_after_pairing", async () => {
           sequence: 2,
           payload: {
             sessionId: readyMessage.payload.sessionId,
+            token,
           },
         }),
       );

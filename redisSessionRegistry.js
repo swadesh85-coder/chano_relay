@@ -71,6 +71,15 @@ function assertSocketId(socketId, label) {
   assertNonEmptyString(socketId, label);
 }
 
+function normalizeToken(token) {
+  if (token === undefined || token === null) {
+    return null;
+  }
+
+  assertNonEmptyString(token, "token");
+  return token;
+}
+
 function assertPositiveInteger(value, label) {
   if (!Number.isInteger(value) || value <= 0) {
     throw new Error(`${label} must be a positive integer`);
@@ -119,6 +128,7 @@ function deserializeRedisFieldValue(value) {
 function serializeSessionHash(session) {
   return {
     sessionId: serializeRedisFieldValue(session.sessionId),
+    token: serializeRedisFieldValue(session.token),
     webSocketId: serializeRedisFieldValue(session.webSocketId),
     mobileSocketId: serializeRedisFieldValue(session.mobileSocketId),
     createdAt: serializeRedisFieldValue(session.createdAt),
@@ -143,6 +153,7 @@ function deserializeSessionHash(serializedSession) {
 
   return {
     sessionId,
+    token: deserializeRedisFieldValue(serializedSession.token),
     webSocketId: deserializeRedisFieldValue(serializedSession.webSocketId),
     mobileSocketId: deserializeRedisFieldValue(serializedSession.mobileSocketId),
     createdAt,
@@ -173,7 +184,7 @@ function buildRedisHashUpdates(updates) {
   return redisHashUpdates;
 }
 
-function resolveCreateSessionArguments(now, webSocketIdOrExpiresAt, maybeExpiresAt) {
+function resolveLegacyCreateSessionArguments(now, webSocketIdOrExpiresAt, maybeExpiresAt) {
   if (maybeExpiresAt !== undefined) {
     return {
       webSocketId: webSocketIdOrExpiresAt,
@@ -206,6 +217,28 @@ function resolveCreateSessionArguments(now, webSocketIdOrExpiresAt, maybeExpires
   return {
     webSocketId: null,
     expiresAtMs: normalizeExpiresAt(webSocketIdOrExpiresAt),
+  };
+}
+
+function resolveCreateSessionArguments(now, sessionIdOrOptions, webSocketIdOrExpiresAt, maybeExpiresAt, maybeToken) {
+  if (sessionIdOrOptions && typeof sessionIdOrOptions === "object" && !Array.isArray(sessionIdOrOptions)) {
+    return {
+      sessionId: sessionIdOrOptions.sessionId,
+      token: normalizeToken(sessionIdOrOptions.token),
+      webSocketId: sessionIdOrOptions.webSocketId || null,
+      expiresAtMs:
+        sessionIdOrOptions.expiresAt === undefined
+          ? now + DEFAULT_SESSION_TTL_MS
+          : normalizeExpiresAt(sessionIdOrOptions.expiresAt),
+    };
+  }
+
+  const resolvedArguments = resolveLegacyCreateSessionArguments(now, webSocketIdOrExpiresAt, maybeExpiresAt);
+
+  return {
+    sessionId: sessionIdOrOptions,
+    token: normalizeToken(maybeToken),
+    ...resolvedArguments,
   };
 }
 
@@ -305,14 +338,16 @@ class RedisSessionRegistry {
     return new RedisSessionRegistry(redisClient);
   }
 
-  async createSession(sessionId, webSocketIdOrExpiresAt, maybeExpiresAt) {
-    assertSessionId(sessionId);
-
-    const { webSocketId, expiresAtMs } = resolveCreateSessionArguments(
+  async createSession(sessionIdOrOptions, webSocketIdOrExpiresAt, maybeExpiresAt, maybeToken) {
+    const { sessionId, token, webSocketId, expiresAtMs } = resolveCreateSessionArguments(
       this.now(),
+      sessionIdOrOptions,
       webSocketIdOrExpiresAt,
       maybeExpiresAt,
+      maybeToken,
     );
+
+    assertSessionId(sessionId);
 
     if (webSocketId !== null && webSocketId !== undefined) {
       assertSocketId(webSocketId, "webSocketId");
@@ -321,6 +356,7 @@ class RedisSessionRegistry {
     const key = getRedisSessionKey(sessionId);
     const session = {
       sessionId,
+      token,
       mobileSocketId: null,
       webSocketId: webSocketId || null,
       createdAt: this.now(),

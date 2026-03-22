@@ -30,6 +30,7 @@ test("redis_session_registry_runtime", async () => {
 
   assert.equal(sessionRecord.state, "active");
   assert.equal(typeof sessionRecord.sessionId, "string");
+  assert.equal(typeof sessionRecord.token, "string");
   assert.equal(typeof sessionRecord.webSocketId, "string");
   assert.equal(typeof sessionRecord.mobileSocketId, "string");
   assert.equal(typeof sessionRecord.createdAt, "number");
@@ -40,6 +41,7 @@ test("redis_session_registry_runtime", async () => {
     "mobileSocketId",
     "sessionId",
     "state",
+    "token",
     "webSocketId",
   ]);
   assert.equal(auditResult.redisChecks.keys.some((key) => key === `session:${sessionRecord.sessionId}`), true);
@@ -49,6 +51,7 @@ test("redis_session_registry_runtime", async () => {
   assert.equal(auditResult.ttlEvidence.sessionActivation.ttlSeconds, 120);
   assert.equal(auditResult.rawRedisSessionRecord.sessionId, sessionRecord.sessionId);
   assert.equal(auditResult.rawRedisSessionRecord.state, "active");
+  assert.equal(auditResult.rawRedisSessionRecord.token, sessionRecord.token);
 });
 
 test("relay_session_ttl_runtime", async () => {

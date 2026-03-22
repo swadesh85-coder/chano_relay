@@ -53,25 +53,6 @@ function createSessionQueueManager(options = {}) {
       return null;
     }
 
-    if (queueState.inSnapshotMode) {
-      const nextPendingEntry = queueState.pending[0] || null;
-
-      if (!nextPendingEntry || nextPendingEntry.envelope.type !== "event_stream") {
-        return queueState.pending.shift() || null;
-      }
-
-      const snapshotEntryIndex = queueState.pending.findIndex(
-        (entry) => typeof entry.envelope.type === "string" && entry.envelope.type.startsWith("snapshot"),
-      );
-
-      if (snapshotEntryIndex === -1) {
-        return null;
-      }
-
-      const [snapshotEntry] = queueState.pending.splice(snapshotEntryIndex, 1);
-      return snapshotEntry;
-    }
-
     return queueState.pending.shift() || null;
   }
 

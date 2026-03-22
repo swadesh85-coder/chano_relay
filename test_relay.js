@@ -322,6 +322,219 @@ function captureForwardedMessages(socket) {
   return socket.sentMessages.map((message) => JSON.parse(message));
 }
 
+async function sendMixedMessages({ messageRouter, senderSocket, sessionId }) {
+  const mixedEnvelopes = [
+    createEnvelope({
+      type: "snapshot_start",
+      sessionId,
+      sequence: 1,
+      timestamp: 1_700_000_010_001,
+      payload: { opaque: "snapshot-start" },
+    }),
+    createEnvelope({
+      type: "snapshot_chunk",
+      sessionId,
+      sequence: 2,
+      timestamp: 1_700_000_010_002,
+      payload: { opaque: "chunk-1" },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 101,
+      timestamp: 1_700_000_010_003,
+      payload: { eventVersion: 101, opaque: "event-101" },
+    }),
+    createEnvelope({
+      type: "snapshot_chunk",
+      sessionId,
+      sequence: 3,
+      timestamp: 1_700_000_010_004,
+      payload: { opaque: "chunk-2" },
+    }),
+    createEnvelope({
+      type: "snapshot_complete",
+      sessionId,
+      sequence: 4,
+      timestamp: 1_700_000_010_005,
+      payload: { opaque: "snapshot-complete" },
+    }),
+  ];
+
+  await Promise.all(mixedEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)));
+
+  return mixedEnvelopes;
+}
+
+async function sendDuplicateMessages({ messageRouter, senderSocket, sessionId }) {
+  const duplicateEnvelopes = [
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 101,
+      timestamp: 1_700_000_000_101,
+      payload: {
+        opaque: { marker: "event-101" },
+      },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 102,
+      timestamp: 1_700_000_000_102,
+      payload: {
+        opaque: { marker: "event-102" },
+      },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 102,
+      timestamp: 1_700_000_000_102,
+      payload: {
+        opaque: { marker: "event-102" },
+      },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 103,
+      timestamp: 1_700_000_000_103,
+      payload: {
+        opaque: { marker: "event-103" },
+      },
+    }),
+  ];
+
+  await Promise.all(
+    duplicateEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)),
+  );
+
+  return duplicateEnvelopes;
+}
+
+async function sendOutOfOrderEvents({ messageRouter, senderSocket, sessionId }) {
+  const outOfOrderEnvelopes = [
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 101,
+      timestamp: 1_700_000_001_101,
+      payload: {
+        opaque: { marker: "event-101" },
+      },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 103,
+      timestamp: 1_700_000_001_103,
+      payload: {
+        opaque: { marker: "event-103" },
+      },
+    }),
+  ];
+
+  await Promise.all(
+    outOfOrderEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)),
+  );
+
+  return outOfOrderEnvelopes;
+}
+
+async function sendSnapshotFallbackFlow({ messageRouter, senderSocket, sessionId }) {
+  const snapshotEnvelopes = [
+    createEnvelope({
+      type: "snapshot_start",
+      sessionId,
+      sequence: 201,
+      payload: {
+        opaque: { marker: "snapshot-start" },
+      },
+    }),
+    createEnvelope({
+      type: "snapshot_chunk",
+      sessionId,
+      sequence: 202,
+      payload: {
+        opaque: { marker: "snapshot-chunk" },
+      },
+    }),
+    createEnvelope({
+      type: "snapshot_complete",
+      sessionId,
+      sequence: 203,
+      payload: {
+        opaque: { marker: "snapshot-complete" },
+      },
+    }),
+  ];
+
+  await Promise.all(
+    snapshotEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)),
+  );
+
+  return snapshotEnvelopes;
+}
+
+function validateRelayDuplicateBehavior(messages) {
+  assert.equal(messages.length, 4);
+  assert.deepEqual(
+    messages.map((message) => `${message.type} ${message.sequence}`),
+    ["event_stream 101", "event_stream 102", "event_stream 102", "event_stream 103"],
+  );
+  assert.deepEqual(
+    messages.map((message) => message.payload),
+    [
+      { opaque: { marker: "event-101" } },
+      { opaque: { marker: "event-102" } },
+      { opaque: { marker: "event-102" } },
+      { opaque: { marker: "event-103" } },
+    ],
+  );
+}
+
+function validateRelayBehavior(messages) {
+  assert.equal(messages.length, 2);
+  assert.deepEqual(
+    messages.map((message) => message.sequence),
+    [101, 103],
+  );
+  assert.deepEqual(
+    messages.map((message) => message.payload),
+    [
+      { opaque: { marker: "event-101" } },
+      { opaque: { marker: "event-103" } },
+    ],
+  );
+}
+
+function validateRelayIsolation(messages) {
+  assert.equal(messages.length, 5);
+  assert.deepEqual(
+    messages.map((message) => `${message.type} ${message.sequence}`),
+    [
+      "snapshot_start 1",
+      "snapshot_chunk 2",
+      "event_stream 101",
+      "snapshot_chunk 3",
+      "snapshot_complete 4",
+    ],
+  );
+  assert.deepEqual(
+    messages.map((message) =>
+      message.type === "snapshot_start"
+        ? "SNAPSHOT_START"
+        : message.type === "snapshot_complete"
+          ? "SNAPSHOT_COMPLETE"
+          : message.type === "event_stream"
+            ? `EVENT_STREAM ${message.payload.eventVersion}`
+            : `SNAPSHOT_CHUNK ${message.sequence - 1}`,
+    ),
+    ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "EVENT_STREAM 101", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE"],
+  );
+}
+
 function validateRelayOrdering(messages, expectedSequences) {
   assert.deepEqual(
     messages.map((message) => message.sequence),
@@ -2827,7 +3040,7 @@ test("relay_no_reorder_async", async () => {
   assert.equal(logs.includes("OUTBOUND seq=11 eventVersion=211"), true);
 });
 
-test("snapshot_contiguity_enforced", async () => {
+test("relay_snapshot_isolation_transparency", async () => {
   const logs = [];
   const connectionManager = createConnectionManager();
   const messageRouter = createMessageRouter(connectionManager, {
@@ -2835,31 +3048,32 @@ test("snapshot_contiguity_enforced", async () => {
   });
   const mobileSocket = new MockSocket();
   const webSocket = new MockSocket();
-  const sessionId = "snapshot-contiguity-enforced";
+  const sessionId = "abc";
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  const routePromises = [
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 10 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "event_stream", sessionId, sequence: 14 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 11 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 12 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 13 }), mobileSocket),
-  ];
+  const sentEnvelopes = await sendMixedMessages({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+  });
+  const forwardedMessages = captureForwardedMessages(webSocket);
 
-  await Promise.all(routePromises);
-
+  assert.deepEqual(forwardedMessages, sentEnvelopes);
+  validateRelayIsolation(forwardedMessages);
   assert.deepEqual(
-    webSocket.sentMessages.map((message) => JSON.parse(message).type),
-    ["snapshot_start", "snapshot_chunk", "snapshot_chunk", "snapshot_complete", "event_stream"],
+    logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc")),
+    [
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_start sequence=1",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=2 index=0",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=3 index=1",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_complete sequence=4",
+    ],
   );
-  assert.equal(logs.includes("RELAY_QUEUE_PROCESS session=snapshot-contiguity-enforced type=snapshot_start sequence=10"), true);
-  assert.equal(logs.includes("RELAY_QUEUE_PROCESS session=snapshot-contiguity-enforced type=snapshot_chunk sequence=11 index=0"), true);
-  assert.equal(logs.includes("RELAY_QUEUE_PROCESS session=snapshot-contiguity-enforced type=snapshot_chunk sequence=12 index=1"), true);
-  assert.equal(logs.includes("RELAY_QUEUE_PROCESS session=snapshot-contiguity-enforced type=snapshot_complete sequence=13"), true);
 });
 
-test("no_event_interleaving_during_snapshot", async () => {
+test("relay_no_interleaving_fix", async () => {
   const logs = [];
   const connectionManager = createConnectionManager();
   const messageRouter = createMessageRouter(connectionManager, {
@@ -2867,25 +3081,30 @@ test("no_event_interleaving_during_snapshot", async () => {
   });
   const mobileSocket = new MockSocket();
   const webSocket = new MockSocket();
-  const sessionId = "no-event-interleaving-during-snapshot";
+  const sessionId = "abc";
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  await Promise.all([
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 10 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "event_stream", sessionId, sequence: 13 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 11 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 12 }), mobileSocket),
-  ]);
+  await sendMixedMessages({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+  });
 
-  const queueLogs = logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=no-event-interleaving-during-snapshot"));
+  const forwardedMessages = captureForwardedMessages(webSocket);
+  const queueLogs = logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc"));
 
-  assert.deepEqual(queueLogs, [
-    "RELAY_QUEUE_PROCESS session=no-event-interleaving-during-snapshot type=snapshot_start sequence=10",
-    "RELAY_QUEUE_PROCESS session=no-event-interleaving-during-snapshot type=snapshot_chunk sequence=11 index=0",
-    "RELAY_QUEUE_PROCESS session=no-event-interleaving-during-snapshot type=snapshot_complete sequence=12",
-    "RELAY_QUEUE_PROCESS session=no-event-interleaving-during-snapshot type=event_stream sequence=13",
-  ]);
+  validateRelayIsolation(forwardedMessages);
+  assert.deepEqual(
+    queueLogs,
+    [
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_start sequence=1",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=2 index=0",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=3 index=1",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_complete sequence=4",
+    ],
+  );
 });
 
 test("relay_snapshot_event_isolation", async () => {
@@ -2918,10 +3137,19 @@ test("relay_snapshot_event_isolation", async () => {
 
   assert.deepEqual(
     webSocket.sentMessages.map((message) => JSON.parse(message).type),
-    ["snapshot_start", "snapshot_chunk", "snapshot_complete", "event_stream"],
+    ["snapshot_start", "event_stream", "snapshot_chunk", "snapshot_complete"],
   );
   assert.deepEqual(eventAudit.inbound.map((entry) => entry.sequence), [13]);
   assert.deepEqual(eventAudit.outbound.map((entry) => entry.sequence), [13]);
+  assert.deepEqual(
+    logs.filter((entry) => entry.startsWith(`RELAY_QUEUE_PROCESS session=${sessionId}`)),
+    [
+      `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_start sequence=10`,
+      `RELAY_QUEUE_PROCESS session=${sessionId} type=event_stream sequence=13`,
+      `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_chunk sequence=11 index=0`,
+      `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_complete sequence=12`,
+    ],
+  );
   assert.equal(logs.includes("INBOUND seq=13 eventVersion=103"), true);
   assert.equal(logs.includes("OUTBOUND seq=13 eventVersion=103"), true);
 });
@@ -3040,6 +3268,291 @@ test("relay_async_order_preservation", async () => {
   );
 });
 
+test("relay_duplicate_forwarding", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "abc";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  const sentEnvelopes = await sendDuplicateMessages({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+  });
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  validateRelayDuplicateBehavior(forwardedMessages);
+  assert.deepEqual(forwardedMessages, sentEnvelopes);
+  assert.deepEqual(
+    logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc")),
+    [
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=102",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=102",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=103",
+    ],
+  );
+});
+
+test("relay_no_deduplication", async () => {
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager);
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "duplicate-no-dedup";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await sendDuplicateMessages({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+  });
+
+  const forwardedMessages = captureForwardedMessages(webSocket);
+  const duplicateMessages = forwardedMessages.filter((message) => message.sequence === 102);
+
+  validateRelayDuplicateBehavior(forwardedMessages);
+  assert.equal(forwardedMessages.length, 4);
+  assert.equal(duplicateMessages.length, 2);
+  assert.deepEqual(duplicateMessages[0], duplicateMessages[1]);
+});
+
+test("relay_preserve_duplicate_order", async () => {
+  const logs = [];
+  const startedSequences = [];
+  const releases = [];
+  const sendOrder = [101, 102, 102, 103];
+  const connectionManager = createConnectionManager();
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "abc";
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+    sessionRegistry: {
+      async getSession(requestedSessionId) {
+        assert.equal(requestedSessionId, sessionId);
+        return {
+          sessionId,
+          state: SESSION_STATES.ACTIVE,
+          webSocketId: "relay-duplicate-order-web",
+          mobileSocketId: "relay-duplicate-order-mobile",
+        };
+      },
+    },
+    sessionLifecycleManager: {
+      async refreshSessionActivity(requestedSessionId, messageType) {
+        assert.equal(requestedSessionId, sessionId);
+        assert.equal(messageType, "event_stream");
+        const releaseIndex = startedSequences.length;
+        const sequence = sendOrder[releaseIndex];
+        startedSequences.push(sequence);
+        await releases[releaseIndex].promise;
+        return { sessionId: requestedSessionId, state: SESSION_STATES.ACTIVE };
+      },
+      async persistBeforeRouting(operation) {
+        return operation();
+      },
+    },
+  });
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "relay-duplicate-order-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "relay-duplicate-order-web" });
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  sendOrder.forEach(() => {
+    releases.push(createDeferred());
+  });
+
+  const sentEnvelopes = [
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 101,
+      timestamp: 1_700_000_000_101,
+      payload: { opaque: { marker: "event-101" } },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 102,
+      timestamp: 1_700_000_000_102,
+      payload: { opaque: { marker: "event-102-a" } },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 102,
+      timestamp: 1_700_000_000_103,
+      payload: { opaque: { marker: "event-102-b" } },
+    }),
+    createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 103,
+      timestamp: 1_700_000_000_104,
+      payload: { opaque: { marker: "event-103" } },
+    }),
+  ];
+
+  const routePromise = Promise.all(
+    sentEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, mobileSocket)),
+  );
+
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(startedSequences, [101]);
+
+  releases[0].resolve();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(startedSequences, [101, 102]);
+
+  releases[1].resolve();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(startedSequences, [101, 102, 102]);
+
+  releases[2].resolve();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(startedSequences, [101, 102, 102, 103]);
+
+  releases[3].resolve();
+  await routePromise;
+
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  assert.deepEqual(
+    forwardedMessages.map((message) => `${message.type} ${message.sequence}`),
+    ["event_stream 101", "event_stream 102", "event_stream 102", "event_stream 103"],
+  );
+  assert.deepEqual(
+    forwardedMessages.map((message) => message.payload),
+    [
+      { opaque: { marker: "event-101" } },
+      { opaque: { marker: "event-102-a" } },
+      { opaque: { marker: "event-102-b" } },
+      { opaque: { marker: "event-103" } },
+    ],
+  );
+  assert.deepEqual(
+    logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc")),
+    [
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=102",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=102",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=103",
+    ],
+  );
+});
+
+test("relay_gap_transparency", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "abc";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  const sentEnvelopes = await sendOutOfOrderEvents({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+  });
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  validateRelayBehavior(forwardedMessages);
+  assert.deepEqual(forwardedMessages, sentEnvelopes);
+  assert.deepEqual(
+    logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc")),
+    [
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=103",
+    ],
+  );
+});
+
+test("relay_snapshot_forwarding", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "snapshot-gap-fallback";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  const sentEnvelopes = await sendSnapshotFallbackFlow({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+  });
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  assert.deepEqual(forwardedMessages, sentEnvelopes);
+  assert.deepEqual(
+    forwardedMessages.map((message) => message.type),
+    ["snapshot_start", "snapshot_chunk", "snapshot_complete"],
+  );
+  assert.deepEqual(
+    forwardedMessages.map((message) =>
+      message.type === "snapshot_start"
+        ? "SNAPSHOT_START"
+        : message.type === "snapshot_chunk"
+          ? "SNAPSHOT_CHUNK"
+          : "SNAPSHOT_COMPLETE",
+    ),
+    ["SNAPSHOT_START", "SNAPSHOT_CHUNK", "SNAPSHOT_COMPLETE"],
+  );
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_start"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_chunk index=0"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_complete"), true);
+});
+
+test("relay_no_recovery_logic", async () => {
+  const logs = [];
+  const connectionManager = createConnectionManager();
+  const messageRouter = createMessageRouter(connectionManager, {
+    logger: (entry) => logs.push(entry),
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "gap-no-recovery";
+
+  connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
+
+  await sendOutOfOrderEvents({
+    messageRouter,
+    senderSocket: mobileSocket,
+    sessionId,
+  });
+
+  const forwardedMessages = captureForwardedMessages(webSocket);
+
+  validateRelayBehavior(forwardedMessages);
+  assert.deepEqual(
+    forwardedMessages.map((message) => message.type),
+    ["event_stream", "event_stream"],
+  );
+  assert.equal(
+    logs.some((entry) => entry.includes("snapshot_start") || entry.includes("snapshot_chunk") || entry.includes("snapshot_complete")),
+    false,
+  );
+  assert.equal(
+    forwardedMessages.some((message) => message.type.startsWith("snapshot")),
+    false,
+  );
+});
+
 test("snapshot_stream_contiguity", async () => {
   const connectionManager = createConnectionManager();
   const messageRouter = createMessageRouter(connectionManager);
@@ -3061,7 +3574,7 @@ test("snapshot_stream_contiguity", async () => {
 
   assert.deepEqual(
     forwardedMessages.map((message) => message.type),
-    ["snapshot_start", "snapshot_chunk", "snapshot_chunk", "snapshot_complete", "event_stream"],
+    ["snapshot_start", "snapshot_chunk", "event_stream", "snapshot_chunk", "snapshot_complete"],
   );
   assert.deepEqual(
     forwardedMessages.map((message) =>
@@ -3073,7 +3586,7 @@ test("snapshot_stream_contiguity", async () => {
             ? "SNAPSHOT_COMPLETE"
             : `SNAPSHOT_CHUNK ${message.sequence - 1}`,
     ),
-    ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE", "EVENT_STREAM 101"],
+    ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "EVENT_STREAM 101", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE"],
   );
 });
 
@@ -3102,13 +3615,13 @@ test("event_block_during_snapshot", async () => {
   assert.deepEqual(queueLogs, [
     "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_start sequence=1",
     "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=2 index=0",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=event_stream sequence=5",
     "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=3 index=1",
     "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_complete sequence=4",
-    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=event_stream sequence=5",
   ]);
   assert.deepEqual(
     captureForwardedMessages(webSocket).map((message) => message.type),
-    ["snapshot_start", "snapshot_chunk", "snapshot_chunk", "snapshot_complete", "event_stream"],
+    ["snapshot_start", "snapshot_chunk", "event_stream", "snapshot_chunk", "snapshot_complete"],
   );
 });
 

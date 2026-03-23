@@ -62,7 +62,7 @@ test("relay_session_ttl_runtime", async () => {
   assert.equal(auditResult.ttlEvidence.sessionActivation.abnormalDecrease, false);
   assert.deepEqual(
     auditResult.ttlEvidence.messageFlow.map((entry) => entry.messageType),
-    ["snapshot_start", "mutation_command", "command_result", "event_stream", "snapshot_complete"],
+    ["snapshot_start", "event_stream", "snapshot_complete", "mutation_command", "command_result"],
   );
   assert.equal(
     auditResult.ttlEvidence.messageFlow.every((entry) => entry.refreshedToFullDuration),
@@ -90,6 +90,33 @@ test("redis_session_logs_runtime", async () => {
   assert.equal(auditResult.startupLogs.some((entry) => entry.includes("SESSION_UPDATE active")), true);
   assert.equal(auditResult.startupLogs.some((entry) => entry.includes("MESSAGE_RECEIVED type=snapshot_start")), true);
   assert.equal(auditResult.startupLogs.some((entry) => entry.includes("RAW_WS_MESSAGE bytes=")), true);
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("snapshot_lock_acquired") &&
+        entry.includes(`session=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("type=snapshot_start"),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("message_deferred_due_to_snapshot") &&
+        entry.includes(`session=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("type=event_stream"),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("snapshot_lock_released") &&
+        entry.includes(`session=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("type=snapshot_complete"),
+    ),
+    true,
+  );
   assert.equal(
     auditResult.startupLogs.some(
       (entry) =>
@@ -162,9 +189,9 @@ test("relay_message_routing_runtime", async () => {
     auditResult.routingEvidence.map((entry) => `${entry.direction}:${entry.type}`),
     [
       "mobile->web:snapshot_start",
+      "mobile->web:event_stream",
       "web->mobile:mutation_command",
       "mobile->web:command_result",
-      "mobile->web:event_stream",
     ],
   );
   assert.equal(
@@ -180,15 +207,15 @@ test("relay_mutation_transport_runtime", async () => {
   assert.deepEqual(
     auditResult.mutationAudit.inbound.slice(0, 2),
     [
-      { sequence: 6, type: "mutation_command", commandId: "cmd-101" },
-      { sequence: 7, type: "command_result", commandId: "cmd-101" },
+      { sequence: 8, type: "mutation_command", commandId: "cmd-101" },
+      { sequence: 9, type: "command_result", commandId: "cmd-101" },
     ],
   );
   assert.deepEqual(
     auditResult.mutationAudit.outbound.slice(0, 2),
     [
-      { sequence: 6, type: "mutation_command", commandId: "cmd-101" },
-      { sequence: 7, type: "command_result", commandId: "cmd-101" },
+      { sequence: 8, type: "mutation_command", commandId: "cmd-101" },
+      { sequence: 9, type: "command_result", commandId: "cmd-101" },
     ],
   );
   assert.equal(

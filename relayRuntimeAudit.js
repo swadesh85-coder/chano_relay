@@ -740,10 +740,27 @@ async function runRelayRuntimeAudit(options = {}) {
         snapshotChunk: "alpha",
       },
     });
+    const routeEnvelopeThree = createEnvelope({
+      type: "event_stream",
+      sessionId,
+      sequence: 6,
+      payload: {
+        eventVersion: 9001,
+        delta: "opaque-event",
+      },
+    });
+    const routeEnvelopeFour = createEnvelope({
+      type: "snapshot_complete",
+      sessionId,
+      sequence: 7,
+      payload: {
+        snapshotChunk: "omega",
+      },
+    });
     const routeEnvelopeTwo = createEnvelope({
       type: "mutation_command",
       sessionId,
-      sequence: 6,
+      sequence: 8,
       payload: {
         commandId: "cmd-101",
         command: "apply_patch",
@@ -753,28 +770,11 @@ async function runRelayRuntimeAudit(options = {}) {
     const routeEnvelopeResult = createEnvelope({
       type: "command_result",
       sessionId,
-      sequence: 7,
+      sequence: 9,
       payload: {
         commandId: "cmd-101",
         status: "applied",
         applied: true,
-      },
-    });
-    const routeEnvelopeThree = createEnvelope({
-      type: "event_stream",
-      sessionId,
-      sequence: 8,
-      payload: {
-        eventVersion: 9001,
-        delta: "opaque-event",
-      },
-    });
-    const routeEnvelopeFour = createEnvelope({
-      type: "snapshot_complete",
-      sessionId,
-      sequence: 10,
-      payload: {
-        snapshotChunk: "omega",
       },
     });
 
@@ -785,22 +785,6 @@ async function runRelayRuntimeAudit(options = {}) {
     mobileSocket.send(JSON.stringify(routeEnvelopeOne));
     const routedEnvelopeOne = await routedToWebOne;
     const routeEnvelopeOneAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeOne.type);
-
-    const routedToMobile = waitForSocketMessage(
-      mobileSocket,
-      (message) => message.type === routeEnvelopeTwo.type && message.sequence === routeEnvelopeTwo.sequence,
-    );
-    webSocket.send(JSON.stringify(routeEnvelopeTwo));
-    const routedEnvelopeTwo = await routedToMobile;
-    const routeEnvelopeTwoAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeTwo.type);
-
-    const routedToWebResult = waitForSocketMessage(
-      webSocket,
-      (message) => message.type === routeEnvelopeResult.type && message.sequence === routeEnvelopeResult.sequence,
-    );
-    mobileSocket.send(JSON.stringify(routeEnvelopeResult));
-    const routedEnvelopeResult = await routedToWebResult;
-    const routeEnvelopeResultAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeResult.type);
 
     const routedSnapshotIsolationMessages = collectSocketMessages(
       webSocket,
@@ -821,6 +805,22 @@ async function runRelayRuntimeAudit(options = {}) {
     );
     const routeEnvelopeThreeAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeThree.type);
     const routeEnvelopeFourAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeFour.type);
+
+    const routedToMobile = waitForSocketMessage(
+      mobileSocket,
+      (message) => message.type === routeEnvelopeTwo.type && message.sequence === routeEnvelopeTwo.sequence,
+    );
+    webSocket.send(JSON.stringify(routeEnvelopeTwo));
+    const routedEnvelopeTwo = await routedToMobile;
+    const routeEnvelopeTwoAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeTwo.type);
+
+    const routedToWebResult = waitForSocketMessage(
+      webSocket,
+      (message) => message.type === routeEnvelopeResult.type && message.sequence === routeEnvelopeResult.sequence,
+    );
+    mobileSocket.send(JSON.stringify(routeEnvelopeResult));
+    const routedEnvelopeResult = await routedToWebResult;
+    const routeEnvelopeResultAudit = await auditTTLRefresh(redisClient, sessionId, routeEnvelopeResult.type);
 
     const mutationOrderingEnvelopeOne = createEnvelope({
       type: "mutation_command",
@@ -905,6 +905,12 @@ async function runRelayRuntimeAudit(options = {}) {
         unchanged: JSON.stringify(routedEnvelopeOne) === JSON.stringify(routeEnvelopeOne),
       },
       {
+        direction: "mobile->web",
+        type: routeEnvelopeThree.type,
+        sessionId,
+        unchanged: JSON.stringify(routedEnvelopeThree) === JSON.stringify(routeEnvelopeThree),
+      },
+      {
         direction: "web->mobile",
         type: routeEnvelopeTwo.type,
         sessionId,
@@ -915,12 +921,6 @@ async function runRelayRuntimeAudit(options = {}) {
         type: routeEnvelopeResult.type,
         sessionId,
         unchanged: JSON.stringify(routedEnvelopeResult) === JSON.stringify(routeEnvelopeResult),
-      },
-      {
-        direction: "mobile->web",
-        type: routeEnvelopeThree.type,
-        sessionId,
-        unchanged: JSON.stringify(routedEnvelopeThree) === JSON.stringify(routeEnvelopeThree),
       },
     ];
 
@@ -958,10 +958,10 @@ async function runRelayRuntimeAudit(options = {}) {
         sessionActivation: sessionActivationAudit,
         messageFlow: [
           routeEnvelopeOneAudit,
-          routeEnvelopeTwoAudit,
-          routeEnvelopeResultAudit,
           routeEnvelopeThreeAudit,
           routeEnvelopeFourAudit,
+          routeEnvelopeTwoAudit,
+          routeEnvelopeResultAudit,
         ],
         sessionExpiry: sessionExpiryAudit,
         ttlComputation: ttlComputationAudit,
@@ -1051,9 +1051,10 @@ async function runRelayRuntimeAudit(options = {}) {
     record(`SESSION_PAIRED sessionId=${sessionId}`);
     record(`SESSION_ACTIVE sessionId=${sessionId}`);
     record(`ROUTE mobile->web type=${routeEnvelopeOne.type} sessionId=${sessionId}`);
+    record(`ROUTE mobile->web type=${routeEnvelopeThree.type} sessionId=${sessionId}`);
+    record(`ROUTE mobile->web type=${routeEnvelopeFour.type} sessionId=${sessionId}`);
     record(`ROUTE web->mobile type=${routeEnvelopeTwo.type} sessionId=${sessionId}`);
     record(`ROUTE mobile->web type=${routeEnvelopeResult.type} sessionId=${sessionId}`);
-    record(`ROUTE mobile->web type=${routeEnvelopeThree.type} sessionId=${sessionId}`);
     for (const entry of results.mutationAudit.routingLogs) {
       record(entry);
     }

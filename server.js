@@ -2,6 +2,7 @@ const fs = require("fs");
 const http = require("http");
 const https = require("https");
 const path = require("path");
+const crypto = require("crypto");
 const { EventEmitter } = require("events");
 const { WebSocketServer } = require("ws");
 const { DEFAULT_PAIRING_TTL_MS, QRPairingSystem, createQRPairingSystem } = require("./qrPairingSystem");
@@ -74,11 +75,57 @@ function formatRawAuditPreview(rawMessage, maxChars = 200) {
   return rawText.slice(0, maxChars).replace(/\r/g, "\\r").replace(/\n/g, "\\n");
 }
 
+function coerceRawFrameBuffer(rawFrame) {
+  if (Buffer.isBuffer(rawFrame)) {
+    return rawFrame;
+  }
+
+  if (typeof rawFrame === "string") {
+    return Buffer.from(rawFrame, "utf8");
+  }
+
+  if (rawFrame instanceof ArrayBuffer) {
+    return Buffer.from(rawFrame);
+  }
+
+  if (ArrayBuffer.isView(rawFrame)) {
+    return Buffer.from(rawFrame.buffer, rawFrame.byteOffset, rawFrame.byteLength);
+  }
+
+  if (Array.isArray(rawFrame)) {
+    return Buffer.concat(rawFrame.map((chunk) => coerceRawFrameBuffer(chunk)));
+  }
+
+  return Buffer.from(String(rawFrame), "utf8");
+}
+
+function computeRawFrameHash(rawFrame) {
+  return crypto.createHash("sha256").update(coerceRawFrameBuffer(rawFrame)).digest("hex");
+}
+
+function isSupportedRawFrameType(rawFrame) {
+  return typeof rawFrame === "string" || Buffer.isBuffer(rawFrame);
+}
+
+function sendRawFrame(destinationSocket, rawFrame, isBinary = false) {
+  if (typeof rawFrame === "string") {
+    destinationSocket.send(rawFrame);
+    return;
+  }
+
+  destinationSocket.send(rawFrame, { binary: isBinary });
+}
+
 function logRelayAudit(diagnostics, label, fields = []) {
   if (!diagnostics || !diagnostics.enabled) {
     return;
   }
 
+  const suffix = fields.map(([key, value]) => `${key}=${formatAuditValue(value)}`).join(" ");
+  console.log(`${label}${suffix ? ` ${suffix}` : ""}`);
+}
+
+function logRelayIntegrity(label, fields = []) {
   const suffix = fields.map(([key, value]) => `${key}=${formatAuditValue(value)}`).join(" ");
   console.log(`${label}${suffix ? ` ${suffix}` : ""}`);
 }
@@ -493,8 +540,43 @@ function createMessageRouter(connectionManager, options = {}) {
   const mutationAudits = new Map();
   const sessionQueueManager = createSessionQueueManager({
     logger,
-    forwardEnvelope: (envelope, metadata) => routeEnvelope(envelope, metadata.senderSocket),
+    forwardEnvelope: (envelope, metadata) =>
+      routeEnvelope(metadata.rawFrame, envelope, metadata.senderSocket, undefined, metadata),
   });
+
+  function createRoutingMetadata(rawFrame, metadata = {}) {
+    return {
+      ...metadata,
+      rawFrame,
+      ingressHash: metadata.ingressHash || computeRawFrameHash(rawFrame),
+      isBinary: metadata.isBinary === true,
+    };
+  }
+
+  async function terminateTransportViolation(envelope, reason, auditLabel, fields = []) {
+    logRelayIntegrity(auditLabel, [["sessionId", envelope && envelope.sessionId ? envelope.sessionId : null], ...fields]);
+
+    if (sessionLifecycleManager && envelope && envelope.sessionId) {
+      await sessionLifecycleManager.closeSession(envelope.sessionId, reason);
+    }
+
+    throw new Error(reason);
+  }
+
+  async function assertForwardableRawFrame(rawFrame, envelope) {
+    if (rawFrame === null || rawFrame === undefined) {
+      await terminateTransportViolation(envelope, "relay_raw_frame_missing", "RELAY_RAW_FRAME_MISSING");
+    }
+
+    if (!isSupportedRawFrameType(rawFrame)) {
+      await terminateTransportViolation(
+        envelope,
+        "relay_invalid_frame_type",
+        "RELAY_INVALID_FRAME_TYPE",
+        [["frameType", rawFrame && rawFrame.constructor ? rawFrame.constructor.name : typeof rawFrame]],
+      );
+    }
+  }
 
   function getRouteDirection(senderRole) {
     return senderRole === "mobile" ? "mobile→web" : "web→mobile";
@@ -657,46 +739,72 @@ function createMessageRouter(connectionManager, options = {}) {
     return isReferenceEqual;
   }
 
-  function forwardEnvelopeAsIs(envelope, destinationSocket) {
-    const payloadReference = envelope.payload;
-    destinationSocket.send(JSON.stringify(envelope));
-    return ensureNoPayloadMutation(envelope, payloadReference);
+  async function auditForwardedFrame(envelope, routingMetadata) {
+    await assertForwardableRawFrame(routingMetadata.rawFrame, envelope);
+
+    const egressHash = computeRawFrameHash(routingMetadata.rawFrame);
+
+    logRelayIntegrity("RELAY_EGRESS_HASH", [
+      ["sessionId", envelope.sessionId || null],
+      ["hash", egressHash],
+    ]);
+
+    if (routingMetadata.ingressHash !== egressHash) {
+      await terminateTransportViolation(envelope, "relay_byte_violation", "RELAY_BYTE_VIOLATION", [
+        ["sessionId", envelope.sessionId || null],
+        ["ingressHash", routingMetadata.ingressHash],
+        ["egressHash", egressHash],
+      ]);
+    }
+
+    return egressHash;
   }
 
-  function forwardSnapshotStart(envelope, destinationSocket, senderRegistration) {
-    forwardEnvelopeAsIs(envelope, destinationSocket);
+  async function forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata) {
+    const payloadReference = envelope.payload;
+    await auditForwardedFrame(envelope, routingMetadata);
+    sendRawFrame(destinationSocket, routingMetadata.rawFrame, routingMetadata.isBinary);
+    const payloadReferenceEquality = ensureNoPayloadMutation(envelope, payloadReference);
+    return payloadReferenceEquality;
+  }
+
+  async function forwardSnapshotStart(envelope, destinationSocket, senderRegistration, routingMetadata) {
+    await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
     logger(`RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_start`);
   }
 
-  function forwardEventStream(envelope, destinationSocket, senderRegistration) {
-    const payloadReferenceEquality = forwardEnvelopeAsIs(envelope, destinationSocket);
+  async function forwardEventStream(envelope, destinationSocket, senderRegistration, routingMetadata) {
+    const payloadReferenceEquality = await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
     recordEventAudit("OUTBOUND", envelope, payloadReferenceEquality);
     logger(
       `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=event_stream sequence=${envelope.sequence}`,
     );
   }
 
-  function forwardMutationEnvelope(envelope, destinationSocket, senderRegistration) {
-    const payloadReferenceEquality = forwardEnvelopeAsIs(envelope, destinationSocket);
+  async function forwardMutationEnvelope(envelope, destinationSocket, senderRegistration, routingMetadata) {
+    const payloadReferenceEquality = await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
     recordMutationAudit("OUTBOUND", envelope, payloadReferenceEquality);
     logger(
       `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=${envelope.type} sequence=${envelope.sequence}`,
     );
   }
 
-  function forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, chunkIndex) {
-    forwardEnvelopeAsIs(envelope, destinationSocket);
+  async function forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, routingMetadata, chunkIndex) {
+    await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
     logger(
       `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_chunk index=${chunkIndex === null ? 0 : chunkIndex}`,
     );
   }
 
-  function forwardSnapshotComplete(envelope, destinationSocket, senderRegistration) {
-    forwardEnvelopeAsIs(envelope, destinationSocket);
+  async function forwardSnapshotComplete(envelope, destinationSocket, senderRegistration, routingMetadata) {
+    await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
     logger(`RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_complete`);
   }
 
-  async function routeEnvelope(envelope, senderSocket, senderRegistration = connectionManager.lookupSocket(senderSocket)) {
+  async function routeEnvelope(rawFrame, envelope, senderSocket, senderRegistration = connectionManager.lookupSocket(senderSocket), metadata = {}) {
+    await assertForwardableRawFrame(rawFrame, envelope);
+
+    const routingMetadata = createRoutingMetadata(rawFrame, metadata);
     const hasSenderSessionBinding = Boolean(
       senderRegistration && senderRegistration.sessionId && senderRegistration.role,
     );
@@ -898,19 +1006,19 @@ function createMessageRouter(connectionManager, options = {}) {
     }
 
     if (envelope.type === "snapshot_start") {
-      forwardSnapshotStart(envelope, destinationSocket, senderRegistration);
+      await forwardSnapshotStart(envelope, destinationSocket, senderRegistration, routingMetadata);
     } else if (envelope.type === "snapshot_chunk") {
       const sessionQueue = sessionQueueManager.initializeSessionQueue(envelope.sessionId);
       const chunkIndex = Math.max(sessionQueue.snapshotChunkIndex - 1, 0);
-      forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, chunkIndex);
+      await forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, routingMetadata, chunkIndex);
     } else if (envelope.type === "snapshot_complete") {
-      forwardSnapshotComplete(envelope, destinationSocket, senderRegistration);
+      await forwardSnapshotComplete(envelope, destinationSocket, senderRegistration, routingMetadata);
     } else if (envelope.type === "event_stream") {
-      forwardEventStream(envelope, destinationSocket, senderRegistration);
+      await forwardEventStream(envelope, destinationSocket, senderRegistration, routingMetadata);
     } else if (isMutationAuditEnvelope(envelope)) {
-      forwardMutationEnvelope(envelope, destinationSocket, senderRegistration);
+      await forwardMutationEnvelope(envelope, destinationSocket, senderRegistration, routingMetadata);
     } else {
-      destinationSocket.send(JSON.stringify(envelope));
+      await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
     }
 
     const targetRegistration = connectionManager.lookupSocket(destinationSocket);
@@ -936,15 +1044,26 @@ function createMessageRouter(connectionManager, options = {}) {
     return true;
   }
 
-  async function routeMessage(envelope, senderSocket) {
+  async function routeMessage(rawFrame, envelope, senderSocket, metadata = {}) {
+    await assertForwardableRawFrame(rawFrame, envelope);
+
+    if (envelope && typeof envelope === "object" && !Object.isFrozen(envelope)) {
+      Object.freeze(envelope);
+    }
+
+    const routingMetadata = createRoutingMetadata(rawFrame, metadata);
+
     recordEventAudit("INBOUND", envelope);
     recordMutationAudit("INBOUND", envelope);
 
     if (typeof envelope.sessionId === "string" && envelope.sessionId.trim() !== "") {
-      return sessionQueueManager.enqueueMessage(envelope.sessionId, envelope, { senderSocket });
+      return sessionQueueManager.enqueueMessage(envelope.sessionId, envelope, {
+        ...routingMetadata,
+        senderSocket,
+      });
     }
 
-    return routeEnvelope(envelope, senderSocket);
+    return routeEnvelope(rawFrame, envelope, senderSocket, undefined, routingMetadata);
   }
 
   return {
@@ -1113,8 +1232,12 @@ function createRelayServer(configOverrides = {}) {
     events.emit("connection", { remoteAddress });
 
     socket.on("message", async (rawMessage, isBinary) => {
-      const rawMessageBytes = Buffer.byteLength(rawMessage);
-      const rawPreview = formatRawAuditPreview(rawMessage);
+      const rawFrame = Buffer.isBuffer(rawMessage) || typeof rawMessage === "string"
+        ? rawMessage
+        : coerceRawFrameBuffer(rawMessage);
+      const rawMessageBuffer = coerceRawFrameBuffer(rawFrame);
+      const rawMessageBytes = rawMessageBuffer.length;
+      const rawPreview = formatRawAuditPreview(rawFrame);
 
       logRelayAudit(ingressDiagnostics, "RAW_WS_MESSAGE", [
         ["bytes", rawMessageBytes],
@@ -1156,7 +1279,7 @@ function createRelayServer(configOverrides = {}) {
 
       let parsed;
       try {
-        parsed = JSON.parse(rawMessage.toString("utf8"));
+        parsed = JSON.parse(rawMessageBuffer.toString("utf8"));
         logRelayAudit(ingressDiagnostics, "JSON_PARSE_SUCCESS", [
           ["type", parsed.type || null],
           ["sessionId", parsed.sessionId || null],
@@ -1185,6 +1308,16 @@ function createRelayServer(configOverrides = {}) {
         socket.send(createTransportEnvelopeError("invalid_json", config.protocolVersion));
         return;
       }
+
+      if (parsed && typeof parsed === "object" && !Object.isFrozen(parsed)) {
+        Object.freeze(parsed);
+      }
+
+      const ingressHash = computeRawFrameHash(rawFrame);
+      logRelayIntegrity("RELAY_INGRESS_HASH", [
+        ["sessionId", parsed.sessionId || null],
+        ["hash", ingressHash],
+      ]);
 
       if (parsed.type === "qr_session_create") {
         const sessionCreationViolation = relayRateLimiter.recordSessionCreation(remoteAddress);
@@ -1223,12 +1356,18 @@ function createRelayServer(configOverrides = {}) {
 
       events.emit("transportEnvelope", {
         envelope: parsed,
+        rawFrame,
+        ingressHash,
         remoteAddress,
       });
 
       let routed;
       try {
-        routed = await messageRouter.routeMessage(parsed, socket);
+        routed = await messageRouter.routeMessage(rawFrame, parsed, socket, {
+          rawFrame,
+          ingressHash,
+          isBinary,
+        });
       } catch (error) {
         logRelayAudit(ingressDiagnostics, "ROUTING_DECISION", [
           ["type", parsed.type || null],

@@ -164,6 +164,30 @@ test("redis_session_logs_runtime", async () => {
   assert.equal(
     auditResult.startupLogs.some(
       (entry) =>
+        entry.includes("RELAY_INGRESS_HASH") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("hash="),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
+        entry.includes("RELAY_EGRESS_HASH") &&
+        entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`) &&
+        entry.includes("hash="),
+    ),
+    true,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) => entry.includes("RELAY_BYTE_VIOLATION") && entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`),
+    ),
+    false,
+  );
+  assert.equal(
+    auditResult.startupLogs.some(
+      (entry) =>
         entry.includes("ROUTING_DECISION type=snapshot_start") &&
         entry.includes(`sessionId=${auditResult.lifecycleEvidence.sessionId}`) &&
         entry.includes("routed=true") &&

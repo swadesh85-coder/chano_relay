@@ -258,6 +258,7 @@ function createSessionQueueManager(options = {}) {
 
     queueState.pending.push({
       envelope,
+      rawFrame: metadata.rawFrame,
       metadata,
       deferred,
       arrivalOrder: queueState.arrivalOrder,

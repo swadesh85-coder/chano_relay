@@ -1,4 +1,4 @@
-const WebSocket = require("ws");
+﻿const WebSocket = require("ws");
 const { EventEmitter } = require("events");
 
 const {
@@ -141,6 +141,10 @@ function createEnvelope(overrides = {}) {
     payload: { opaque: true },
     ...overrides,
   };
+}
+
+function routeRawEnvelope(messageRouter, envelope, senderSocket, metadata = {}) {
+  return messageRouter.routeMessage(JSON.stringify(envelope), envelope, senderSocket, metadata);
 }
 
 function waitForOpen(socket, timeoutMs = 3000) {
@@ -454,7 +458,7 @@ async function auditSessionExpiry() {
   await scheduler.runDueTasks();
   const stillActiveBeforeRefresh = await sessionRegistry.getSession(sessionId);
 
-  await messageRouter.routeMessage(
+  await routeRawEnvelope(messageRouter, 
     {
       protocolVersion: DEFAULT_PROTOCOL_VERSION,
       type: "event_stream",
@@ -1059,7 +1063,7 @@ async function runRelayRuntimeAudit(options = {}) {
       record(entry);
     }
     record(`PAYLOAD_REFERENCE_EQUALITY ${results.mutationAudit.payloadReferenceEquality.every(Boolean)}`);
-    record(`seq: ${results.orderingEvidence.join(" → ")}`);
+    record(`seq: ${results.orderingEvidence.join(" -> ")}`);
     record(`SESSION_CLOSED sessionId=${sessionId}`);
     record(`Mobile Authority -> ${results.constitution.mobileAuthority ? "PASS" : "FAIL"}`);
     record(`Mutation Boundary -> ${results.constitution.mutationBoundary ? "PASS" : "FAIL"}`);

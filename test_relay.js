@@ -1,4 +1,4 @@
-const assert = require("node:assert/strict");
+﻿const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -213,6 +213,10 @@ function createEnvelope(overrides = {}) {
   };
 }
 
+function routeRawEnvelope(messageRouter, envelope, senderSocket, metadata = {}) {
+  return messageRouter.routeMessage(JSON.stringify(envelope), envelope, senderSocket, metadata);
+}
+
 function waitForOpen(socket) {
   return new Promise((resolve, reject) => {
     socket.once("open", resolve);
@@ -254,6 +258,27 @@ function waitForMessage(socket, timeoutMs = 3000) {
       }
 
       resolve(JSON.parse(data.toString("utf8")));
+    });
+
+    socket.once("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+  });
+}
+
+function waitForRawMessage(socket, timeoutMs = 3000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Timed out waiting for raw websocket message")), timeoutMs);
+
+    socket.once("message", (data, isBinary) => {
+      clearTimeout(timer);
+      if (isBinary) {
+        reject(new Error("Expected text websocket frame"));
+        return;
+      }
+
+      resolve(Buffer.isBuffer(data) ? data.toString("utf8") : String(data));
     });
 
     socket.once("error", (error) => {
@@ -390,7 +415,7 @@ async function sendOrderedMessages({ messageRouter, senderSocket, sessionId, seq
 
   for (let index = 0; index < sequences.length; index += 1) {
     routePromises.push(
-      messageRouter.routeMessage(
+      routeRawEnvelope(messageRouter, 
         createEnvelope({
           type: "event_stream",
           sessionId,
@@ -452,7 +477,7 @@ async function sendMixedMessages({ messageRouter, senderSocket, sessionId }) {
     }),
   ];
 
-  await Promise.all(mixedEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)));
+  await Promise.all(mixedEnvelopes.map((envelope) => routeRawEnvelope(messageRouter, envelope, senderSocket)));
 
   return mixedEnvelopes;
 }
@@ -498,7 +523,7 @@ async function sendDuplicateMessages({ messageRouter, senderSocket, sessionId })
   ];
 
   await Promise.all(
-    duplicateEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)),
+    duplicateEnvelopes.map((envelope) => routeRawEnvelope(messageRouter, envelope, senderSocket)),
   );
 
   return duplicateEnvelopes;
@@ -527,7 +552,7 @@ async function sendOutOfOrderEvents({ messageRouter, senderSocket, sessionId }) 
   ];
 
   await Promise.all(
-    outOfOrderEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)),
+    outOfOrderEnvelopes.map((envelope) => routeRawEnvelope(messageRouter, envelope, senderSocket)),
   );
 
   return outOfOrderEnvelopes;
@@ -562,7 +587,7 @@ async function sendSnapshotFallbackFlow({ messageRouter, senderSocket, sessionId
   ];
 
   await Promise.all(
-    snapshotEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, senderSocket)),
+    snapshotEnvelopes.map((envelope) => routeRawEnvelope(messageRouter, envelope, senderSocket)),
   );
 
   return snapshotEnvelopes;
@@ -1392,7 +1417,7 @@ test("single_timeout_source", async () => {
   const activeHandle = sessionLifecycleManager.getTimerHandle(sessionId);
   assert.equal(scheduler.getActiveHandleCount(), 1);
 
-  await messageRouter.routeMessage(createEnvelope({ sessionId, type: "snapshot_start", sequence: 21 }), mobileSocket);
+  await routeRawEnvelope(messageRouter, createEnvelope({ sessionId, type: "snapshot_start", sequence: 21 }), mobileSocket);
 
   assert.notEqual(sessionLifecycleManager.getTimerHandle(sessionId), activeHandle);
   assert.equal(scheduler.getActiveHandleCount(), 1);
@@ -1459,7 +1484,7 @@ test("session_ttl_refresh_on_message", async () => {
   await sessionLifecycleManager.transitionToActive(sessionId);
 
   redisClient.advanceTime(DEFAULT_SESSION_TTL_MS - 1_000);
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
   const refreshedSession = await sessionRegistry.getSession(sessionId);
 
   assert.equal(routed, true);
@@ -1499,7 +1524,7 @@ test("timer_refresh_on_message", async () => {
   await sessionLifecycleManager.transitionToActive(sessionId);
 
   const activeHandle = sessionLifecycleManager.getTimerHandle(sessionId);
-  await messageRouter.routeMessage(createEnvelope({ sessionId, type: "snapshot_start", sequence: 11 }), mobileSocket);
+  await routeRawEnvelope(messageRouter, createEnvelope({ sessionId, type: "snapshot_start", sequence: 11 }), mobileSocket);
 
   assert.notEqual(sessionLifecycleManager.getTimerHandle(sessionId), activeHandle);
   assert.equal(logs.some((entry) => entry === `TIMER_RESET sessionId=${sessionId}`), true);
@@ -1577,7 +1602,7 @@ test("no_premature_timeout_after_handshake", async () => {
 
   redisClient.advanceTime(1_500);
   await scheduler.runDueTasks();
-  await messageRouter.routeMessage(createEnvelope({ sessionId, type: "protocol_handshake", sequence: 12 }), mobileSocket);
+  await routeRawEnvelope(messageRouter, createEnvelope({ sessionId, type: "protocol_handshake", sequence: 12 }), mobileSocket);
   redisClient.advanceTime(1_500);
   await scheduler.runDueTasks();
 
@@ -1655,11 +1680,11 @@ test("no_premature_close_after_handshake", async () => {
 
   redisClient.advanceTime(1_500);
   await scheduler.runDueTasks();
-  await messageRouter.routeMessage(createEnvelope({ sessionId, type: "protocol_handshake", sequence: 12 }), mobileSocket);
+  await routeRawEnvelope(messageRouter, createEnvelope({ sessionId, type: "protocol_handshake", sequence: 12 }), mobileSocket);
   redisClient.advanceTime(1_500);
   await scheduler.runDueTasks();
 
-  const routed = await messageRouter.routeMessage(
+  const routed = await routeRawEnvelope(messageRouter, 
     createEnvelope({ sessionId, type: "snapshot_start", sequence: 13 }), mobileSocket,
   );
 
@@ -1733,7 +1758,7 @@ test("no_premature_session_expiry", async () => {
   await scheduler.runDueTasks();
   assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.ACTIVE);
 
-  await messageRouter.routeMessage(createEnvelope({ sessionId, type: "snapshot_start", sequence: 3 }), mobileSocket);
+  await routeRawEnvelope(messageRouter, createEnvelope({ sessionId, type: "snapshot_start", sequence: 3 }), mobileSocket);
   redisClient.advanceTime(sessionTtlMs - 1);
   await scheduler.runDueTasks();
   assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.ACTIVE);
@@ -2006,7 +2031,7 @@ test("router_dispatch_logged", async () => {
   connectionManager.registerConnection(webSocket, { connectionId: "diag-web" });
   connectionManager.bindSessionSockets("diag-router-session", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
   const dispatchEntry = findDiagnosticsEntry(diagnosticsEntries, "message_router_dispatch");
 
   assert.equal(routed, true);
@@ -2022,7 +2047,7 @@ test("bootstrap_message_allowed", async () => {
   const socket = new MockSocket();
 
   for (const messageType of BOOTSTRAP_MESSAGE_TYPES) {
-    const routed = await messageRouter.routeMessage(
+    const routed = await routeRawEnvelope(messageRouter, 
       createEnvelope({
         type: messageType,
         sessionId: messageType === "qr_session_create" ? "bootstrap-session" : "bootstrap-session",
@@ -2039,7 +2064,7 @@ test("non_bootstrap_blocked", async () => {
   const messageRouter = createMessageRouter(connectionManager);
   const socket = new MockSocket();
 
-  const routed = await messageRouter.routeMessage(
+  const routed = await routeRawEnvelope(messageRouter, 
     createEnvelope({
       type: "event_stream",
       sessionId: "non-bootstrap-session",
@@ -2062,7 +2087,7 @@ test("router_dispatch_bootstrap", async () => {
   const messageRouter = createMessageRouter(connectionManager, { diagnostics });
   const socket = new MockSocket();
 
-  const routed = await messageRouter.routeMessage(
+  const routed = await routeRawEnvelope(messageRouter, 
     createEnvelope({
       type: "protocol_handshake",
       sessionId: "bootstrap-dispatch-session",
@@ -2101,7 +2126,7 @@ test("bootstrap_dispatch_continues", async () => {
 
   connectionManager.registerConnection(socket, { connectionId: "bootstrap-dispatch-socket" });
 
-  const routed = await messageRouter.routeMessage(envelope, socket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, socket);
 
   assert.equal(routed, true);
   assert.equal(handlerCallCount, 1);
@@ -2128,7 +2153,7 @@ test("dispatch_table_handler_logged", async () => {
 
   connectionManager.registerConnection(socket, { connectionId: "dispatch-log-socket" });
 
-  const routed = await messageRouter.routeMessage(
+  const routed = await routeRawEnvelope(messageRouter, 
     createEnvelope({
       type: "qr_session_create",
       sessionId: "dispatch-log-session",
@@ -2158,7 +2183,7 @@ test("router_dispatch_registered", async () => {
   connectionManager.registerConnection(webSocket, { connectionId: "registered-web" });
   connectionManager.bindSessionSockets("registered-dispatch-session", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages[0], JSON.stringify(envelope));
@@ -2184,7 +2209,7 @@ test("router_rejects_non_active_session", async () => {
     state: SESSION_STATES.PAIRED,
   });
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, false);
   assert.equal(webSocket.sentMessages.length, 0);
@@ -2213,10 +2238,119 @@ test("router_allows_active_session", async () => {
     state: SESSION_STATES.ACTIVE,
   });
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages[0], JSON.stringify(envelope));
+});
+
+test("router_rejects_missing_raw_frame", async () => {
+  const redisClient = new FakeRedisClient();
+  const scheduler = new ManualScheduler(() => redisClient.nowMs);
+  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const connectionManager = createConnectionManager();
+  const sessionLifecycleManager = createSessionLifecycleManager({
+    sessionRegistry,
+    connectionManager,
+    now: () => redisClient.nowMs,
+    setTimer: (callback, delay) => scheduler.setTimeout(callback, delay),
+    clearTimer: (handle) => scheduler.clearTimeout(handle),
+    logger: () => {},
+  });
+  const messageRouter = createMessageRouter(connectionManager, {
+    sessionRegistry,
+    sessionLifecycleManager,
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "7e7176da-0108-4f7c-8c18-b0c69e7e47ff";
+  const envelope = createEnvelope({ sessionId, type: "event_stream", payload: { opaque: "missing-raw-frame" } });
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "missing-raw-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "missing-raw-web" });
+
+  await sessionLifecycleManager.createSession(sessionId, "missing-raw-web", redisClient.nowMs + DEFAULT_SESSION_TTL_MS);
+  await sessionLifecycleManager.transitionToPaired(sessionId, "missing-raw-mobile");
+  await sessionLifecycleManager.transitionToActive(sessionId);
+
+  await assert.rejects(() => messageRouter.routeMessage(undefined, envelope, mobileSocket), /relay_raw_frame_missing/);
+
+  assert.equal(webSocket.sentMessages.some((message) => JSON.parse(message).type === "event_stream"), false);
+  assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.CLOSED);
+});
+
+test("router_rejects_invalid_raw_frame_type", async () => {
+  const redisClient = new FakeRedisClient();
+  const scheduler = new ManualScheduler(() => redisClient.nowMs);
+  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const connectionManager = createConnectionManager();
+  const sessionLifecycleManager = createSessionLifecycleManager({
+    sessionRegistry,
+    connectionManager,
+    now: () => redisClient.nowMs,
+    setTimer: (callback, delay) => scheduler.setTimeout(callback, delay),
+    clearTimer: (handle) => scheduler.clearTimeout(handle),
+    logger: () => {},
+  });
+  const messageRouter = createMessageRouter(connectionManager, {
+    sessionRegistry,
+    sessionLifecycleManager,
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "e3a3973b-7d18-4b12-8643-92d21b4af06e";
+  const envelope = createEnvelope({ sessionId, type: "event_stream", payload: { opaque: "invalid-raw-frame" } });
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "invalid-raw-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "invalid-raw-web" });
+
+  await sessionLifecycleManager.createSession(sessionId, "invalid-raw-web", redisClient.nowMs + DEFAULT_SESSION_TTL_MS);
+  await sessionLifecycleManager.transitionToPaired(sessionId, "invalid-raw-mobile");
+  await sessionLifecycleManager.transitionToActive(sessionId);
+
+  await assert.rejects(() => messageRouter.routeMessage({ not: "raw" }, envelope, mobileSocket), /relay_invalid_frame_type/);
+
+  assert.equal(webSocket.sentMessages.some((message) => JSON.parse(message).type === "event_stream"), false);
+  assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.CLOSED);
+});
+
+test("router_rejects_hash_mismatch_before_forwarding", async () => {
+  const redisClient = new FakeRedisClient();
+  const scheduler = new ManualScheduler(() => redisClient.nowMs);
+  const sessionRegistry = createRedisSessionRegistry(redisClient);
+  const connectionManager = createConnectionManager();
+  const sessionLifecycleManager = createSessionLifecycleManager({
+    sessionRegistry,
+    connectionManager,
+    now: () => redisClient.nowMs,
+    setTimer: (callback, delay) => scheduler.setTimeout(callback, delay),
+    clearTimer: (handle) => scheduler.clearTimeout(handle),
+    logger: () => {},
+  });
+  const messageRouter = createMessageRouter(connectionManager, {
+    sessionRegistry,
+    sessionLifecycleManager,
+  });
+  const mobileSocket = new MockSocket();
+  const webSocket = new MockSocket();
+  const sessionId = "6b841682-80a0-4b93-bb6f-bff4ebbf8154";
+  const envelope = createEnvelope({ sessionId, type: "event_stream", payload: { opaque: "tampered-hash" } });
+  const rawFrame = JSON.stringify(envelope);
+
+  connectionManager.registerConnection(mobileSocket, { connectionId: "hash-mismatch-mobile" });
+  connectionManager.registerConnection(webSocket, { connectionId: "hash-mismatch-web" });
+
+  await sessionLifecycleManager.createSession(sessionId, "hash-mismatch-web", redisClient.nowMs + DEFAULT_SESSION_TTL_MS);
+  await sessionLifecycleManager.transitionToPaired(sessionId, "hash-mismatch-mobile");
+  await sessionLifecycleManager.transitionToActive(sessionId);
+
+  await assert.rejects(
+    () => messageRouter.routeMessage(rawFrame, envelope, mobileSocket, { ingressHash: "tampered-ingress-hash" }),
+    /relay_byte_violation/,
+  );
+
+  assert.equal(webSocket.sentMessages.some((message) => JSON.parse(message).type === "event_stream"), false);
+  assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.CLOSED);
 });
 
 test("qr_handler_invoked", async () => {
@@ -2426,7 +2560,7 @@ test("routing_after_activation", async () => {
   connectionManager.registerConnection(webSocket, { connectionId: "route-web" });
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  const routePromise = messageRouter.routeMessage(envelope, mobileSocket);
+  const routePromise = routeRawEnvelope(messageRouter, envelope, mobileSocket);
   await new Promise((resolve) => setImmediate(resolve));
 
   assert.deepEqual(persistenceOrder, ["persist:start", `refresh:${sessionId}:event_stream`]);
@@ -2767,7 +2901,7 @@ test("mobile_to_web_routing", async () => {
 
   connectionManager.bindSessionSockets("session-route-1", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages.length, 1);
@@ -2788,7 +2922,7 @@ test("relay_forward_envelope", async () => {
 
   connectionManager.bindSessionSockets("relay-forward-session", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages.length, 1);
@@ -2812,7 +2946,7 @@ test("snapshot_start_forward", async () => {
 
   connectionManager.bindSessionSockets("snapshot-start-session", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages[0], JSON.stringify(envelope));
@@ -2849,9 +2983,9 @@ test("snapshot_chunk_forward", async () => {
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  await messageRouter.routeMessage(startEnvelope, mobileSocket);
-  await messageRouter.routeMessage(firstChunk, mobileSocket);
-  await messageRouter.routeMessage(secondChunk, mobileSocket);
+  await routeRawEnvelope(messageRouter, startEnvelope, mobileSocket);
+  await routeRawEnvelope(messageRouter, firstChunk, mobileSocket);
+  await routeRawEnvelope(messageRouter, secondChunk, mobileSocket);
 
   assert.equal(webSocket.sentMessages[1], JSON.stringify(firstChunk));
   assert.equal(webSocket.sentMessages[2], JSON.stringify(secondChunk));
@@ -2883,8 +3017,8 @@ test("snapshot_complete_forward", async () => {
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  await messageRouter.routeMessage(startEnvelope, mobileSocket);
-  const routed = await messageRouter.routeMessage(completeEnvelope, mobileSocket);
+  await routeRawEnvelope(messageRouter, startEnvelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, completeEnvelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages[1], JSON.stringify(completeEnvelope));
@@ -2913,7 +3047,7 @@ test("relay_payload_opaque", async () => {
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(envelope.payload, originalPayloadReference);
@@ -2953,7 +3087,7 @@ test("relay_event_forward_order", async () => {
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   for (const envelope of envelopes) {
-    await messageRouter.routeMessage(envelope, mobileSocket);
+    await routeRawEnvelope(messageRouter, envelope, mobileSocket);
   }
 
   assert.deepEqual(
@@ -3030,7 +3164,7 @@ test("ordering_preserved", async () => {
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   const routePromises = [
-    messageRouter.routeMessage(
+    routeRawEnvelope(messageRouter, 
       createEnvelope({
         type: "snapshot_start",
         sessionId,
@@ -3044,7 +3178,7 @@ test("ordering_preserved", async () => {
   routePromises.push(
     ...sequences.map((sequence) => {
       releases.set(sequence, createDeferred());
-      return messageRouter.routeMessage(
+      return routeRawEnvelope(messageRouter, 
         createEnvelope({
           type: "snapshot_chunk",
           sessionId,
@@ -3057,7 +3191,7 @@ test("ordering_preserved", async () => {
   );
 
   routePromises.push(
-    messageRouter.routeMessage(
+    routeRawEnvelope(messageRouter, 
       createEnvelope({
         type: "snapshot_complete",
         sessionId,
@@ -3133,7 +3267,7 @@ test("relay_session_ordering", async () => {
 
   const routePromises = sendOrder.map((sequence) => {
     releases.set(sequence, createDeferred());
-    return messageRouter.routeMessage(
+    return routeRawEnvelope(messageRouter, 
       createEnvelope({
         type: "event_stream",
         sessionId,
@@ -3205,7 +3339,7 @@ test("relay_no_reorder_async", async () => {
 
   const routePromises = sendOrder.map((sequence, index) => {
     releases.set(sequence, createDeferred());
-    return messageRouter.routeMessage(
+    return routeRawEnvelope(messageRouter, 
       createEnvelope({
         sessionId,
         sequence,
@@ -3330,8 +3464,8 @@ test("relay_snapshot_event_isolation", async () => {
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   await Promise.all([
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 10 }), mobileSocket),
-    messageRouter.routeMessage(
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_start", sessionId, sequence: 10 }), mobileSocket),
+    routeRawEnvelope(messageRouter, 
       createEnvelope({
         type: "event_stream",
         sessionId,
@@ -3340,8 +3474,8 @@ test("relay_snapshot_event_isolation", async () => {
       }),
       mobileSocket,
     ),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 11 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 12 }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 11 }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_complete", sessionId, sequence: 12 }), mobileSocket),
   ]);
 
   assert.deepEqual(
@@ -3615,7 +3749,7 @@ test("relay_preserve_duplicate_order", async () => {
   ];
 
   const routePromise = Promise.all(
-    sentEnvelopes.map((envelope) => messageRouter.routeMessage(envelope, mobileSocket)),
+    sentEnvelopes.map((envelope) => routeRawEnvelope(messageRouter, envelope, mobileSocket)),
   );
 
   await new Promise((resolve) => setImmediate(resolve));
@@ -3776,11 +3910,11 @@ test("snapshot_stream_contiguity", async () => {
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   await Promise.all([
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 2, payload: { opaque: "chunk-1" } }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "event_stream", sessionId, sequence: 5, payload: { eventVersion: 101, opaque: "blocked" } }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 3, payload: { opaque: "chunk-2" } }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 4 }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 2, payload: { opaque: "chunk-1" } }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "event_stream", sessionId, sequence: 5, payload: { eventVersion: 101, opaque: "blocked" } }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 3, payload: { opaque: "chunk-2" } }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_complete", sessionId, sequence: 4 }), mobileSocket),
   ]);
 
   const forwardedMessages = captureForwardedMessages(webSocket);
@@ -3816,11 +3950,11 @@ test("event_block_during_snapshot", async () => {
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   await Promise.all([
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 2, payload: { opaque: "chunk-1" } }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "event_stream", sessionId, sequence: 5, payload: { eventVersion: 101, opaque: "blocked" } }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 3, payload: { opaque: "chunk-2" } }), mobileSocket),
-    messageRouter.routeMessage(createEnvelope({ type: "snapshot_complete", sessionId, sequence: 4 }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 2, payload: { opaque: "chunk-1" } }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "event_stream", sessionId, sequence: 5, payload: { eventVersion: 101, opaque: "blocked" } }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 3, payload: { opaque: "chunk-2" } }), mobileSocket),
+    routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_complete", sessionId, sequence: 4 }), mobileSocket),
   ]);
 
   const queueLogs = logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=snapshot-blocked-event"));
@@ -3858,7 +3992,7 @@ test("snapshot_chunk_without_start_rejected", async () => {
 
   await assert.rejects(
     () =>
-      messageRouter.routeMessage(
+      routeRawEnvelope(messageRouter, 
         createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 1, payload: { opaque: "chunk" } }),
         mobileSocket,
       ),
@@ -3886,10 +4020,10 @@ test("nested_snapshot_start_rejected", async () => {
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  await messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket);
+  await routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket);
 
   await assert.rejects(
-    () => messageRouter.routeMessage(createEnvelope({ type: "snapshot_start", sessionId, sequence: 2 }), mobileSocket),
+    () => routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_start", sessionId, sequence: 2 }), mobileSocket),
     /nested_snapshot_start/,
   );
 
@@ -3950,7 +4084,7 @@ test("queue_process_sequential", async () => {
 
   const routePromises = sendOrder.map((sequence) => {
     releases.set(sequence, createDeferred());
-    return messageRouter.routeMessage(
+    return routeRawEnvelope(messageRouter, 
       createEnvelope({
         type: "event_stream",
         sessionId,
@@ -3987,7 +4121,7 @@ test("web_to_mobile_routing", async () => {
 
   connectionManager.bindSessionSockets("session-route-2", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, webSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, webSocket);
 
   assert.equal(routed, true);
   assert.equal(mobileSocket.sentMessages.length, 1);
@@ -4005,7 +4139,7 @@ test("missing_destination_drop", async () => {
   connectionManager.bindSessionSockets("session-route-3", mobileSocket, webSocket);
   webSocket.close();
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, false);
   assert.equal(webSocket.sentMessages.length, 0);
@@ -4026,7 +4160,7 @@ test("envelope_integrity_preserved", async () => {
 
   connectionManager.bindSessionSockets("session-route-4", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages[0], originalSnapshot);
@@ -4048,7 +4182,7 @@ test("relay_preserve_envelope_fields", async () => {
 
   connectionManager.bindSessionSockets("relay-preserve-session", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
   const forwardedEnvelope = JSON.parse(webSocket.sentMessages[0]);
 
   assert.equal(routed, true);
@@ -4080,7 +4214,7 @@ test("relay_mutation_forward", async () => {
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, webSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, webSocket);
 
   assert.equal(routed, true);
   assert.equal(envelope.payload, originalPayloadReference);
@@ -4126,7 +4260,7 @@ test("relay_command_result_routing", async () => {
   connectionManager.bindSessionSockets(sessionIdOne, mobileSocketOne, webSocketOne);
   connectionManager.bindSessionSockets(sessionIdTwo, mobileSocketTwo, webSocketTwo);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocketOne);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocketOne);
 
   assert.equal(routed, true);
   assert.equal(webSocketOne.sentMessages.length, 1);
@@ -4185,7 +4319,7 @@ test("relay_mutation_ordering", async () => {
 
   const routePromises = sendOrder.map((sequence, index) => {
     releases.set(sequence, createDeferred());
-    return messageRouter.routeMessage(
+    return routeRawEnvelope(messageRouter, 
       createEnvelope({
         type: "mutation_command",
         sessionId,
@@ -4251,7 +4385,7 @@ test("relay_payload_opaque_mutation", async () => {
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, webSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, webSocket);
 
   assert.equal(routed, true);
   assert.equal(envelope.payload, originalPayloadReference);
@@ -4276,7 +4410,7 @@ test("relay_no_message_dispatch", async () => {
 
   connectionManager.bindSessionSockets("relay-no-dispatch-session", mobileSocket, webSocket);
 
-  const routed = await messageRouter.routeMessage(envelope, mobileSocket);
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages.length, 1);
@@ -4422,6 +4556,77 @@ test("session_state_active", async () => {
 
       webSocket.close();
       mobileSocket.close();
+    },
+  );
+});
+
+test("relay_forwards_text_frames_byte_for_byte", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionId = "99999999-9999-4999-8999-999999999999";
+  const token = "byte-transparent-token";
+
+  await withStartedServer(
+    {
+      host: "127.0.0.1",
+      port: 0,
+      wsPath: "/relay",
+      diagnostics: {
+        ingress: {
+          enabled: true,
+        },
+      },
+      pairing: {
+        secret: "test-pairing-secret",
+        ttlMs: DEFAULT_PAIRING_TTL_MS,
+      },
+      sessionRegistry: createRedisSessionRegistry(redisClient),
+    },
+    async (relayServer) => {
+      const { webSocket, mobileSocket } = await establishActiveRelaySessionOverWebSocket(relayServer, {
+        sessionId,
+        token,
+        createSequence: 31,
+        pairSequence: 32,
+      });
+
+      const rawSnapshotStart = [
+        "{",
+        `  \"protocolVersion\": ${DEFAULT_PROTOCOL_VERSION},`,
+        '  "type": "snapshot_start",',
+        `  \"sessionId\": \"${sessionId}\",`,
+        '  "timestamp": 1700000000000,',
+        '  "sequence": 33,',
+        '  "payload": { "snapshotId": "opaque-start", "schemaVersion": 2, "lastEventVersion": 0 }',
+        "}",
+      ].join("\n");
+      const rawSnapshotChunk = [
+        "{",
+        `  \"protocolVersion\": ${DEFAULT_PROTOCOL_VERSION},`,
+        '  "type": "snapshot_chunk",',
+        `  \"sessionId\": \"${sessionId}\",`,
+        '  "timestamp": 1700000000001,',
+        '  "sequence": 34,',
+        '  "payload": { "snapshotChunk": "alpha", "padding": [1, 2, 3] }',
+        "}",
+      ].join("\n");
+
+      const forwardedStartPromise = waitForRawMessage(webSocket);
+      mobileSocket.send(rawSnapshotStart);
+      assert.equal(await forwardedStartPromise, rawSnapshotStart);
+
+      const forwardedChunkPromise = waitForRawMessage(webSocket);
+      mobileSocket.send(rawSnapshotChunk);
+      assert.equal(await forwardedChunkPromise, rawSnapshotChunk);
+
+      if (mobileSocket.readyState === WebSocket.OPEN) {
+        mobileSocket.close();
+        await waitForClose(mobileSocket);
+      }
+
+      if (webSocket.readyState === WebSocket.OPEN) {
+        webSocket.close();
+        await waitForClose(webSocket);
+      }
     },
   );
 });
@@ -4745,3 +4950,4 @@ test("multiple_connection_handling", async () => {
     assert.equal(relayServer.getConnectionCount(), 0);
   });
 });
+

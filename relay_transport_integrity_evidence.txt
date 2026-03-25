@@ -1,0 +1,49 @@
+Relay Transport Integrity Verification
+GeneratedAt: 2026-03-25T05:54:18.797Z
+Verdict: PASS
+SessionId: 44444444-4444-4444-8444-444444444444
+SnapshotLoaderObserved: no
+SnapshotLoaderNote: snapshot_loader.ts not present in this workspace; web verification is limited to raw frame receipt and JSON parse integrity.
+
+Normal Flow
+ObservedForwardOrder: snapshot_start -> snapshot_chunk -> snapshot_complete -> event_stream
+ExpectedForwardOrder: snapshot_start -> snapshot_chunk -> snapshot_complete -> event_stream
+NoRelayByteViolation: true
+NoMissingRawFrameViolation: true
+NoInvalidFrameTypeViolation: true
+
+Per-Message Evidence
+type | sequence | sentAt | receivedAt | localHash | ingressHash | egressHash | ingressEqLocal | egressEqLocal | rawForwardEq | parseOk
+snapshot_start | 3 | 2026-03-25T05:54:18.790Z | 2026-03-25T05:54:18.792Z | ed9de628f097f516167ef941677b1c38cf86cf08d148a2a8422029122d0de88f | ed9de628f097f516167ef941677b1c38cf86cf08d148a2a8422029122d0de88f | ed9de628f097f516167ef941677b1c38cf86cf08d148a2a8422029122d0de88f | true | true | true | true
+snapshot_chunk | 4 | 2026-03-25T05:54:18.792Z | 2026-03-25T05:54:18.793Z | 1833a61973887114e7f21eb00f6fa91f821f60fa772c43b278f9edba9d9251b4 | 1833a61973887114e7f21eb00f6fa91f821f60fa772c43b278f9edba9d9251b4 | 1833a61973887114e7f21eb00f6fa91f821f60fa772c43b278f9edba9d9251b4 | true | true | true | true
+snapshot_complete | 5 | 2026-03-25T05:54:18.793Z | 2026-03-25T05:54:18.794Z | d02a5eddb3c64e2578061c591c4338c99e956d932765507e9337b5b5a1736dcb | d02a5eddb3c64e2578061c591c4338c99e956d932765507e9337b5b5a1736dcb | d02a5eddb3c64e2578061c591c4338c99e956d932765507e9337b5b5a1736dcb | true | true | true | true
+event_stream | 6 | 2026-03-25T05:54:18.794Z | 2026-03-25T05:54:18.794Z | 0d84ab08a2c2bf93093e75b77c024627fb69c10ba8ef009b9f1fe8e94c906490 | 0d84ab08a2c2bf93093e75b77c024627fb69c10ba8ef009b9f1fe8e94c906490 | 0d84ab08a2c2bf93093e75b77c024627fb69c10ba8ef009b9f1fe8e94c906490 | true | true | true | true
+
+Negative Controls
+Control: hash_mismatch
+ExpectedLog: RELAY_BYTE_VIOLATION
+ObservedLog: true
+SessionClosed: true
+ForwardedEventStream: false
+Error: relay_byte_violation
+
+Control: missing_raw_frame
+ExpectedLog: RELAY_RAW_FRAME_MISSING
+ObservedLog: true
+SessionClosed: true
+ForwardedEventStream: false
+Error: relay_raw_frame_missing
+
+Control: invalid_frame_type
+ExpectedLog: RELAY_INVALID_FRAME_TYPE
+ObservedLog: true
+SessionClosed: true
+ForwardedEventStream: false
+Error: relay_invalid_frame_type
+
+Validation Summary
+IngressEqualsEgressForAllMessages: true
+WebReceivedIntactFrames: true
+SnapshotSequenceValid: true
+EventStreamAfterSnapshotComplete: true
+NegativeControlsEnforced: true

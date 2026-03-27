@@ -1,0 +1,25 @@
+Relay Projection Bridge Audit
+GeneratedAt: 2026-03-27T10:38:24.072Z
+Verdict: PASS
+
+Relay Transport Evidence
+TransportVerdict: PASS
+ObservedForwardOrder: snapshot_start -> snapshot_chunk -> snapshot_complete -> event_stream
+SnapshotSequenceValid: true
+EventStreamAfterSnapshotComplete: true
+
+Web Projection Evidence
+ProjectionSpecStatus: 0
+ProjectionSpecCommand: cmd.exe /d /s /c npx vitest run --environment jsdom src/app/projection/web_sync_e2e.spec.ts
+ProjectionSpecCwd: C:\Users\Taboo\chano_web
+ProjectionSuccessMarkersAsserted: SNAPSHOT_ASSEMBLY_STARTED, BOUNDARY_OK, EVENT_APPLY, EVENT_IGNORE_DUPLICATE, SNAPSHOT_RESYNC_REQUIRED
+
+Web Stdout
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/Taboo/chano_web[39m
+
+ [32m✓[39m src/app/projection/web_sync_e2e.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 392[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m   Start at [22m 16:08:21
+[2m   Duration [22m 2.37s[2m (transform 233ms, setup 0ms, import 663ms, tests 392ms, environment 1.06s)[22m

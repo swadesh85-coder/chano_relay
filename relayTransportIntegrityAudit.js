@@ -18,6 +18,31 @@ const { FakeRedisClient } = require("./relayRuntimeAudit");
 
 const EVIDENCE_FILE_PATH = path.join(__dirname, "relay_transport_integrity_evidence.txt");
 
+function resolveSnapshotLoaderObservation() {
+  const candidatePaths = [
+    path.join(__dirname, "src", "app", "projection", "snapshot_loader.ts"),
+    path.join(__dirname, "..", "chano_web", "src", "app", "projection", "snapshot_loader.ts"),
+  ];
+
+  const snapshotLoaderPath = candidatePaths.find((candidatePath) => fs.existsSync(candidatePath)) || null;
+
+  if (!snapshotLoaderPath) {
+    return {
+      observed: false,
+      note:
+        "snapshot_loader.ts not present in the relay workspace or sibling chano_web workspace; web verification is limited to raw frame receipt and JSON parse integrity.",
+    };
+  }
+
+  const relativePath = path.relative(__dirname, snapshotLoaderPath).replace(/\\/g, "/");
+
+  return {
+    observed: true,
+    note:
+      `snapshot_loader.ts present at ${relativePath}; this relay-only harness verifies byte transparency and raw frame receipt, while web ingestion/projection is validated separately by the web audit specs.`,
+  };
+}
+
 class MockSocket {
   constructor() {
     this.sentMessages = [];
@@ -378,7 +403,7 @@ async function runRelayTransportIntegrityAudit(options = {}) {
   const logEntries = [];
   const originalConsoleLog = console.log;
   const emitOutput = options.emitOutput === true;
-  const snapshotLoaderMatchesWorkspace = false;
+  const snapshotLoaderObservation = resolveSnapshotLoaderObservation();
   const redisClient = new FakeRedisClient();
   const sessionRegistry = createRedisSessionRegistry(redisClient);
   let relayServer;
@@ -584,10 +609,8 @@ async function runRelayTransportIntegrityAudit(options = {}) {
           ? "PASS"
           : "FAIL",
       sessionId,
-      snapshotLoaderObserved: snapshotLoaderMatchesWorkspace,
-      snapshotLoaderNote: snapshotLoaderMatchesWorkspace
-        ? "snapshot_loader.ts present in workspace"
-        : "snapshot_loader.ts not present in this workspace; web verification is limited to raw frame receipt and JSON parse integrity.",
+      snapshotLoaderObserved: snapshotLoaderObservation.observed,
+      snapshotLoaderNote: snapshotLoaderObservation.note,
       observedOrder,
       normalFlow: {
         messages: normalFlowDefinitions,

@@ -133,6 +133,7 @@ class QRPairingSystem {
     const {
       connectionManager,
       diagnostics,
+      pairingSecret,
       sessionLifecycleManager,
       sessionRegistry,
       pairingTtlMs = DEFAULT_PAIRING_TTL_MS,
@@ -155,6 +156,7 @@ class QRPairingSystem {
 
     this.connectionManager = connectionManager;
     this.diagnostics = diagnostics || null;
+    this.pairingSecret = pairingSecret;
     this.sessionLifecycleManager = sessionLifecycleManager;
     this.sessionRegistry = sessionRegistry;
     this.pairingTtlMs = pairingTtlMs;
@@ -210,11 +212,19 @@ class QRPairingSystem {
 
     const sessionId = envelope.sessionId;
     const expiresAt = this.now() + this.pairingTtlMs;
+    const signedToken = signPairingTokenPayload(
+      {
+        sessionId,
+        expiresAt,
+      },
+      this.pairingSecret,
+    );
 
     await this.sessionLifecycleManager.onQrSessionCreate(
       envelope,
       senderRegistration.connectionId,
       expiresAt,
+      signedToken,
     );
     this.logger("[relay_session] session created");
 
@@ -223,6 +233,7 @@ class QRPairingSystem {
         createTransportResponseEnvelope(envelope, "qr_session_ready", sessionId, {
           sessionId,
           expiresAt,
+          token: signedToken,
         }),
       ),
     );
@@ -259,7 +270,13 @@ class QRPairingSystem {
       return this.rejectPairRequest(senderSocket, envelope, "invalid_session_state");
     }
 
-    if (session.webSocketId === senderRegistration.connectionId) {
+    const runtimeSession = this.sessionLifecycleManager.getRuntimeSession(envelope.sessionId);
+
+    if (!runtimeSession || !runtimeSession.webSocketId) {
+      return this.rejectPairRequest(senderSocket, envelope, "web_connection_not_available");
+    }
+
+    if (runtimeSession.webSocketId === senderRegistration.connectionId) {
       return this.rejectPairRequest(senderSocket, envelope, "mobile_socket_required");
     }
 
@@ -270,12 +287,24 @@ class QRPairingSystem {
       `RELAY_PAIRING_VALIDATE sessionToken=${formatPairingTokenValue(sessionToken)} requestToken=${formatPairingTokenValue(requestToken)}`,
     );
 
-    if (!sessionToken || sessionToken !== requestToken) {
+    if (!sessionToken || !requestToken) {
       this.logger("TOKEN_MISMATCH -> pairing rejected");
       return this.rejectPairRequest(senderSocket, envelope, "INVALID_TOKEN");
     }
 
-    const webRegistration = this.connectionManager.lookupConnectionById(session.webSocketId);
+    const verification = verifyPairingToken(
+      requestToken,
+      this.pairingSecret,
+      envelope.sessionId,
+      this.now(),
+    );
+
+    if (!verification.valid || requestToken !== sessionToken) {
+      this.logger("TOKEN_MISMATCH -> pairing rejected");
+      return this.rejectPairRequest(senderSocket, envelope, "INVALID_TOKEN");
+    }
+
+    const webRegistration = this.connectionManager.lookupConnectionById(runtimeSession.webSocketId);
     if (!webRegistration || !canSendToSocket(webRegistration.socket)) {
       return this.rejectPairRequest(senderSocket, envelope, "web_connection_not_available");
     }
@@ -289,27 +318,21 @@ class QRPairingSystem {
       return this.rejectPairRequest(senderSocket, envelope, "session_not_ready");
     }
 
-    const activeSession = await this.sessionLifecycleManager.persistBeforeRouting(() =>
-      this.sessionLifecycleManager.onPairApproved(envelope.sessionId),
-    );
-    this.logger("[relay_session] state=active");
-
     const approvalEnvelope = createTransportResponseEnvelope(envelope, "pair_approved", envelope.sessionId, {
       sessionId: envelope.sessionId,
-      state: SESSION_STATES.ACTIVE,
+      state: SESSION_STATES.PAIRED,
     });
 
-    senderSocket.send(JSON.stringify(approvalEnvelope));
     webRegistration.socket.send(JSON.stringify(approvalEnvelope));
     this.logger("TOKEN_MATCH -> pairing approved");
-    this.logger("RELAY_ROUTE mobile→web type=pair_approved");
-    this.logger(`[relay_router] routing enabled for session ${activeSession.sessionId}`);
+    this.logger("RELAY_ROUTE relay→web type=pair_approved");
+    this.logger(`[relay_router] pairing ready for session ${pairedSession.sessionId}`);
 
     if (this.events) {
       this.events.emit("pairApproved", {
         sessionId: envelope.sessionId,
         mobileSocketId: senderRegistration.connectionId,
-        webSocketId: session.webSocketId,
+        webSocketId: runtimeSession.webSocketId,
       });
     }
 

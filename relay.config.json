@@ -18,6 +18,10 @@
       "enabled": true
     }
   },
+  "heartbeat": {
+    "enabled": true,
+    "intervalMs": 30000
+  },
   "tls": {
     "enabled": false,
     "keyPath": "",

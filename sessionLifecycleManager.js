@@ -97,20 +97,23 @@ class SessionLifecycleManager {
     assertNonEmptyString(createRequest.webSocketId, "webSocketId");
 
     const session = await this.sessionRegistry.createSession(createRequest);
-    this.indexSession(session);
+    this.indexSession({
+      ...session,
+      webSocketId: createRequest.webSocketId,
+    });
     this.scheduleTimeout(session.sessionId, this.resolveTimeoutDelayMs(session));
     this.logger(`RELAY_SESSION_CREATED session=${formatSessionAuditRecord(session)}`);
     this.logger("SESSION_CREATE persisted");
     return session;
   }
 
-  async onQrSessionCreate(envelope, webSocketId, expiresAt) {
+  async onQrSessionCreate(envelope, webSocketId, expiresAt, tokenOverride = null) {
     assertTransportEnvelope(envelope, "qr_session_create");
     assertNonEmptyString(webSocketId, "webSocketId");
 
     return this.createSession({
       sessionId: envelope.sessionId,
-      token: envelope.payload && typeof envelope.payload === "object" ? envelope.payload.token : null,
+      token: tokenOverride,
       webSocketId,
       expiresAt,
     });
@@ -129,9 +132,20 @@ class SessionLifecycleManager {
       throw new Error(`Session ${sessionId} must be waiting before pairing`);
     }
 
-    const sessionWithMobile = await this.sessionRegistry.updateSessionOnPair(sessionId, mobileSocketId);
+    const runtimeSession = this.getOrCreateRuntimeSession(sessionId);
+
+    if (!runtimeSession.webSocketId) {
+      throw new Error(`Session ${sessionId} requires a waiting web socket before pairing`);
+    }
+
+    const sessionWithMobile = await this.sessionRegistry.updateSessionOnPair(
+      sessionId,
+      mobileSocketId,
+      runtimeSession.webSocketId,
+    );
 
     this.indexSession(sessionWithMobile);
+    this.bindLiveSockets(sessionWithMobile);
     this.logger("SESSION_UPDATE paired");
     return sessionWithMobile;
   }
@@ -159,7 +173,6 @@ class SessionLifecycleManager {
       throw new Error(`Session ${sessionId} requires mobile and web sockets before activation`);
     }
 
-    this.bindLiveSockets(session);
     const activeSession = await this.sessionRegistry.activateSession(sessionId);
     this.indexSession(activeSession);
     this.scheduleTimeout(activeSession.sessionId, this.getFullSessionTtlMs());
@@ -218,8 +231,8 @@ class SessionLifecycleManager {
     assertNonEmptyString(reason, "reason");
 
     const session = await this.sessionRegistry.getSession(sessionId);
+    const indexedSession = this.getIndexedSession(sessionId);
     if (!session) {
-      const indexedSession = this.getIndexedSession(sessionId);
       this.clearPreviousTimer(sessionId);
 
       if (!indexedSession) {
@@ -227,6 +240,9 @@ class SessionLifecycleManager {
       }
 
       this.notifySessionClosed(indexedSession, reason);
+      if (typeof this.connectionManager.unbindSession === "function") {
+        this.connectionManager.unbindSession(sessionId);
+      }
       this.unindexSession(indexedSession, { clearTimer: false });
       this.logger(`SESSION_CLOSED reason=${reason}`);
 
@@ -244,12 +260,18 @@ class SessionLifecycleManager {
 
     this.clearPreviousTimer(sessionId);
 
-    let closedSession = session;
-    closedSession = await this.sessionRegistry.updateSession(sessionId, {
+    const closedSession = {
+      ...session,
+      webSocketId: session.webSocketId || (indexedSession ? indexedSession.webSocketId : null),
+      mobileSocketId: session.mobileSocketId || (indexedSession ? indexedSession.mobileSocketId : null),
       state: SESSION_STATES.CLOSED,
-    });
+    };
 
     this.notifySessionClosed(closedSession, reason);
+    if (typeof this.connectionManager.unbindSession === "function") {
+      this.connectionManager.unbindSession(sessionId);
+    }
+    await this.sessionRegistry.deleteSession(sessionId);
     this.unindexSession(closedSession, { clearTimer: false });
     this.logger(`SESSION_CLOSED reason=${reason}`);
 
@@ -284,10 +306,25 @@ class SessionLifecycleManager {
     runtimeSession.webSocketId = session.webSocketId || null;
     runtimeSession.mobileSocketId = session.mobileSocketId || null;
 
-    this.socketSessionIds.set(session.webSocketId, session.sessionId);
+    if (session.webSocketId) {
+      this.socketSessionIds.set(session.webSocketId, session.sessionId);
+    }
     if (session.mobileSocketId) {
       this.socketSessionIds.set(session.mobileSocketId, session.sessionId);
     }
+  }
+
+  getRuntimeSession(sessionId) {
+    const runtimeSession = this.sessionSocketIds.get(sessionId);
+    if (!runtimeSession) {
+      return null;
+    }
+
+    return {
+      sessionId,
+      webSocketId: runtimeSession.webSocketId || null,
+      mobileSocketId: runtimeSession.mobileSocketId || null,
+    };
   }
 
   unindexSession(session, options = {}) {

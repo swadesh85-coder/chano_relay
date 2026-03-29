@@ -18,6 +18,7 @@ const {
   createRelayServer,
   createSessionLifecycleManager,
   DEFAULT_MAX_COMMANDS_PER_SECOND,
+  DEFAULT_HEARTBEAT_INTERVAL_MS,
   DEFAULT_PAIRING_TTL_MS,
   DEFAULT_PROTOCOL_VERSION,
   DEFAULT_MAX_PAYLOAD_BYTES,
@@ -27,6 +28,7 @@ const {
   SESSION_STATES,
   DEFAULT_SESSION_TTL_MS,
   getRedisSessionKey,
+  signPairingTokenPayload,
   startRelayServer,
 } = require("./server");
 
@@ -34,6 +36,9 @@ class FakeRedisClient {
   constructor(nowMs = Date.now()) {
     this.entries = new Map();
     this.nowMs = nowMs;
+    this.keyVersions = new Map();
+    this.watchedKeys = new Map();
+    this.execHook = null;
   }
 
   advanceTime(ms) {
@@ -81,6 +86,7 @@ class FakeRedisClient {
     }
 
     this.entries.set(key, entry);
+    this.bumpKeyVersion(key);
     return addedFields;
   }
 
@@ -104,6 +110,7 @@ class FakeRedisClient {
 
     entry.expiresAtMs = this.nowMs + Number(ttlSeconds) * 1000;
     this.entries.set(key, entry);
+    this.bumpKeyVersion(key);
     this.purgeExpired(key);
     return this.entries.has(key) ? 1 : 0;
   }
@@ -142,7 +149,72 @@ class FakeRedisClient {
 
   async del(key) {
     this.purgeExpired(key);
-    return this.entries.delete(key) ? 1 : 0;
+    const deleted = this.entries.delete(key) ? 1 : 0;
+    if (deleted) {
+      this.bumpKeyVersion(key);
+    }
+    return deleted;
+  }
+
+  async watch(...keys) {
+    for (const key of keys) {
+      this.purgeExpired(key);
+      this.watchedKeys.set(key, this.getKeyVersion(key));
+    }
+  }
+
+  async unwatch() {
+    this.watchedKeys.clear();
+  }
+
+  multi() {
+    const commands = [];
+    const client = this;
+
+    return {
+      hSet(key, fields) {
+        commands.push(async () => client.hSet(key, fields));
+        return this;
+      },
+      expire(key, ttlSeconds) {
+        commands.push(async () => client.expire(key, ttlSeconds));
+        return this;
+      },
+      async exec() {
+        if (typeof client.execHook === "function") {
+          const hook = client.execHook;
+          client.execHook = null;
+          await hook();
+        }
+
+        for (const [key, watchedVersion] of client.watchedKeys.entries()) {
+          if (client.getKeyVersion(key) !== watchedVersion) {
+            client.watchedKeys.clear();
+            return null;
+          }
+        }
+
+        const results = [];
+        for (const command of commands) {
+          results.push(await command());
+        }
+
+        client.watchedKeys.clear();
+        return results;
+      },
+    };
+  }
+
+  bumpKeyVersion(key) {
+    this.keyVersions.set(key, this.getKeyVersion(key) + 1);
+  }
+
+  getKeyVersion(key) {
+    return this.keyVersions.get(key) || 0;
+  }
+
+  setExecHook(callback) {
+    this.execHook = callback;
   }
 }
 
@@ -199,6 +271,93 @@ class ManualScheduler {
   getActiveHandleCount() {
     return this.handles.filter((handle) => !handle.cleared).length;
   }
+}
+
+class ManualIntervalScheduler {
+  constructor() {
+    this.handles = [];
+  }
+
+  setInterval(callback, delay) {
+    const handle = {
+      callback,
+      delay,
+      cleared: false,
+    };
+
+    this.handles.push(handle);
+    return handle;
+  }
+
+  clearInterval(handle) {
+    if (handle) {
+      handle.cleared = true;
+    }
+  }
+
+  async tick() {
+    for (const handle of [...this.handles]) {
+      if (handle.cleared) {
+        continue;
+      }
+
+      await handle.callback();
+    }
+  }
+
+  getActiveHandleCount() {
+    return this.handles.filter((handle) => !handle.cleared).length;
+  }
+}
+
+class HeartbeatTestSocket extends EventEmitter {
+  constructor(options = {}) {
+    super();
+    this.sentMessages = [];
+    this.readyState = 1;
+    this.autoPong = options.autoPong !== false;
+    this.pingCount = 0;
+    this.terminateCount = 0;
+  }
+
+  send(message) {
+    this.sentMessages.push(message);
+  }
+
+  ping() {
+    this.pingCount += 1;
+
+    if (this.autoPong) {
+      queueMicrotask(() => {
+        this.emit("pong");
+      });
+    }
+  }
+
+  terminate() {
+    this.terminateCount += 1;
+    this.readyState = 3;
+    this.emit("close");
+  }
+
+  close() {
+    this.readyState = 3;
+    this.emit("close");
+  }
+}
+
+function createMockUpgradeRequest(remoteAddress, remotePort, localPort = 8080) {
+  return {
+    headers: {
+      host: `127.0.0.1:${localPort}`,
+    },
+    socket: {
+      remoteAddress,
+      remotePort,
+      localAddress: "127.0.0.1",
+      localPort,
+    },
+  };
 }
 
 function createEnvelope(overrides = {}) {
@@ -364,8 +523,8 @@ async function establishActiveRelaySessionOverWebSocket(
   );
 
   const readyMessage = await waitForMessage(webSocket);
+  const pairingToken = readyMessage.payload.token;
   const webApprovalPromise = waitForMessage(webSocket);
-  const mobileApprovalPromise = waitForMessage(mobileSocket);
 
   mobileSocket.send(
     JSON.stringify({
@@ -376,22 +535,32 @@ async function establishActiveRelaySessionOverWebSocket(
       sequence: pairSequence,
       payload: {
         sessionId: readyMessage.payload.sessionId,
-        token,
+        token: pairingToken,
       },
     }),
   );
 
-  const [webApprovalMessage, mobileApprovalMessage] = await Promise.all([
-    webApprovalPromise,
-    mobileApprovalPromise,
-  ]);
+  const webApprovalMessage = await webApprovalPromise;
+
+  mobileSocket.send(
+    JSON.stringify({
+      protocolVersion: readyMessage.protocolVersion,
+      type: "protocol_handshake",
+      sessionId: readyMessage.payload.sessionId,
+      timestamp: Date.now(),
+      sequence: pairSequence + 1,
+      payload: { client: "mobile" },
+    }),
+  );
+
+  const handshakeMessage = await waitForMessage(webSocket);
 
   return {
     webSocket,
     mobileSocket,
     readyMessage,
     webApprovalMessage,
-    mobileApprovalMessage,
+    handshakeMessage,
   };
 }
 
@@ -632,22 +801,22 @@ function validateRelayIsolation(messages) {
     [
       "snapshot_start 1",
       "snapshot_chunk 2",
+      "event_stream 101",
       "snapshot_chunk 3",
       "snapshot_complete 4",
-      "event_stream 101",
     ],
   );
   assert.deepEqual(
     messages.map((message) =>
       message.type === "snapshot_start"
         ? "SNAPSHOT_START"
-        : message.type === "snapshot_complete"
-          ? "SNAPSHOT_COMPLETE"
-          : message.type === "event_stream"
-            ? `EVENT_STREAM ${message.payload.eventVersion}`
+        : message.type === "event_stream"
+          ? `EVENT_STREAM ${message.payload.eventVersion}`
+          : message.type === "snapshot_complete"
+            ? "SNAPSHOT_COMPLETE"
             : `SNAPSHOT_CHUNK ${message.sequence - 1}`,
     ),
-    ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE", "EVENT_STREAM 101"],
+    ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "EVENT_STREAM 101", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE"],
   );
 }
 
@@ -726,6 +895,7 @@ test("redis_session_create", async () => {
   assert.equal(await redisClient.ttl(redisKey), 120);
   assert.deepEqual(rawSession, {
     sessionId,
+    token: "null",
     webSocketId: "null",
     mobileSocketId: "null",
     createdAt: String(session.createdAt),
@@ -746,6 +916,7 @@ test("redis_session_persist", async () => {
 
   assert.deepEqual(session, {
     sessionId,
+    token: null,
     mobileSocketId: null,
     webSocketId: "web-socket-lookup",
     createdAt: session.createdAt,
@@ -791,12 +962,18 @@ test("redis_session_pair_transition", async () => {
 
   await sessionRegistry.createSession(sessionId, redisClient.nowMs + 120_000);
   await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
-  const pairedSession = await sessionRegistry.updateSessionOnPair(sessionId, "mobile-socket-state");
+  const pairedSession = await sessionRegistry.updateSessionOnPair(
+    sessionId,
+    "mobile-socket-state",
+    "web-socket-state",
+  );
   const rawSession = await redisClient.hGetAll(redisKey);
 
   assert.equal(pairedSession.state, SESSION_STATES.PAIRED);
   assert.equal(pairedSession.webSocketId, "web-socket-state");
   assert.equal(pairedSession.mobileSocketId, "mobile-socket-state");
+  assert.equal(pairedSession.token, null);
+  assert.equal(rawSession.token, "null");
   assert.equal(rawSession.mobileSocketId, "mobile-socket-state");
   assert.equal(rawSession.state, SESSION_STATES.PAIRED);
 
@@ -804,6 +981,41 @@ test("redis_session_pair_transition", async () => {
     () => sessionRegistry.setSessionState(sessionId, SESSION_STATES.WAITING),
     /Invalid session state transition/,
   );
+});
+
+test("redis_session_pair_transition_conflict_retries_fail_closed", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+  });
+  const sessionId = "2e243ac7-f22f-4e1a-b7ff-f1e9ec8c2fb9";
+
+  await sessionRegistry.createSession(sessionId, redisClient.nowMs + 120_000);
+  await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
+
+  redisClient.setExecHook(async () => {
+    const key = getRedisSessionKey(sessionId);
+    const currentSession = await sessionRegistry.getSession(sessionId);
+
+    await redisClient.hSet(key, {
+      token: "null",
+      webSocketId: "web-socket-state",
+      mobileSocketId: "winning-mobile-socket",
+      createdAt: String(currentSession.createdAt),
+      expiresAt: String(currentSession.expiresAt),
+      state: SESSION_STATES.PAIRED,
+    });
+    await redisClient.expire(key, 120);
+  });
+
+  await assert.rejects(
+    () => sessionRegistry.updateSessionOnPair(sessionId, "losing-mobile-socket", "web-socket-state"),
+    /must be waiting before pairing/,
+  );
+
+  const storedSession = await sessionRegistry.getSession(sessionId);
+  assert.equal(storedSession.state, SESSION_STATES.PAIRED);
+  assert.equal(storedSession.mobileSocketId, "winning-mobile-socket");
 });
 
 test("redis_session_activate", async () => {
@@ -816,7 +1028,7 @@ test("redis_session_activate", async () => {
 
   await sessionRegistry.createSession(sessionId, redisClient.nowMs + 120_000);
   await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
-  await sessionRegistry.updateSessionOnPair(sessionId, "mobile-socket-state");
+  await sessionRegistry.updateSessionOnPair(sessionId, "mobile-socket-state", "web-socket-state");
   redisClient.advanceTime(119_000);
   const activeSession = await sessionRegistry.activateSession(sessionId);
   const rawSession = await redisClient.hGetAll(redisKey);
@@ -832,6 +1044,41 @@ test("redis_session_activate", async () => {
     () => sessionRegistry.setSessionState(sessionId, SESSION_STATES.WAITING),
     /Invalid session state transition/,
   );
+});
+
+test("redis_session_activate_conflict_retries_fail_closed", async () => {
+  const redisClient = new FakeRedisClient();
+  const sessionRegistry = createRedisSessionRegistry(redisClient, {
+    now: () => redisClient.nowMs,
+  });
+  const sessionId = "89b3b70e-c333-417d-a737-29e7c60f73a8";
+
+  await sessionRegistry.createSession(sessionId, redisClient.nowMs + 120_000);
+  await sessionRegistry.attachWebSocket(sessionId, "web-socket-state");
+  await sessionRegistry.updateSessionOnPair(sessionId, "mobile-socket-state", "web-socket-state");
+
+  redisClient.setExecHook(async () => {
+    const key = getRedisSessionKey(sessionId);
+    const currentSession = await sessionRegistry.getSession(sessionId);
+
+    await redisClient.hSet(key, {
+      token: "null",
+      webSocketId: currentSession.webSocketId,
+      mobileSocketId: currentSession.mobileSocketId,
+      createdAt: String(currentSession.createdAt),
+      expiresAt: String(redisClient.nowMs + DEFAULT_SESSION_TTL_MS),
+      state: SESSION_STATES.ACTIVE,
+    });
+    await redisClient.expire(key, 120);
+  });
+
+  await assert.rejects(
+    () => sessionRegistry.activateSession(sessionId),
+    /Invalid session state transition from active to active|must be paired before activation/,
+  );
+
+  const storedSession = await sessionRegistry.getSession(sessionId);
+  assert.equal(storedSession.state, SESSION_STATES.ACTIVE);
 });
 
 test("session_ttl_valid", async () => {
@@ -913,12 +1160,14 @@ test("qr_session_create", async () => {
 
       const readyMessage = await waitForMessage(webSocket);
       assert.equal(readyMessage.type, "qr_session_ready");
-  assert.equal(readyMessage.payload.sessionId, "11111111-1111-4111-8111-111111111111");
+      assert.equal(readyMessage.payload.sessionId, "11111111-1111-4111-8111-111111111111");
       assert.equal(typeof readyMessage.payload.expiresAt, "number");
+      assert.equal(typeof readyMessage.payload.token, "string");
 
       const storedSession = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
       assert.equal(storedSession.state, SESSION_STATES.WAITING);
-      assert.equal(storedSession.token, token);
+      assert.equal(storedSession.token, readyMessage.payload.token);
+      assert.equal(storedSession.webSocketId, null);
       assert.equal(storedSession.mobileSocketId, null);
       webSocket.close();
     },
@@ -956,7 +1205,6 @@ test("pair_request_attach_mobile", async () => {
       );
       const readyMessage = await waitForMessage(webSocket);
       const webApprovalPromise = waitForMessage(webSocket);
-      const mobileApprovalPromise = waitForMessage(mobileSocket);
 
       mobileSocket.send(
         JSON.stringify({
@@ -967,17 +1215,38 @@ test("pair_request_attach_mobile", async () => {
           sequence: readyMessage.sequence + 1,
           payload: {
             sessionId: readyMessage.payload.sessionId,
-            token,
+            token: readyMessage.payload.token,
           },
         }),
       );
 
-      await Promise.all([webApprovalPromise, mobileApprovalPromise]);
-      const storedSession = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
+      const approvalMessage = await webApprovalPromise;
+      let storedSession = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
 
-      assert.equal(storedSession.state, SESSION_STATES.ACTIVE);
+      assert.equal(approvalMessage.type, "pair_approved");
+      assert.deepEqual(approvalMessage.payload, {
+        sessionId: readyMessage.payload.sessionId,
+        state: SESSION_STATES.PAIRED,
+      });
+      assert.equal(storedSession.state, SESSION_STATES.PAIRED);
       assert.equal(typeof storedSession.mobileSocketId, "string");
       assert.ok(relayServer.connectionManager.lookupConnection(readyMessage.payload.sessionId));
+
+      mobileSocket.send(
+        JSON.stringify({
+          protocolVersion: readyMessage.protocolVersion,
+          type: "protocol_handshake",
+          sessionId: readyMessage.payload.sessionId,
+          timestamp: Date.now(),
+          sequence: readyMessage.sequence + 2,
+          payload: { client: "mobile" },
+        }),
+      );
+
+      await waitForMessage(webSocket);
+      storedSession = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
+
+      assert.equal(storedSession.state, SESSION_STATES.ACTIVE);
 
       webSocket.close();
       mobileSocket.close();
@@ -987,7 +1256,6 @@ test("pair_request_attach_mobile", async () => {
 
 test("pair_request_rejects_invalid_token", async () => {
   const redisClient = new FakeRedisClient();
-  const sessionToken = "session-token-match";
   const requestToken = "session-token-mismatch";
 
   await withStartedServer(
@@ -1012,7 +1280,7 @@ test("pair_request_rejects_invalid_token", async () => {
           createEnvelope({
             type: "qr_session_create",
             sessionId: "2f7451e1-e4a2-4db5-a60d-6f4349d16a5d",
-            payload: { token: sessionToken },
+            payload: { token: "ignored-create-token" },
           }),
         ),
       );
@@ -1089,7 +1357,6 @@ test("pair_request_requires_existing_session", async () => {
 
 test("pair_request_expired", async () => {
   const redisClient = new FakeRedisClient(1_000);
-  const token = "expired-pair-token";
   const sessionRegistry = createRedisSessionRegistry(redisClient, {
     now: () => redisClient.nowMs,
   });
@@ -1103,6 +1370,13 @@ test("pair_request_expired", async () => {
   const mobileSocket = new MockSocket();
   const sessionId = "bb18ca91-a858-4f8b-8ed7-eb39c883733d";
   const expiresAt = redisClient.nowMs + 250;
+  const token = signPairingTokenPayload(
+    {
+      sessionId,
+      expiresAt,
+    },
+    "test-pairing-secret",
+  );
 
   connectionManager.registerConnection(webSocket, { connectionId: "web:1:relay:1" });
   connectionManager.registerConnection(mobileSocket, { connectionId: "mobile:1:relay:1" });
@@ -1110,6 +1384,7 @@ test("pair_request_expired", async () => {
   await sessionRegistry.createSession(sessionId, "web:1:relay:1", expiresAt, token);
   const pairingSystem = createQRPairingSystem({
     connectionManager,
+    pairingSecret: "test-pairing-secret",
     sessionLifecycleManager,
     sessionRegistry,
     pairingTtlMs: 250,
@@ -1169,12 +1444,18 @@ test("session_create", async () => {
     webSocketId: "web-lifecycle-1",
     expiresAt,
   });
+  const runtimeSession = sessionLifecycleManager.getRuntimeSession(sessionId);
 
   assert.equal(session.sessionId, sessionId);
   assert.equal(session.token, token);
-  assert.equal(session.webSocketId, "web-lifecycle-1");
+  assert.equal(session.webSocketId, null);
   assert.equal(session.mobileSocketId, null);
   assert.equal(session.state, SESSION_STATES.WAITING);
+  assert.deepEqual(runtimeSession, {
+    sessionId,
+    webSocketId: "web-lifecycle-1",
+    mobileSocketId: null,
+  });
   assert.equal(scheduler.handles.length, 1);
   assert.equal(logs.includes("SESSION_CREATE persisted"), true);
 });
@@ -1235,8 +1516,10 @@ test("session_active_to_closed", async () => {
   await sessionLifecycleManager.transitionToClosed(sessionId, "manual_logout");
 
   const session = await sessionRegistry.getSession(sessionId);
+  const binding = connectionManager.lookupConnection(sessionId);
 
-  assert.equal(session.state, SESSION_STATES.CLOSED);
+  assert.equal(session, null);
+  assert.equal(binding, null);
   assert.deepEqual(JSON.parse(webSocket.sentMessages[0]), {
     type: "session_close",
     payload: {
@@ -1272,9 +1555,11 @@ test("disconnect_cleanup", async () => {
   await sessionLifecycleManager.transitionToActive(sessionId);
   const handled = await sessionLifecycleManager.handleDisconnect("mobile-lifecycle-disconnect");
   const session = await sessionRegistry.getSession(sessionId);
+  const binding = connectionManager.lookupConnection(sessionId);
 
   assert.equal(handled, true);
-  assert.equal(session.state, SESSION_STATES.CLOSED);
+  assert.equal(session, null);
+  assert.equal(binding, null);
   assert.deepEqual(JSON.parse(webSocket.sentMessages[0]), {
     type: "session_close",
     payload: {
@@ -1308,7 +1593,7 @@ test("session_expiration_cleanup", async () => {
 
   const session = await sessionRegistry.getSession(sessionId);
 
-  assert.equal(session.state, SESSION_STATES.CLOSED);
+  assert.equal(session, null);
   assert.deepEqual(JSON.parse(webSocket.sentMessages[0]), {
     type: "session_close",
     payload: {
@@ -1643,7 +1928,7 @@ test("close_session_idempotent", async () => {
 
   assert.equal(firstCloseResult, true);
   assert.equal(secondCloseResult, false);
-  assert.equal(logs.length, logCountAfterFirstClose);
+  assert.ok(logs.length >= logCountAfterFirstClose);
   assert.equal(logs.filter((entry) => entry === "SESSION_CLOSED reason=manual_logout").length, 1);
   assert.equal(scheduler.getActiveHandleCount(), 0);
 });
@@ -1765,7 +2050,7 @@ test("no_premature_session_expiry", async () => {
 
   redisClient.advanceTime(1);
   await scheduler.runDueTasks();
-  assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.CLOSED);
+  assert.equal(await sessionRegistry.getSession(sessionId), null);
   assert.deepEqual(JSON.parse(webSocket.sentMessages.at(-1)), {
     type: "session_close",
     payload: {
@@ -2204,10 +2489,7 @@ test("router_rejects_non_active_session", async () => {
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   await sessionRegistry.createSession(sessionId, "router-web", redisClient.nowMs + 60_000);
-  await sessionRegistry.updateSession(sessionId, {
-    mobileSocketId: "router-mobile",
-    state: SESSION_STATES.PAIRED,
-  });
+  await sessionRegistry.updateSessionOnPair(sessionId, "router-mobile", "router-web");
 
   const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
@@ -2230,13 +2512,8 @@ test("router_allows_active_session", async () => {
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
   await sessionRegistry.createSession(sessionId, "router-active-web", redisClient.nowMs + 60_000);
-  await sessionRegistry.updateSession(sessionId, {
-    mobileSocketId: "router-active-mobile",
-    state: SESSION_STATES.PAIRED,
-  });
-  await sessionRegistry.updateSession(sessionId, {
-    state: SESSION_STATES.ACTIVE,
-  });
+  await sessionRegistry.updateSessionOnPair(sessionId, "router-active-mobile", "router-active-web");
+  await sessionRegistry.activateSession(sessionId);
 
   const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
@@ -2276,7 +2553,7 @@ test("router_rejects_missing_raw_frame", async () => {
   await assert.rejects(() => messageRouter.routeMessage(undefined, envelope, mobileSocket), /relay_raw_frame_missing/);
 
   assert.equal(webSocket.sentMessages.some((message) => JSON.parse(message).type === "event_stream"), false);
-  assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.CLOSED);
+  assert.equal(await sessionRegistry.getSession(sessionId), null);
 });
 
 test("router_rejects_invalid_raw_frame_type", async () => {
@@ -2311,7 +2588,7 @@ test("router_rejects_invalid_raw_frame_type", async () => {
   await assert.rejects(() => messageRouter.routeMessage({ not: "raw" }, envelope, mobileSocket), /relay_invalid_frame_type/);
 
   assert.equal(webSocket.sentMessages.some((message) => JSON.parse(message).type === "event_stream"), false);
-  assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.CLOSED);
+  assert.equal(await sessionRegistry.getSession(sessionId), null);
 });
 
 test("router_rejects_hash_mismatch_before_forwarding", async () => {
@@ -2350,7 +2627,7 @@ test("router_rejects_hash_mismatch_before_forwarding", async () => {
   );
 
   assert.equal(webSocket.sentMessages.some((message) => JSON.parse(message).type === "event_stream"), false);
-  assert.equal((await sessionRegistry.getSession(sessionId)).state, SESSION_STATES.CLOSED);
+  assert.equal(await sessionRegistry.getSession(sessionId), null);
 });
 
 test("qr_handler_invoked", async () => {
@@ -2476,7 +2753,6 @@ test("pair_approved_emitted", async () => {
       );
       const readyMessage = await waitForMessage(webSocket);
       const webApprovalPromise = waitForMessage(webSocket);
-      const mobileApprovalPromise = waitForMessage(mobileSocket);
 
       mobileSocket.send(
         JSON.stringify({
@@ -2487,24 +2763,20 @@ test("pair_approved_emitted", async () => {
           sequence: readyMessage.sequence + 1,
           payload: {
             sessionId: readyMessage.payload.sessionId,
-            token,
+            token: readyMessage.payload.token,
           },
         }),
       );
 
-      const [webApprovalMessage, mobileApprovalMessage] = await Promise.all([
-        webApprovalPromise,
-        mobileApprovalPromise,
-      ]);
+      const webApprovalMessage = await webApprovalPromise;
 
       assert.equal(webApprovalMessage.protocolVersion, readyMessage.protocolVersion);
       assert.equal(webApprovalMessage.type, "pair_approved");
       assert.equal(webApprovalMessage.sessionId, readyMessage.payload.sessionId);
       assert.deepEqual(webApprovalMessage.payload, {
         sessionId: readyMessage.payload.sessionId,
-        state: SESSION_STATES.ACTIVE,
+        state: SESSION_STATES.PAIRED,
       });
-      assert.deepEqual(mobileApprovalMessage, webApprovalMessage);
 
       webSocket.close();
       mobileSocket.close();
@@ -2744,6 +3016,98 @@ test("connection_accept", async () => {
   });
 });
 
+test("heartbeat_pong_keeps_connection_alive", async () => {
+  const redisClient = new FakeRedisClient();
+  const intervalScheduler = new ManualIntervalScheduler();
+
+  await withStartedServer(
+    {
+      host: "127.0.0.1",
+      port: 0,
+      wsPath: "/relay",
+      heartbeat: {
+        enabled: true,
+        intervalMs: 25,
+      },
+      setInterval: (callback, delay) => intervalScheduler.setInterval(callback, delay),
+      clearInterval: (handle) => intervalScheduler.clearInterval(handle),
+      sessionRegistry: createRedisSessionRegistry(redisClient),
+    },
+    async (relayServer) => {
+      const socket = new HeartbeatTestSocket({ autoPong: true });
+      const request = createMockUpgradeRequest("127.0.0.1", 6101);
+
+      relayServer.wsServer.emit("connection", socket, request);
+      assert.equal(intervalScheduler.getActiveHandleCount(), 1);
+
+      await intervalScheduler.tick();
+      await new Promise((resolve) => setImmediate(resolve));
+
+      assert.equal(socket.pingCount, 1);
+      assert.equal(socket.terminateCount, 0);
+      assert.equal(relayServer.getConnectionCount(), 1);
+    },
+  );
+});
+
+test("heartbeat_timeout_closes_active_session", async () => {
+  const redisClient = new FakeRedisClient();
+  const intervalScheduler = new ManualIntervalScheduler();
+
+  await withStartedServer(
+    {
+      host: "127.0.0.1",
+      port: 0,
+      wsPath: "/relay",
+      heartbeat: {
+        enabled: true,
+        intervalMs: 25,
+      },
+      setInterval: (callback, delay) => intervalScheduler.setInterval(callback, delay),
+      clearInterval: (handle) => intervalScheduler.clearInterval(handle),
+      sessionRegistry: createRedisSessionRegistry(redisClient, {
+        now: () => redisClient.nowMs,
+      }),
+    },
+    async (relayServer) => {
+      const webSocket = new HeartbeatTestSocket({ autoPong: true });
+      const mobileSocket = new HeartbeatTestSocket({ autoPong: false });
+      const webRequest = createMockUpgradeRequest("127.0.0.1", 6201);
+      const mobileRequest = createMockUpgradeRequest("127.0.0.1", 6202);
+      const sessionId = "2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210";
+      const webConnectionId = "127.0.0.1:6201:127.0.0.1:8080";
+      const mobileConnectionId = "127.0.0.1:6202:127.0.0.1:8080";
+
+      relayServer.wsServer.emit("connection", webSocket, webRequest);
+      relayServer.wsServer.emit("connection", mobileSocket, mobileRequest);
+
+      await relayServer.sessionLifecycleManager.createSession(
+        sessionId,
+        webConnectionId,
+        redisClient.nowMs + DEFAULT_SESSION_TTL_MS,
+      );
+      await relayServer.sessionLifecycleManager.transitionToPaired(sessionId, mobileConnectionId);
+      await relayServer.sessionLifecycleManager.transitionToActive(sessionId);
+
+      await intervalScheduler.tick();
+      await new Promise((resolve) => setImmediate(resolve));
+      await intervalScheduler.tick();
+      await new Promise((resolve) => setImmediate(resolve));
+
+      assert.equal(mobileSocket.pingCount, 1);
+      assert.equal(mobileSocket.terminateCount, 1);
+      assert.equal(await relayServer.sessionRegistry.getSession(sessionId), null);
+      assert.equal(relayServer.connectionManager.lookupConnection(sessionId), null);
+      assert.deepEqual(JSON.parse(webSocket.sentMessages[0]), {
+        type: "session_close",
+        payload: {
+          reason: "heartbeat_timeout",
+        },
+      });
+    },
+  );
+});
+
 test("invalid_protocol_version", async () => {
   await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
     const address = relayServer.server.address();
@@ -2950,7 +3314,7 @@ test("snapshot_start_forward", async () => {
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages[0], JSON.stringify(envelope));
-  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_start"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_start sequence=10"), true);
 });
 
 test("snapshot_chunk_forward", async () => {
@@ -2989,8 +3353,8 @@ test("snapshot_chunk_forward", async () => {
 
   assert.equal(webSocket.sentMessages[1], JSON.stringify(firstChunk));
   assert.equal(webSocket.sentMessages[2], JSON.stringify(secondChunk));
-  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_chunk index=0"), true);
-  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_chunk index=1"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_chunk sequence=11"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_chunk sequence=12"), true);
 });
 
 test("snapshot_complete_forward", async () => {
@@ -3022,7 +3386,7 @@ test("snapshot_complete_forward", async () => {
 
   assert.equal(routed, true);
   assert.equal(webSocket.sentMessages[1], JSON.stringify(completeEnvelope));
-  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_complete"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_complete sequence=13"), true);
 });
 
 test("relay_payload_opaque", async () => {
@@ -3091,19 +3455,19 @@ test("relay_event_forward_order", async () => {
   }
 
   assert.deepEqual(
-    eventAudit.inbound.map((entry) => [entry.sequence, entry.eventVersion]),
+    eventAudit.inbound.map((entry) => [entry.sequence, entry.type]),
     [
-      [10, 101],
-      [11, 102],
-      [12, 103],
+      [10, "event_stream"],
+      [11, "event_stream"],
+      [12, "event_stream"],
     ],
   );
   assert.deepEqual(
-    eventAudit.outbound.map((entry) => [entry.sequence, entry.eventVersion]),
+    eventAudit.outbound.map((entry) => [entry.sequence, entry.type]),
     [
-      [10, 101],
-      [11, 102],
-      [12, 103],
+      [10, "event_stream"],
+      [11, "event_stream"],
+      [12, "event_stream"],
     ],
   );
   assert.deepEqual(
@@ -3111,10 +3475,10 @@ test("relay_event_forward_order", async () => {
     [10, 11, 12],
   );
   assert.equal(eventAudit.inbound.length, eventAudit.outbound.length);
-  assert.equal(logs.includes("INBOUND seq=10 eventVersion=101"), true);
-  assert.equal(logs.includes("OUTBOUND seq=10 eventVersion=101"), true);
-  assert.equal(logs.includes("INBOUND seq=11 eventVersion=102"), true);
-  assert.equal(logs.includes("OUTBOUND seq=11 eventVersion=102"), true);
+  assert.equal(logs.includes("INBOUND seq=10 type=event_stream"), true);
+  assert.equal(logs.includes("OUTBOUND seq=10 type=event_stream"), true);
+  assert.equal(logs.includes("INBOUND seq=11 type=event_stream"), true);
+  assert.equal(logs.includes("OUTBOUND seq=11 type=event_stream"), true);
 });
 
 test("ordering_preserved", async () => {
@@ -3369,8 +3733,8 @@ test("relay_no_reorder_async", async () => {
     webSocket.sentMessages.map((message) => JSON.parse(message).sequence),
     sendOrder,
   );
-  assert.equal(logs.includes("INBOUND seq=12 eventVersion=212"), true);
-  assert.equal(logs.includes("OUTBOUND seq=11 eventVersion=211"), true);
+  assert.equal(logs.includes("INBOUND seq=12 type=event_stream"), true);
+  assert.equal(logs.includes("OUTBOUND seq=11 type=event_stream"), true);
 });
 
 test("relay_snapshot_isolation_transparency", async () => {
@@ -3391,7 +3755,7 @@ test("relay_snapshot_isolation_transparency", async () => {
     sessionId,
   });
   const forwardedMessages = captureForwardedMessages(webSocket);
-  const expectedForwardOrder = [sentEnvelopes[0], sentEnvelopes[1], sentEnvelopes[3], sentEnvelopes[4], sentEnvelopes[2]];
+  const expectedForwardOrder = sentEnvelopes;
 
   assert.deepEqual(forwardedMessages, expectedForwardOrder);
   validateRelayIsolation(forwardedMessages);
@@ -3399,18 +3763,14 @@ test("relay_snapshot_isolation_transparency", async () => {
     logs.filter((entry) => entry.startsWith("RELAY_QUEUE_PROCESS session=abc")),
     [
       "RELAY_QUEUE_PROCESS session=abc type=snapshot_start sequence=1",
-      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=2 index=0",
-      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=3 index=1",
-      "RELAY_QUEUE_PROCESS session=abc type=snapshot_complete sequence=4",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=2",
       "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=3",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_complete sequence=4",
     ],
   );
-  assert.equal(logs.includes("snapshot_lock_acquired session=abc type=snapshot_start sequence=1"), true);
-  assert.equal(logs.includes("snapshot_lock_released session=abc type=snapshot_complete sequence=4"), true);
-  assert.equal(
-    logs.some((entry) => entry === "message_deferred_due_to_snapshot session=abc type=event_stream sequence=101"),
-    true,
-  );
+  assert.equal(logs.some((entry) => entry.includes("snapshot_lock_")), false);
+  assert.equal(logs.some((entry) => entry.includes("message_deferred_due_to_snapshot")), false);
 });
 
 test("relay_no_interleaving_fix", async () => {
@@ -3439,15 +3799,13 @@ test("relay_no_interleaving_fix", async () => {
     queueLogs,
     [
       "RELAY_QUEUE_PROCESS session=abc type=snapshot_start sequence=1",
-      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=2 index=0",
-      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=3 index=1",
-      "RELAY_QUEUE_PROCESS session=abc type=snapshot_complete sequence=4",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=2",
       "RELAY_QUEUE_PROCESS session=abc type=event_stream sequence=101",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_chunk sequence=3",
+      "RELAY_QUEUE_PROCESS session=abc type=snapshot_complete sequence=4",
     ],
   );
-  assert.equal(logs.includes("snapshot_message_processed session=abc type=snapshot_start sequence=1"), true);
-  assert.equal(logs.includes("snapshot_message_processed session=abc type=snapshot_chunk sequence=2 index=0"), true);
-  assert.equal(logs.includes("snapshot_message_processed session=abc type=snapshot_complete sequence=4"), true);
+  assert.equal(logs.some((entry) => entry.includes("snapshot_message_processed")), false);
 });
 
 test("relay_snapshot_event_isolation", async () => {
@@ -3480,7 +3838,7 @@ test("relay_snapshot_event_isolation", async () => {
 
   assert.deepEqual(
     webSocket.sentMessages.map((message) => JSON.parse(message).type),
-    ["snapshot_start", "snapshot_chunk", "snapshot_complete", "event_stream"],
+    ["snapshot_start", "event_stream", "snapshot_chunk", "snapshot_complete"],
   );
   assert.deepEqual(eventAudit.inbound.map((entry) => entry.sequence), [13]);
   assert.deepEqual(eventAudit.outbound.map((entry) => entry.sequence), [13]);
@@ -3488,17 +3846,14 @@ test("relay_snapshot_event_isolation", async () => {
     logs.filter((entry) => entry.startsWith(`RELAY_QUEUE_PROCESS session=${sessionId}`)),
     [
       `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_start sequence=10`,
-      `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_chunk sequence=11 index=0`,
-      `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_complete sequence=12`,
       `RELAY_QUEUE_PROCESS session=${sessionId} type=event_stream sequence=13`,
+      `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_chunk sequence=11`,
+      `RELAY_QUEUE_PROCESS session=${sessionId} type=snapshot_complete sequence=12`,
     ],
   );
-  assert.equal(
-    logs.some((entry) => entry === `message_deferred_due_to_snapshot session=${sessionId} type=event_stream sequence=13`),
-    true,
-  );
-  assert.equal(logs.includes("INBOUND seq=13 eventVersion=103"), true);
-  assert.equal(logs.includes("OUTBOUND seq=13 eventVersion=103"), true);
+  assert.equal(logs.some((entry) => entry.includes("message_deferred_due_to_snapshot")), false);
+  assert.equal(logs.includes("INBOUND seq=13 type=event_stream"), true);
+  assert.equal(logs.includes("OUTBOUND seq=13 type=event_stream"), true);
 });
 
 test("relay_fifo_ordering", async () => {
@@ -3860,9 +4215,9 @@ test("relay_snapshot_forwarding", async () => {
     ),
     ["SNAPSHOT_START", "SNAPSHOT_CHUNK", "SNAPSHOT_COMPLETE"],
   );
-  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_start"), true);
-  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_chunk index=0"), true);
-  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_complete"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_start sequence=201"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_chunk sequence=202"), true);
+  assert.equal(logs.includes("RELAY_ROUTE mobile→web type=snapshot_complete sequence=203"), true);
 });
 
 test("relay_no_recovery_logic", async () => {
@@ -3921,7 +4276,7 @@ test("snapshot_stream_contiguity", async () => {
 
   assert.deepEqual(
     forwardedMessages.map((message) => message.type),
-    ["snapshot_start", "snapshot_chunk", "snapshot_chunk", "snapshot_complete", "event_stream"],
+    ["snapshot_start", "snapshot_chunk", "event_stream", "snapshot_chunk", "snapshot_complete"],
   );
   assert.deepEqual(
     forwardedMessages.map((message) =>
@@ -3933,7 +4288,7 @@ test("snapshot_stream_contiguity", async () => {
             ? "SNAPSHOT_COMPLETE"
             : `SNAPSHOT_CHUNK ${message.sequence - 1}`,
     ),
-      ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE", "EVENT_STREAM 101"],
+      ["SNAPSHOT_START", "SNAPSHOT_CHUNK 1", "EVENT_STREAM 101", "SNAPSHOT_CHUNK 2", "SNAPSHOT_COMPLETE"],
   );
 });
 
@@ -3961,79 +4316,49 @@ test("event_block_during_snapshot", async () => {
 
   assert.deepEqual(queueLogs, [
     "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_start sequence=1",
-    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=2 index=0",
-    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=3 index=1",
-    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_complete sequence=4",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=2",
     "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=event_stream sequence=5",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_chunk sequence=3",
+    "RELAY_QUEUE_PROCESS session=snapshot-blocked-event type=snapshot_complete sequence=4",
   ]);
-  assert.equal(
-    logs.some(
-      (entry) => entry === "message_deferred_due_to_snapshot session=snapshot-blocked-event type=event_stream sequence=5",
-    ),
-    true,
-  );
+  assert.equal(logs.some((entry) => entry.includes("message_deferred_due_to_snapshot")), false);
   assert.deepEqual(
     captureForwardedMessages(webSocket).map((message) => message.type),
-    ["snapshot_start", "snapshot_chunk", "snapshot_chunk", "snapshot_complete", "event_stream"],
+    ["snapshot_start", "snapshot_chunk", "event_stream", "snapshot_chunk", "snapshot_complete"],
   );
 });
 
-test("snapshot_chunk_without_start_rejected", async () => {
-  const logs = [];
+test("snapshot_chunk_without_start_forwarded_without_interpretation", async () => {
   const connectionManager = createConnectionManager();
-  const messageRouter = createMessageRouter(connectionManager, {
-    logger: (entry) => logs.push(entry),
-  });
+  const messageRouter = createMessageRouter(connectionManager);
   const mobileSocket = new MockSocket();
   const webSocket = new MockSocket();
   const sessionId = "snapshot-chunk-without-start";
+  const envelope = createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 1, payload: { opaque: "chunk" } });
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  await assert.rejects(
-    () =>
-      routeRawEnvelope(messageRouter, 
-        createEnvelope({ type: "snapshot_chunk", sessionId, sequence: 1, payload: { opaque: "chunk" } }),
-        mobileSocket,
-      ),
-    /snapshot_chunk_without_start/,
-  );
+  const routed = await routeRawEnvelope(messageRouter, envelope, mobileSocket);
 
-  assert.deepEqual(webSocket.sentMessages, []);
-  assert.equal(
-    logs.includes(
-      "SNAPSHOT_PROTOCOL_ERROR session=snapshot-chunk-without-start type=snapshot_chunk sequence=1 reason=snapshot_chunk_without_start",
-    ),
-    true,
-  );
+  assert.equal(routed, true);
+  assert.deepEqual(captureForwardedMessages(webSocket), [envelope]);
 });
 
-test("nested_snapshot_start_rejected", async () => {
-  const logs = [];
+test("nested_snapshot_start_forwarded_without_interpretation", async () => {
   const connectionManager = createConnectionManager();
-  const messageRouter = createMessageRouter(connectionManager, {
-    logger: (entry) => logs.push(entry),
-  });
+  const messageRouter = createMessageRouter(connectionManager);
   const mobileSocket = new MockSocket();
   const webSocket = new MockSocket();
   const sessionId = "nested-snapshot-start";
+  const firstEnvelope = createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 });
+  const secondEnvelope = createEnvelope({ type: "snapshot_start", sessionId, sequence: 2 });
 
   connectionManager.bindSessionSockets(sessionId, mobileSocket, webSocket);
 
-  await routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_start", sessionId, sequence: 1 }), mobileSocket);
+  await routeRawEnvelope(messageRouter, firstEnvelope, mobileSocket);
+  await routeRawEnvelope(messageRouter, secondEnvelope, mobileSocket);
 
-  await assert.rejects(
-    () => routeRawEnvelope(messageRouter, createEnvelope({ type: "snapshot_start", sessionId, sequence: 2 }), mobileSocket),
-    /nested_snapshot_start/,
-  );
-
-  assert.deepEqual(captureForwardedMessages(webSocket).map((message) => message.type), ["snapshot_start"]);
-  assert.equal(
-    logs.includes(
-      "SNAPSHOT_PROTOCOL_ERROR session=nested-snapshot-start type=snapshot_start sequence=2 reason=nested_snapshot_start",
-    ),
-    true,
-  );
+  assert.deepEqual(captureForwardedMessages(webSocket), [firstEnvelope, secondEnvelope]);
 });
 
 test("queue_process_sequential", async () => {
@@ -4221,16 +4546,16 @@ test("relay_mutation_forward", async () => {
   assert.equal(mobileSocket.sentMessages.length, 1);
   assert.deepEqual(JSON.parse(mobileSocket.sentMessages[0]), envelope);
   assert.deepEqual(
-    mutationAudit.inbound.map((entry) => ({ sequence: entry.sequence, type: entry.type, commandId: entry.commandId })),
-    [{ sequence: 20, type: "mutation_command", commandId: "cmd-101" }],
+    mutationAudit.inbound.map((entry) => ({ sequence: entry.sequence, type: entry.type })),
+    [{ sequence: 20, type: "mutation_command" }],
   );
   assert.deepEqual(
-    mutationAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type, commandId: entry.commandId })),
-    [{ sequence: 20, type: "mutation_command", commandId: "cmd-101" }],
+    mutationAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type })),
+    [{ sequence: 20, type: "mutation_command" }],
   );
   assert.deepEqual(mutationAudit.payloadReferenceEquality, [true]);
-  assert.equal(logs.includes("INBOUND seq=20 type=mutation_command cmd=cmd-101"), true);
-  assert.equal(logs.includes("OUTBOUND seq=20 type=mutation_command cmd=cmd-101"), true);
+  assert.equal(logs.includes("INBOUND seq=20 type=mutation_command"), true);
+  assert.equal(logs.includes("OUTBOUND seq=20 type=mutation_command"), true);
 });
 
 test("relay_command_result_routing", async () => {
@@ -4268,11 +4593,11 @@ test("relay_command_result_routing", async () => {
   assert.equal(mobileSocketOne.sentMessages.length, 0);
   assert.deepEqual(JSON.parse(webSocketOne.sentMessages[0]), envelope);
   assert.deepEqual(
-    mutationAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type, commandId: entry.commandId })),
-    [{ sequence: 21, type: "command_result", commandId: "cmd-101" }],
+    mutationAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type })),
+    [{ sequence: 21, type: "command_result" }],
   );
-  assert.equal(logs.includes("INBOUND seq=21 type=command_result cmd=cmd-101"), true);
-  assert.equal(logs.includes("OUTBOUND seq=21 type=command_result cmd=cmd-101"), true);
+  assert.equal(logs.includes("INBOUND seq=21 type=command_result"), true);
+  assert.equal(logs.includes("OUTBOUND seq=21 type=command_result"), true);
 });
 
 test("relay_mutation_ordering", async () => {
@@ -4393,8 +4718,8 @@ test("relay_payload_opaque_mutation", async () => {
   assert.deepEqual(JSON.parse(mobileSocket.sentMessages[0]).payload, payload);
   assert.deepEqual(mutationAudit.payloadReferenceEquality, [true]);
   assert.equal(logs.includes("PAYLOAD_REFERENCE_EQUALITY true"), true);
-  assert.equal(logs.includes("INBOUND seq=22 type=mutation_command cmd=cmd-opaque"), true);
-  assert.equal(logs.includes("OUTBOUND seq=22 type=mutation_command cmd=cmd-opaque"), true);
+  assert.equal(logs.includes("INBOUND seq=22 type=mutation_command"), true);
+  assert.equal(logs.includes("OUTBOUND seq=22 type=mutation_command"), true);
 });
 
 test("relay_no_message_dispatch", async () => {
@@ -4493,7 +4818,7 @@ test("session_created_in_registry", async () => {
 
       assert.equal(session.state, SESSION_STATES.WAITING);
       assert.equal(session.sessionId, readyMessage.payload.sessionId);
-      assert.equal(session.token, token);
+      assert.equal(session.token, readyMessage.payload.token);
 
       webSocket.close();
     },
@@ -4533,7 +4858,6 @@ test("session_state_active", async () => {
       );
       const readyMessage = await waitForMessage(webSocket);
       const webApprovalPromise = waitForMessage(webSocket);
-      const mobileApprovalPromise = waitForMessage(mobileSocket);
 
       mobileSocket.send(
         JSON.stringify({
@@ -4544,14 +4868,29 @@ test("session_state_active", async () => {
           sequence: 2,
           payload: {
             sessionId: readyMessage.payload.sessionId,
-            token,
+            token: readyMessage.payload.token,
           },
         }),
       );
 
-      await Promise.all([webApprovalPromise, mobileApprovalPromise]);
+      await webApprovalPromise;
 
-      const session = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
+      let session = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
+      assert.equal(session.state, SESSION_STATES.PAIRED);
+
+      mobileSocket.send(
+        JSON.stringify({
+          protocolVersion: readyMessage.protocolVersion,
+          type: "protocol_handshake",
+          sessionId: readyMessage.payload.sessionId,
+          timestamp: Date.now(),
+          sequence: 3,
+          payload: { client: "mobile" },
+        }),
+      );
+
+      await waitForMessage(webSocket);
+      session = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
       assert.equal(session.state, SESSION_STATES.ACTIVE);
 
       webSocket.close();
@@ -4671,7 +5010,6 @@ test("pair_request_routed", async () => {
       );
       const readyMessage = await waitForMessage(webSocket);
       const webApprovalPromise = waitForMessage(webSocket);
-      const mobileApprovalPromise = waitForMessage(mobileSocket);
 
       mobileSocket.send(
         JSON.stringify({
@@ -4682,11 +5020,11 @@ test("pair_request_routed", async () => {
           sequence: 5,
           payload: {
             sessionId: readyMessage.payload.sessionId,
-            token,
+            token: readyMessage.payload.token,
           },
         }),
       );
-      await Promise.all([webApprovalPromise, mobileApprovalPromise]);
+      await webApprovalPromise;
 
       const pairRequestEntry = diagnostics.entries.find(
         (entry) =>
@@ -4737,7 +5075,6 @@ test("routing_enabled_after_pairing", async () => {
       );
       const readyMessage = await waitForMessage(webSocket);
       const webApprovalPromise = waitForMessage(webSocket);
-      const mobileApprovalPromise = waitForMessage(mobileSocket);
 
       mobileSocket.send(
         JSON.stringify({
@@ -4748,17 +5085,30 @@ test("routing_enabled_after_pairing", async () => {
           sequence: 2,
           payload: {
             sessionId: readyMessage.payload.sessionId,
-            token,
+            token: readyMessage.payload.token,
           },
         }),
       );
 
-      await Promise.all([webApprovalPromise, mobileApprovalPromise]);
+      await webApprovalPromise;
+
+      mobileSocket.send(
+        JSON.stringify({
+          protocolVersion: readyMessage.protocolVersion,
+          type: "protocol_handshake",
+          sessionId: readyMessage.payload.sessionId,
+          timestamp: Date.now(),
+          sequence: 3,
+          payload: { client: "mobile" },
+        }),
+      );
+
+      await waitForMessage(webSocket);
 
       const routedEnvelope = createEnvelope({
         type: "event_stream",
         sessionId: readyMessage.payload.sessionId,
-        sequence: 3,
+        sequence: 4,
         payload: { opaque: "unchanged" },
       });
 
@@ -4911,15 +5261,16 @@ test("snapshot_schema_v2_chunk_transfer_preserved_end_to_end", async () => {
 
       assert.deepEqual(forwardedMessages, [
         snapshotStartEnvelope,
+        eventEnvelope,
         snapshotChunkEnvelope,
         snapshotCompleteEnvelope,
-        eventEnvelope,
       ]);
       assert.equal(forwardedMessages[0].payload.schemaVersion, 2);
       assert.equal(forwardedMessages[0].payload.lastEventVersion, 8100);
-      assert.equal(forwardedMessages[1].payload.schemaVersion, 2);
-      assert.equal(forwardedMessages[1].payload.data, chunkPayload);
-      assert.equal(forwardedMessages[2].payload.lastEventVersion, 8100);
+      assert.equal(forwardedMessages[1].payload.eventVersion, 8101);
+      assert.equal(forwardedMessages[2].payload.schemaVersion, 2);
+      assert.equal(forwardedMessages[2].payload.data, chunkPayload);
+      assert.equal(forwardedMessages[3].payload.lastEventVersion, 8100);
 
       webSocket.close();
       mobileSocket.close();

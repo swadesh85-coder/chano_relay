@@ -243,15 +243,11 @@ async function establishPairedSession(clientUrl, sessionRegistry, sessionId, pai
       }),
     ),
   );
-  await readyPromise;
+  const readyMessage = await readyPromise;
   await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.WAITING);
 
   const webApprovedPromise = waitForSocketMessage(
     webSocket,
-    (message) => message.type === "pair_approved" && message.sessionId === sessionId,
-  );
-  const mobileApprovedPromise = waitForSocketMessage(
-    mobileSocket,
     (message) => message.type === "pair_approved" && message.sessionId === sessionId,
   );
 
@@ -261,19 +257,37 @@ async function establishPairedSession(clientUrl, sessionRegistry, sessionId, pai
         type: "pair_request",
         sessionId,
         sequence: 2,
-        payload: { sessionId, token: pairingToken },
+        payload: { sessionId, token: readyMessage.parsed.payload.token },
       }),
     ),
   );
 
-  await Promise.all([webApprovedPromise, mobileApprovedPromise]);
+  await webApprovedPromise;
+
+  const handshakePromise = waitForSocketMessage(
+    webSocket,
+    (message) => message.type === "protocol_handshake" && message.sessionId === sessionId,
+  );
+
+  mobileSocket.send(
+    JSON.stringify(
+      createEnvelope({
+        type: "protocol_handshake",
+        sessionId,
+        sequence: 3,
+        payload: { client: "mobile" },
+      }),
+    ),
+  );
+
+  await handshakePromise;
   await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.ACTIVE);
 
   return { webSocket, mobileSocket };
 }
 
 function extractSessionState(session) {
-  return session ? session.state : "missing";
+  return session ? session.state : SESSION_STATES.CLOSED;
 }
 
 async function runNegativeControl({ label, rawFrame, metadata, sessionId }) {

@@ -22,6 +22,7 @@ const ALLOWED_STATE_TRANSITIONS = Object.freeze({
 const REDIS_CLIENT_PACKAGE_NAME = "redis";
 const DEFAULT_SESSION_TTL_MS = 2 * 60 * 1000;
 const NULL_REDIS_FIELD_VALUE = "null";
+const DEFAULT_ATOMIC_RETRY_COUNT = 3;
 
 function assertNonEmptyString(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -165,6 +166,10 @@ function deserializeSessionHash(serializedSession) {
 function buildRedisHashUpdates(updates) {
   const redisHashUpdates = {};
 
+  if (Object.prototype.hasOwnProperty.call(updates, "token")) {
+    redisHashUpdates.token = serializeRedisFieldValue(updates.token);
+  }
+
   if (Object.prototype.hasOwnProperty.call(updates, "webSocketId")) {
     redisHashUpdates.webSocketId = serializeRedisFieldValue(updates.webSocketId);
   }
@@ -259,6 +264,10 @@ function buildUpdatedSession(session, updates) {
     ...session,
   };
 
+  if (Object.prototype.hasOwnProperty.call(updates, "token")) {
+    nextSession.token = normalizeToken(updates.token);
+  }
+
   if (Object.prototype.hasOwnProperty.call(updates, "webSocketId")) {
     if (updates.webSocketId !== null) {
       assertSocketId(updates.webSocketId, "webSocketId");
@@ -314,8 +323,11 @@ class RedisSessionRegistry {
     this.redisClient = redisClient;
     this.logger = typeof options.logger === "function" ? options.logger : console.log;
     this.now = typeof options.now === "function" ? options.now : () => Date.now();
+    this.atomicRetryCount =
+      options.atomicRetryCount === undefined ? DEFAULT_ATOMIC_RETRY_COUNT : Number(options.atomicRetryCount);
     this.sessionTtlMs =
       options.sessionTtlMs === undefined ? DEFAULT_SESSION_TTL_MS : Number(options.sessionTtlMs);
+    assertPositiveInteger(this.atomicRetryCount, "atomicRetryCount");
     assertPositiveInteger(this.sessionTtlMs, "sessionTtlMs");
   }
 
@@ -358,7 +370,7 @@ class RedisSessionRegistry {
       sessionId,
       token,
       mobileSocketId: null,
-      webSocketId: webSocketId || null,
+      webSocketId: null,
       createdAt: this.now(),
       expiresAt: expiresAtMs,
       state: SESSION_STATES.WAITING,
@@ -373,49 +385,46 @@ class RedisSessionRegistry {
     return session;
   }
 
-  async updateSessionOnPair(sessionId, mobileSocketId) {
+  async updateSessionOnPair(sessionId, mobileSocketId, webSocketId) {
     assertSessionId(sessionId);
     assertSocketId(mobileSocketId, "mobileSocketId");
+    assertSocketId(webSocketId, "webSocketId");
 
-    const session = await this.requireSession(sessionId);
-    const updatedSession = buildUpdatedSession(session, {
-      mobileSocketId,
-      state: SESSION_STATES.PAIRED,
-    });
-
-    await this.writeSessionFields(
-      updatedSession.sessionId,
-      {
-        mobileSocketId: updatedSession.mobileSocketId,
-        state: updatedSession.state,
-      },
-      updatedSession.expiresAt,
+    return this.runAtomicSessionUpdate(
+      sessionId,
       "pair",
-    );
+      (session) => {
+        if (session.state !== SESSION_STATES.WAITING) {
+          throw new Error(`Session ${sessionId} must be waiting before pairing`);
+        }
 
-    return updatedSession;
+        return buildUpdatedSession(session, {
+          token: null,
+          webSocketId,
+          mobileSocketId,
+          state: SESSION_STATES.PAIRED,
+        });
+      },
+    );
   }
 
   async activateSession(sessionId) {
     assertSessionId(sessionId);
 
-    const session = await this.requireSession(sessionId);
-    const updatedSession = buildUpdatedSession(session, {
-      state: SESSION_STATES.ACTIVE,
-      expiresAt: this.computeExpiresAt(),
-    });
-
-    await this.writeSessionFields(
-      updatedSession.sessionId,
-      {
-        state: updatedSession.state,
-        expiresAt: updatedSession.expiresAt,
-      },
-      updatedSession.expiresAt,
+    return this.runAtomicSessionUpdate(
+      sessionId,
       "activate",
-    );
+      (session) => {
+        if (session.state !== SESSION_STATES.PAIRED) {
+          throw new Error(`Session ${sessionId} must be paired before activation`);
+        }
 
-    return updatedSession;
+        return buildUpdatedSession(session, {
+          state: SESSION_STATES.ACTIVE,
+          expiresAt: this.computeExpiresAt(),
+        });
+      },
+    );
   }
 
   async refreshSessionTtl(sessionId, action = "refresh") {
@@ -562,6 +571,73 @@ class RedisSessionRegistry {
       this.logRedisWrite("failure", action, sessionId, ttlSeconds, error);
       throw error;
     }
+  }
+
+  async runAtomicSessionUpdate(sessionId, action, buildUpdatedSessionFn) {
+    assertSessionId(sessionId);
+    assertNonEmptyString(action, "action");
+
+    const key = getRedisSessionKey(sessionId);
+
+    if (typeof buildUpdatedSessionFn !== "function") {
+      throw new Error("buildUpdatedSessionFn must be a function");
+    }
+
+    if (!this.supportsOptimisticTransactions()) {
+      const session = await this.requireSession(sessionId);
+      const updatedSession = buildUpdatedSessionFn(session);
+      await this.writeSessionFields(
+        updatedSession.sessionId,
+        buildRedisHashUpdates(updatedSession),
+        updatedSession.expiresAt,
+        action,
+      );
+      return updatedSession;
+    }
+
+    for (let attempt = 1; attempt <= this.atomicRetryCount; attempt += 1) {
+      await this.redisClient.watch(key);
+
+      try {
+        const currentSession = deserializeSessionHash(await this.redisClient.hGetAll(key));
+        if (!currentSession) {
+          throw new Error(`Session not found for ${sessionId}`);
+        }
+
+        const nextSession = buildUpdatedSessionFn(currentSession);
+        const ttlSeconds = toRedisTtlSeconds(nextSession.expiresAt, this.now());
+        const transaction = this.redisClient.multi();
+
+        transaction.hSet(key, buildRedisHashUpdates(nextSession));
+        transaction.expire(key, ttlSeconds);
+
+        const transactionResult = await transaction.exec();
+        if (transactionResult === null) {
+          this.logRedisWrite("retry", `${action}_conflict`, sessionId, ttlSeconds);
+          continue;
+        }
+
+        this.logRedisWrite("success", action, sessionId, ttlSeconds);
+        return nextSession;
+      } catch (error) {
+        if (typeof this.redisClient.unwatch === "function") {
+          await this.redisClient.unwatch();
+        }
+
+        this.logRedisWrite("failure", action, sessionId, 0, error);
+        throw error;
+      }
+    }
+
+    throw new Error(`Atomic ${action} failed for ${sessionId} after ${this.atomicRetryCount} retries`);
+  }
+
+  supportsOptimisticTransactions() {
+    return (
+      typeof this.redisClient.watch === "function" &&
+      typeof this.redisClient.unwatch === "function" &&
+      typeof this.redisClient.multi === "function"
+    );
   }
 
   logRedisWrite(status, action, sessionId, ttlSeconds, error) {

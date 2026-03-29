@@ -5,7 +5,12 @@ const path = require("path");
 const crypto = require("crypto");
 const { EventEmitter } = require("events");
 const { WebSocketServer } = require("ws");
-const { DEFAULT_PAIRING_TTL_MS, QRPairingSystem, createQRPairingSystem } = require("./qrPairingSystem");
+const {
+  DEFAULT_PAIRING_TTL_MS,
+  QRPairingSystem,
+  createQRPairingSystem,
+  signPairingTokenPayload,
+} = require("./qrPairingSystem");
 const {
   DEFAULT_MAX_COMMANDS_PER_SECOND,
   DEFAULT_MAX_PAYLOAD_SIZE,
@@ -30,6 +35,7 @@ const {
 const DEFAULT_PROTOCOL_VERSION = 2;
 const DEFAULT_MAX_PAYLOAD_BYTES = DEFAULT_MAX_PAYLOAD_SIZE;
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "relay.config.json");
+const DEFAULT_HEARTBEAT_INTERVAL_MS = 30_000;
 const BOOTSTRAP_MESSAGE_TYPES = new Set(["protocol_handshake", "qr_session_create", "pair_request"]);
 function createRelayIngressDiagnostics(options = {}) {
   const enabled = Boolean(options.enabled);
@@ -214,6 +220,18 @@ function loadRelayConfiguration(options = {}) {
           fileConfig.diagnostics && fileConfig.diagnostics.ingress && fileConfig.diagnostics.ingress.enabled,
         ),
       },
+    },
+    heartbeat: {
+      enabled: parseBoolean(
+        env.RELAY_HEARTBEAT_ENABLED,
+        fileConfig.heartbeat && fileConfig.heartbeat.enabled !== undefined
+          ? fileConfig.heartbeat.enabled
+          : true,
+      ),
+      intervalMs: parseInteger(
+        env.RELAY_HEARTBEAT_INTERVAL_MS,
+        parseInteger(fileConfig.heartbeat && fileConfig.heartbeat.intervalMs, DEFAULT_HEARTBEAT_INTERVAL_MS),
+      ),
     },
     tls: tlsConfig,
   };
@@ -487,6 +505,40 @@ function createConnectionManager(options = {}) {
     return session;
   }
 
+  function unbindSession(sessionId) {
+    if (typeof sessionId !== "string" || sessionId.trim() === "") {
+      throw new Error("sessionId is required");
+    }
+
+    const session = sessionRegistry.get(sessionId);
+    if (!session) {
+      return false;
+    }
+
+    const clearRegistration = (socket, role) => {
+      if (!socket) {
+        return;
+      }
+
+      const registration = socketRegistry.get(socket);
+      if (!registration) {
+        return;
+      }
+
+      if (registration.sessionId === sessionId && registration.role === role) {
+        registration.sessionId = null;
+        registration.role = null;
+      }
+    };
+
+    clearRegistration(session.mobileSocket, "mobile");
+    clearRegistration(session.webSocket, "web");
+    session.mobileSocket = null;
+    session.webSocket = null;
+    sessionRegistry.delete(sessionId);
+    return true;
+  }
+
   function getConnectionCount() {
     return socketRegistry.size;
   }
@@ -504,6 +556,7 @@ function createConnectionManager(options = {}) {
     lookupConnectionById,
     lookupSocket,
     bindSessionSockets,
+    unbindSession,
     closeAllConnections,
     getConnectionCount,
   };
@@ -588,30 +641,6 @@ function createMessageRouter(connectionManager, options = {}) {
     );
   }
 
-  function extractEventVersion(payload) {
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      return "unknown";
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(payload, "eventVersion")) {
-      return "unknown";
-    }
-
-    return payload.eventVersion;
-  }
-
-  function extractCommandId(payload) {
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      return "unknown";
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(payload, "commandId")) {
-      return "unknown";
-    }
-
-    return payload.commandId;
-  }
-
   function enableEventAudit(sessionId) {
     if (typeof sessionId !== "string" || sessionId.trim() === "") {
       throw new Error("sessionId is required");
@@ -686,11 +715,11 @@ function createMessageRouter(connectionManager, options = {}) {
 
     const entry = {
       envelope,
+      type: envelope.type,
       sequence: envelope.sequence,
-      eventVersion: extractEventVersion(envelope.payload),
       payloadReferenceEquality,
     };
-    const logLine = `${direction} seq=${entry.sequence} eventVersion=${entry.eventVersion}`;
+    const logLine = `${direction} seq=${entry.sequence} type=${entry.type}`;
 
     if (direction === "INBOUND") {
       auditState.inbound.push(entry);
@@ -717,10 +746,9 @@ function createMessageRouter(connectionManager, options = {}) {
       envelope,
       type: envelope.type,
       sequence: envelope.sequence,
-      commandId: extractCommandId(envelope.payload),
       payloadReferenceEquality,
     };
-    const logLine = `${direction} seq=${entry.sequence} type=${entry.type} cmd=${entry.commandId}`;
+    const logLine = `${direction} seq=${entry.sequence} type=${entry.type}`;
 
     if (direction === "INBOUND") {
       auditState.inbound.push(entry);
@@ -768,37 +796,15 @@ function createMessageRouter(connectionManager, options = {}) {
     return payloadReferenceEquality;
   }
 
-  async function forwardSnapshotStart(envelope, destinationSocket, senderRegistration, routingMetadata) {
-    await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
-    logger(`RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_start`);
-  }
-
-  async function forwardEventStream(envelope, destinationSocket, senderRegistration, routingMetadata) {
+  async function forwardRoutedEnvelope(envelope, destinationSocket, senderRegistration, routingMetadata) {
     const payloadReferenceEquality = await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
+
     recordEventAudit("OUTBOUND", envelope, payloadReferenceEquality);
-    logger(
-      `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=event_stream sequence=${envelope.sequence}`,
-    );
-  }
-
-  async function forwardMutationEnvelope(envelope, destinationSocket, senderRegistration, routingMetadata) {
-    const payloadReferenceEquality = await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
     recordMutationAudit("OUTBOUND", envelope, payloadReferenceEquality);
+
     logger(
       `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=${envelope.type} sequence=${envelope.sequence}`,
     );
-  }
-
-  async function forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, routingMetadata, chunkIndex) {
-    await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
-    logger(
-      `RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_chunk index=${chunkIndex === null ? 0 : chunkIndex}`,
-    );
-  }
-
-  async function forwardSnapshotComplete(envelope, destinationSocket, senderRegistration, routingMetadata) {
-    await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
-    logger(`RELAY_ROUTE ${getRouteDirection(senderRegistration.role)} type=snapshot_complete`);
   }
 
   async function routeEnvelope(rawFrame, envelope, senderSocket, senderRegistration = connectionManager.lookupSocket(senderSocket), metadata = {}) {
@@ -927,8 +933,10 @@ function createMessageRouter(connectionManager, options = {}) {
       return false;
     }
 
+    let persistedSession = null;
+
     if (sessionRegistry) {
-      const persistedSession = await sessionRegistry.getSession(envelope.sessionId);
+      persistedSession = await sessionRegistry.getSession(envelope.sessionId);
 
       logRelayAudit(diagnostics, "SESSION_LOOKUP", [
         ["type", envelope.type || null],
@@ -954,7 +962,10 @@ function createMessageRouter(connectionManager, options = {}) {
         return false;
       }
 
-      if (persistedSession.state !== SESSION_STATES.ACTIVE) {
+      const handshakeDuringPairing =
+        envelope.type === "protocol_handshake" && persistedSession.state === SESSION_STATES.PAIRED;
+
+      if (persistedSession.state !== SESSION_STATES.ACTIVE && !handshakeDuringPairing) {
         if (diagnostics) {
           diagnostics.log("message_router_dispatch", {
             socketId: senderRegistration.connectionId,
@@ -999,26 +1010,23 @@ function createMessageRouter(connectionManager, options = {}) {
       return false;
     }
 
-    if (sessionLifecycleManager) {
+    if (sessionLifecycleManager && (!persistedSession || persistedSession.state === SESSION_STATES.ACTIVE)) {
       await sessionLifecycleManager.persistBeforeRouting(() =>
         sessionLifecycleManager.refreshSessionActivity(envelope.sessionId, envelope.type),
       );
     }
 
-    if (envelope.type === "snapshot_start") {
-      await forwardSnapshotStart(envelope, destinationSocket, senderRegistration, routingMetadata);
-    } else if (envelope.type === "snapshot_chunk") {
-      const sessionQueue = sessionQueueManager.initializeSessionQueue(envelope.sessionId);
-      const chunkIndex = Math.max(sessionQueue.snapshotChunkIndex - 1, 0);
-      await forwardSnapshotChunk(envelope, destinationSocket, senderRegistration, routingMetadata, chunkIndex);
-    } else if (envelope.type === "snapshot_complete") {
-      await forwardSnapshotComplete(envelope, destinationSocket, senderRegistration, routingMetadata);
-    } else if (envelope.type === "event_stream") {
-      await forwardEventStream(envelope, destinationSocket, senderRegistration, routingMetadata);
-    } else if (isMutationAuditEnvelope(envelope)) {
-      await forwardMutationEnvelope(envelope, destinationSocket, senderRegistration, routingMetadata);
-    } else {
-      await forwardEnvelopeAsIs(envelope, destinationSocket, routingMetadata);
+    await forwardRoutedEnvelope(envelope, destinationSocket, senderRegistration, routingMetadata);
+
+    if (
+      sessionLifecycleManager &&
+      persistedSession &&
+      persistedSession.state === SESSION_STATES.PAIRED &&
+      envelope.type === "protocol_handshake"
+    ) {
+      await sessionLifecycleManager.persistBeforeRouting(() =>
+        sessionLifecycleManager.onPairApproved(envelope.sessionId),
+      );
     }
 
     const targetRegistration = connectionManager.lookupSocket(destinationSocket);
@@ -1116,6 +1124,10 @@ function mergeConfiguration(configOverrides = {}) {
         ...((configOverrides.diagnostics && configOverrides.diagnostics.ingress) || {}),
       },
     },
+    heartbeat: {
+      ...(baseConfig.heartbeat || {}),
+      ...(configOverrides.heartbeat || {}),
+    },
     tls: {
       ...baseConfig.tls,
       ...(configOverrides.tls || {}),
@@ -1125,6 +1137,10 @@ function mergeConfiguration(configOverrides = {}) {
 
 function createRelayServer(configOverrides = {}) {
   const config = mergeConfiguration(configOverrides);
+  const setRepeatingTimer =
+    typeof configOverrides.setInterval === "function" ? configOverrides.setInterval : setInterval;
+  const clearRepeatingTimer =
+    typeof configOverrides.clearInterval === "function" ? configOverrides.clearInterval : clearInterval;
   const ingressDiagnostics = createRelayIngressDiagnostics({
     ...(config.diagnostics && config.diagnostics.ingress),
   });
@@ -1143,6 +1159,7 @@ function createRelayServer(configOverrides = {}) {
     ? createQRPairingSystem({
         connectionManager,
         diagnostics: ingressDiagnostics,
+      pairingSecret: config.pairing.secret,
         sessionLifecycleManager,
         sessionRegistry,
         pairingTtlMs: config.pairing.ttlMs,
@@ -1161,8 +1178,120 @@ function createRelayServer(configOverrides = {}) {
         }
       : {},
   });
+  const heartbeatState = new Map();
+  const heartbeatEnabled = Boolean(config.heartbeat && config.heartbeat.enabled);
+  const heartbeatIntervalMs = heartbeatEnabled
+    ? parseInteger(config.heartbeat && config.heartbeat.intervalMs, DEFAULT_HEARTBEAT_INTERVAL_MS)
+    : 0;
+  let heartbeatTimer = null;
 
   let relayServer;
+
+  function unregisterHeartbeat(socket) {
+    const state = heartbeatState.get(socket);
+    if (!state) {
+      return false;
+    }
+
+    if (typeof socket.off === "function") {
+      socket.off("pong", state.onPong);
+      socket.off("close", state.onClose);
+    } else if (typeof socket.removeListener === "function") {
+      socket.removeListener("pong", state.onPong);
+      socket.removeListener("close", state.onClose);
+    }
+
+    heartbeatState.delete(socket);
+    return true;
+  }
+
+  async function handleHeartbeatTimeout(socket, state) {
+    events.emit("heartbeatTimeout", { connectionId: state.connectionId });
+
+    const registration = connectionManager.lookupSocket(socket);
+    const sessionId = registration && registration.sessionId ? registration.sessionId : null;
+
+    if (sessionId && sessionLifecycleManager) {
+      await sessionLifecycleManager.closeSession(sessionId, "heartbeat_timeout").catch((error) => {
+        events.emit("heartbeatError", { connectionId: state.connectionId, error });
+      });
+    }
+
+    unregisterHeartbeat(socket);
+
+    if (typeof socket.terminate === "function") {
+      socket.terminate();
+      return;
+    }
+
+    if (typeof socket.close === "function") {
+      socket.close(1001, "heartbeat_timeout");
+    }
+  }
+
+  function registerHeartbeat(socket, connectionId) {
+    if (!heartbeatEnabled || heartbeatIntervalMs <= 0) {
+      return;
+    }
+
+    const state = {
+      connectionId,
+      awaitingPong: false,
+      onPong() {
+        const currentState = heartbeatState.get(socket);
+        if (!currentState) {
+          return;
+        }
+
+        currentState.awaitingPong = false;
+        events.emit("heartbeatPong", { connectionId });
+      },
+      onClose() {
+        unregisterHeartbeat(socket);
+      },
+    };
+
+    heartbeatState.set(socket, state);
+    socket.on("pong", state.onPong);
+    socket.on("close", state.onClose);
+  }
+
+  async function runHeartbeatSweep() {
+    const sockets = [...heartbeatState.entries()];
+
+    for (const [socket, state] of sockets) {
+      if (!heartbeatState.has(socket)) {
+        continue;
+      }
+
+      if (state.awaitingPong) {
+        await handleHeartbeatTimeout(socket, state);
+        continue;
+      }
+
+      state.awaitingPong = true;
+      events.emit("heartbeatPing", { connectionId: state.connectionId });
+
+      try {
+        if (typeof socket.ping === "function") {
+          socket.ping();
+          continue;
+        }
+      } catch (error) {
+        events.emit("heartbeatError", { connectionId: state.connectionId, error });
+      }
+
+      await handleHeartbeatTimeout(socket, state);
+    }
+  }
+
+  if (heartbeatEnabled && heartbeatIntervalMs > 0) {
+    heartbeatTimer = setRepeatingTimer(() => {
+      runHeartbeatSweep().catch((error) => {
+        events.emit("heartbeatError", { connectionId: null, error });
+      });
+    }, heartbeatIntervalMs);
+  }
 
   function handleRateLimitViolation(socket, connectionId, remoteAddress, reason) {
     events.emit("rateLimitViolation", { connectionId, remoteAddress, reason });
@@ -1229,6 +1358,7 @@ function createRelayServer(configOverrides = {}) {
     const remoteAddress = req.socket.remoteAddress || "unknown";
     const connectionId = buildConnectionId(req);
     connectionManager.registerConnection(socket, { connectionId, remoteAddress });
+    registerHeartbeat(socket, connectionId);
     events.emit("connection", { remoteAddress });
 
     socket.on("message", async (rawMessage, isBinary) => {
@@ -1449,6 +1579,15 @@ function createRelayServer(configOverrides = {}) {
       });
     },
     stop() {
+      if (heartbeatTimer) {
+        clearRepeatingTimer(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+
+      for (const socket of [...heartbeatState.keys()]) {
+        unregisterHeartbeat(socket);
+      }
+
       connectionManager.closeAllConnections();
 
       return new Promise((resolve, reject) => {
@@ -1510,6 +1649,7 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_PROTOCOL_VERSION,
   DEFAULT_MAX_PAYLOAD_BYTES,
+  DEFAULT_HEARTBEAT_INTERVAL_MS,
   DEFAULT_PAIRING_TTL_MS,
   DEFAULT_SESSION_TTL_MS,
   DEFAULT_MAX_COMMANDS_PER_SECOND,
@@ -1533,6 +1673,7 @@ module.exports = {
   createSessionLifecycleManager,
   getRedisSessionKey,
   loadRelayConfiguration,
+  signPairingTokenPayload,
   startRelayServer,
   validateTransportEnvelope,
 };

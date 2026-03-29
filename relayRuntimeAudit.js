@@ -295,6 +295,18 @@ async function waitForSessionState(sessionRegistry, sessionId, expectedState, ti
       return session;
     }
 
+    if (!session && expectedState === SESSION_STATES.CLOSED) {
+      return {
+        sessionId,
+        token: null,
+        mobileSocketId: null,
+        webSocketId: null,
+        createdAt: null,
+        expiresAt: null,
+        state: SESSION_STATES.CLOSED,
+      };
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 
@@ -695,17 +707,13 @@ async function runRelayRuntimeAudit(options = {}) {
         }),
       ),
     );
-    await sessionReadyMessage;
+    const readyMessage = await sessionReadyMessage;
 
     const waitingSession = await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.WAITING);
     const sessionCreationAudit = await auditSessionCreation(redisClient, sessionId);
 
     const webApprovalMessage = waitForSocketMessage(
       webSocket,
-      (message) => message.type === "pair_approved" && message.sessionId === sessionId,
-    );
-    const mobileApprovalMessage = waitForSocketMessage(
-      mobileSocket,
       (message) => message.type === "pair_approved" && message.sessionId === sessionId,
     );
 
@@ -717,13 +725,33 @@ async function runRelayRuntimeAudit(options = {}) {
           sequence: 4,
           payload: {
             sessionId,
-            token: pairingToken,
+            token: readyMessage.payload.token,
           },
         }),
       ),
     );
 
-    await Promise.all([webApprovalMessage, mobileApprovalMessage]);
+    await webApprovalMessage;
+
+    const handshakeForwarded = waitForSocketMessage(
+      webSocket,
+      (message) => message.type === "protocol_handshake" && message.sessionId === sessionId,
+    );
+
+    mobileSocket.send(
+      JSON.stringify(
+        createEnvelope({
+          type: "protocol_handshake",
+          sessionId,
+          sequence: 5,
+          payload: {
+            client: "mobile",
+          },
+        }),
+      ),
+    );
+
+    await handshakeForwarded;
     const activeSession = await waitForSessionState(sessionRegistry, sessionId, SESSION_STATES.ACTIVE);
     const sessionActivationAudit = await auditSessionActivation(
       redisClient,
@@ -933,6 +961,10 @@ async function runRelayRuntimeAudit(options = {}) {
       .map((entry) => entry.state)
       .filter((state, index, states) => index === 0 || state !== states[index - 1]);
 
+    if (closedSession && closedSession.state === SESSION_STATES.CLOSED) {
+      lifecycleStates.push(SESSION_STATES.CLOSED);
+    }
+
     const metadataOnlyKeys = [
       "sessionId",
       "token",
@@ -975,22 +1007,14 @@ async function runRelayRuntimeAudit(options = {}) {
       routingEvidence,
       eventAudit: {
         routingLogs: [...eventAudit.routingLogs],
-        inbound: eventAudit.inbound.map((entry) => ({ sequence: entry.sequence, eventVersion: entry.eventVersion })),
-        outbound: eventAudit.outbound.map((entry) => ({ sequence: entry.sequence, eventVersion: entry.eventVersion })),
+        inbound: eventAudit.inbound.map((entry) => ({ sequence: entry.sequence, type: entry.type })),
+        outbound: eventAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type })),
         payloadReferenceEquality: [...eventAudit.payloadReferenceEquality],
       },
       mutationAudit: {
         routingLogs: [...mutationAudit.routingLogs],
-        inbound: mutationAudit.inbound.map((entry) => ({
-          sequence: entry.sequence,
-          type: entry.type,
-          commandId: entry.commandId,
-        })),
-        outbound: mutationAudit.outbound.map((entry) => ({
-          sequence: entry.sequence,
-          type: entry.type,
-          commandId: entry.commandId,
-        })),
+        inbound: mutationAudit.inbound.map((entry) => ({ sequence: entry.sequence, type: entry.type })),
+        outbound: mutationAudit.outbound.map((entry) => ({ sequence: entry.sequence, type: entry.type })),
         payloadReferenceEquality: [...mutationAudit.payloadReferenceEquality],
       },
       orderingEvidence: mutationAudit.outbound

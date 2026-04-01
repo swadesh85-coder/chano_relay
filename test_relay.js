@@ -1167,7 +1167,7 @@ test("qr_session_create", async () => {
       const storedSession = await relayServer.sessionRegistry.getSession(readyMessage.payload.sessionId);
       assert.equal(storedSession.state, SESSION_STATES.WAITING);
       assert.equal(storedSession.token, readyMessage.payload.token);
-      assert.equal(storedSession.webSocketId, null);
+      assert.equal(typeof storedSession.webSocketId, "string");
       assert.equal(storedSession.mobileSocketId, null);
       webSocket.close();
     },
@@ -1448,7 +1448,7 @@ test("session_create", async () => {
 
   assert.equal(session.sessionId, sessionId);
   assert.equal(session.token, token);
-  assert.equal(session.webSocketId, null);
+  assert.equal(session.webSocketId, "web-lifecycle-1");
   assert.equal(session.mobileSocketId, null);
   assert.equal(session.state, SESSION_STATES.WAITING);
   assert.deepEqual(runtimeSession, {

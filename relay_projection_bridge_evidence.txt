@@ -1,5 +1,5 @@
 Relay Projection Bridge Audit
-GeneratedAt: 2026-03-29T15:33:49.160Z
+GeneratedAt: 2026-04-01T17:15:08.590Z
 Verdict: PASS
 
 Relay Transport Evidence
@@ -17,9 +17,9 @@ ProjectionSuccessMarkersAsserted: SNAPSHOT_ASSEMBLY_STARTED, BOUNDARY_OK, EVENT_
 Web Stdout
 [1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/Taboo/chano_web[39m
 
- [32m✓[39m src/app/projection/web_sync_e2e.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 382[2mms[22m[39m
+ [32m✓[39m src/app/projection/web_sync_e2e.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 330[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m3 passed[39m[22m[90m (3)[39m
-[2m   Start at [22m 21:03:46
-[2m   Duration [22m 2.52s[2m (transform 261ms, setup 0ms, import 747ms, tests 382ms, environment 1.12s)[22m
+[2m   Start at [22m 22:45:06
+[2m   Duration [22m 2.43s[2m (transform 272ms, setup 0ms, import 720ms, tests 330ms, environment 1.10s)[22m

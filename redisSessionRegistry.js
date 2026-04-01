@@ -370,7 +370,7 @@ class RedisSessionRegistry {
       sessionId,
       token,
       mobileSocketId: null,
-      webSocketId: null,
+      webSocketId,
       createdAt: this.now(),
       expiresAt: expiresAtMs,
       state: SESSION_STATES.WAITING,

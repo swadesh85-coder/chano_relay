@@ -1,0 +1,81 @@
+name: Governance Change Record
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+
+jobs:
+  governance-change-record:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate PR governance record
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request?.body ?? '';
+            const requiredHeaders = [
+              '## 1. Change Class',
+              '## 2. Repository Scope',
+              '## 3. Governing Documents',
+              '## 4. Problem Statement',
+              '## 5. Intended Boundary Of Change',
+              '## 6. Acceptance Criteria',
+              '## 7. Required Validation Evidence',
+              '## 8. Class B Coordination',
+              '## 9. Durable Implementation Record',
+              '## 10. Documentation Updates',
+              '## 11. Reviewer Closeout',
+            ];
+            const failures = [];
+
+            for (const header of requiredHeaders) {
+              if (!body.includes(header)) {
+                failures.push(`Missing required section: ${header}`);
+              }
+            }
+
+            const classMatches = body.match(/- \[[xX]\] Class [ABC]/g) ?? [];
+            if (classMatches.length !== 1) {
+              failures.push('Exactly one change class must be selected.');
+            }
+
+            const fieldHasContent = (label) => {
+              const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const sameLine = new RegExp(`${escaped}\\s*[^\\s].+`, 'i');
+              const nextBullet = new RegExp(`${escaped}\\s*\\n(?:\\s*\\n)*-\\s+[^\\s].+`, 'i');
+              return sameLine.test(body) || nextBullet.test(body);
+            };
+
+            if (!fieldHasContent('Core Documents:')) {
+              failures.push('Core Documents must be filled in.');
+            }
+
+            if (!fieldHasContent('Evidence used:')) {
+              failures.push('Evidence used must be filled in.');
+            }
+
+            if (!fieldHasContent('Record location:')) {
+              failures.push('Record location must be filled in.');
+            }
+
+            const classBSelected = /- \[[xX]\] Class B: cross-boundary implementation change/i.test(body);
+            if (classBSelected) {
+              if (!fieldHasContent('Cross-repository validation:')) {
+                failures.push('Class B changes must include cross-repository validation details.');
+              }
+              const affectedRepos = body.match(/- \[[xX]\] `(?:Chano|chano_relay|chano_web)`/g) ?? [];
+              if (affectedRepos.length < 2) {
+                failures.push('Class B changes must select at least two affected repositories.');
+              }
+            }
+
+            if (failures.length > 0) {
+              core.setFailed(`Governance record validation failed:\n- ${failures.join('\n- ')}`);
+            }

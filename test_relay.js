@@ -3108,6 +3108,65 @@ test("heartbeat_timeout_closes_active_session", async () => {
   );
 });
 
+test("heartbeat_pong_refreshes_active_session_ttl_and_preserves_event_stream_routing", async () => {
+  const redisClient = new FakeRedisClient();
+  const intervalScheduler = new ManualIntervalScheduler();
+
+  await withStartedServer(
+    {
+      host: "127.0.0.1",
+      port: 0,
+      wsPath: "/relay",
+      heartbeat: {
+        enabled: true,
+        intervalMs: 25,
+      },
+      setInterval: (callback, delay) => intervalScheduler.setInterval(callback, delay),
+      clearInterval: (handle) => intervalScheduler.clearInterval(handle),
+      sessionRegistry: createRedisSessionRegistry(redisClient, {
+        now: () => redisClient.nowMs,
+      }),
+    },
+    async (relayServer) => {
+      const webSocket = new HeartbeatTestSocket({ autoPong: true });
+      const mobileSocket = new HeartbeatTestSocket({ autoPong: true });
+      const webRequest = createMockUpgradeRequest("127.0.0.1", 6301);
+      const mobileRequest = createMockUpgradeRequest("127.0.0.1", 6302);
+      const sessionId = "d4e24cb0-45d8-4671-b633-2b2f5b9eb7b1";
+      const webConnectionId = "127.0.0.1:6301:127.0.0.1:8080";
+      const mobileConnectionId = "127.0.0.1:6302:127.0.0.1:8080";
+
+      relayServer.wsServer.emit("connection", webSocket, webRequest);
+      relayServer.wsServer.emit("connection", mobileSocket, mobileRequest);
+
+      await relayServer.sessionLifecycleManager.createSession(
+        sessionId,
+        webConnectionId,
+        redisClient.nowMs + DEFAULT_SESSION_TTL_MS,
+      );
+      await relayServer.sessionLifecycleManager.transitionToPaired(sessionId, mobileConnectionId);
+      await relayServer.sessionLifecycleManager.transitionToActive(sessionId);
+
+      redisClient.advanceTime(DEFAULT_SESSION_TTL_MS - 1_000);
+      await intervalScheduler.tick();
+      await new Promise((resolve) => setImmediate(resolve));
+
+      redisClient.advanceTime(2_000);
+
+      const refreshedSession = await relayServer.sessionRegistry.getSession(sessionId);
+      assert.notEqual(refreshedSession, null);
+      assert.equal(refreshedSession.state, SESSION_STATES.ACTIVE);
+      assert.ok(refreshedSession.expiresAt > redisClient.nowMs);
+
+      const envelope = createEnvelope({ sessionId, type: "event_stream", sequence: 6, payload: { opaque: true } });
+      const routed = await routeRawEnvelope(relayServer.messageRouter, envelope, mobileSocket);
+
+      assert.equal(routed, true);
+      assert.equal(webSocket.sentMessages.at(-1), JSON.stringify(envelope));
+    },
+  );
+});
+
 test("invalid_protocol_version", async () => {
   await withStartedServer({ host: "127.0.0.1", port: 0, wsPath: "/relay" }, async (relayServer) => {
     const address = relayServer.server.address();

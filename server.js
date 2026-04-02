@@ -1245,6 +1245,17 @@ function createRelayServer(configOverrides = {}) {
 
         currentState.awaitingPong = false;
         events.emit("heartbeatPong", { connectionId });
+
+        const registration = connectionManager.lookupSocket(socket);
+        if (!registration || !registration.sessionId || !sessionLifecycleManager) {
+          return;
+        }
+
+        sessionLifecycleManager
+          .refreshSessionActivity(registration.sessionId, "heartbeat_pong")
+          .catch((error) => {
+            events.emit("heartbeatError", { connectionId, error });
+          });
       },
       onClose() {
         unregisterHeartbeat(socket);

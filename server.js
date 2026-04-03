@@ -1,6 +1,7 @@
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
+const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const { EventEmitter } = require("events");
@@ -151,6 +152,32 @@ function parseBoolean(value, fallback = false) {
 function parseInteger(value, fallback) {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) ? parsed : fallback;
+}
+
+function getRelayHostHints() {
+  const interfaces = os.networkInterfaces();
+  const ipv4Hosts = [];
+
+  for (const entries of Object.values(interfaces)) {
+    if (!Array.isArray(entries)) {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (!entry || entry.family !== "IPv4" || entry.internal) {
+        continue;
+      }
+
+      if (!ipv4Hosts.includes(entry.address)) {
+        ipv4Hosts.push(entry.address);
+      }
+    }
+  }
+
+  return {
+    preferredIpv4: ipv4Hosts[0] || null,
+    ipv4Hosts,
+  };
 }
 
 function loadRelayConfiguration(options = {}) {
@@ -1327,6 +1354,24 @@ function createRelayServer(configOverrides = {}) {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(body),
         "Cache-Control": "no-store",
+      });
+      res.end(body);
+      return;
+    }
+
+    if (req.method === "GET" && req.url === "/relay-info") {
+      const body = JSON.stringify({
+        status: "ok",
+        transport: config.tls.enabled ? "wss" : "ws",
+        wsPath: config.wsPath,
+        port: config.port,
+        ...getRelayHostHints(),
+      });
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*",
       });
       res.end(body);
       return;

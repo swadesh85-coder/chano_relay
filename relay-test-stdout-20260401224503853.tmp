@@ -1,0 +1,1720 @@
+[redis_session_registry] status=success action=create sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+✔ relay_projection_bridge_audit (4486.1799ms)
+[redis_session_registry] status=success action=create sessionId=4d92f0cf-a044-4ae3-9e83-6e7dd53fd4ab ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=56b8b39a-9ca7-44d8-a928-b0ef1126d2f4 ttlSeconds=120
+[redis_session_registry] status=success action=update sessionId=56b8b39a-9ca7-44d8-a928-b0ef1126d2f4 ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=44ae488a-c7ff-4d0a-b326-a2c9f3cc88ce ttlSeconds=60
+[redis_session_registry] status=success action=update sessionId=44ae488a-c7ff-4d0a-b326-a2c9f3cc88ce ttlSeconds=60
+[redis_session_registry] status=success action=create sessionId=63ec0064-77e0-4ee8-a3ba-98dc1f23e2ce ttlSeconds=60
+[redis_session_registry] status=success action=update sessionId=63ec0064-77e0-4ee8-a3ba-98dc1f23e2ce ttlSeconds=60
+[redis_session_registry] status=success action=update sessionId=63ec0064-77e0-4ee8-a3ba-98dc1f23e2ce ttlSeconds=60
+[redis_session_registry] status=success action=create sessionId=8d2dd03d-e2de-477d-947a-08fab41dbc7a ttlSeconds=120
+[redis_session_registry] status=success action=update sessionId=8d2dd03d-e2de-477d-947a-08fab41dbc7a ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=8d2dd03d-e2de-477d-947a-08fab41dbc7a ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=2e243ac7-f22f-4e1a-b7ff-f1e9ec8c2fb9 ttlSeconds=120
+[redis_session_registry] status=success action=update sessionId=2e243ac7-f22f-4e1a-b7ff-f1e9ec8c2fb9 ttlSeconds=120
+[redis_session_registry] status=retry action=pair_conflict sessionId=2e243ac7-f22f-4e1a-b7ff-f1e9ec8c2fb9 ttlSeconds=120
+[redis_session_registry] status=failure action=pair sessionId=2e243ac7-f22f-4e1a-b7ff-f1e9ec8c2fb9 ttlSeconds=0 error=Session 2e243ac7-f22f-4e1a-b7ff-f1e9ec8c2fb9 must be waiting before pairing
+[redis_session_registry] status=success action=create sessionId=18e8f865-336f-4d15-a0e8-acd0a62bad55 ttlSeconds=120
+[redis_session_registry] status=success action=update sessionId=18e8f865-336f-4d15-a0e8-acd0a62bad55 ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=18e8f865-336f-4d15-a0e8-acd0a62bad55 ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=18e8f865-336f-4d15-a0e8-acd0a62bad55 ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=89b3b70e-c333-417d-a737-29e7c60f73a8 ttlSeconds=120
+[redis_session_registry] status=success action=update sessionId=89b3b70e-c333-417d-a737-29e7c60f73a8 ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=89b3b70e-c333-417d-a737-29e7c60f73a8 ttlSeconds=120
+[redis_session_registry] status=retry action=activate_conflict sessionId=89b3b70e-c333-417d-a737-29e7c60f73a8 ttlSeconds=120
+[redis_session_registry] status=failure action=activate sessionId=89b3b70e-c333-417d-a737-29e7c60f73a8 ttlSeconds=0 error=Session 89b3b70e-c333-417d-a737-29e7c60f73a8 must be paired before activation
+[redis_session_registry] status=success action=create sessionId=18e8f865-336f-4d15-a0e8-acd0a62bad56 ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=19f8f865-336f-4d15-a0e8-acd0a62bad56 ttlSeconds=60
+[redis_session_registry] status=success action=update sessionId=19f8f865-336f-4d15-a0e8-acd0a62bad56 ttlSeconds=60
+[redis_session_registry] status=success action=update sessionId=19f8f865-336f-4d15-a0e8-acd0a62bad56 ttlSeconds=60
+[redis_session_registry] status=success action=update sessionId=19f8f865-336f-4d15-a0e8-acd0a62bad56 ttlSeconds=60
+[redis_session_registry] status=success action=activate sessionId=19f8f865-336f-4d15-a0e8-acd0a62bad56 ttlSeconds=120
+[redis_session_registry] status=success action=update sessionId=19f8f865-336f-4d15-a0e8-acd0a62bad56 ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=bb615715-bbaf-4672-b400-1fbe7dfb8ec4 ttlSeconds=2
+✔ redis_session_create (9.983ms)
+✔ redis_session_persist (1.8556ms)
+✔ attach_web_socket (1.0979ms)
+✔ attach_mobile_socket (1.01ms)
+✔ redis_session_pair_transition (2.6316ms)
+✔ redis_session_pair_transition_conflict_retries_fail_closed (1.6062ms)
+✔ redis_session_activate (1.707ms)
+✔ redis_session_activate_conflict_retries_fail_closed (1.1928ms)
+✔ session_ttl_valid (0.6237ms)
+✔ state_update (1.3316ms)
+✔ session_expiration (0.3634ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704446,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=184 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"11111111-1111-4111-8111-111111111111","timestamp":1775063704447,"sequence":1,"payload":{"token":"qr-session-create-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704450,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":null,"sessionId":null,"rawMessageBytes":184}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=11111111-1111-4111-8111-111111111111
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704451,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":"qr_session_create","sessionId":"11111111-1111-4111-8111-111111111111"}
+RELAY_INGRESS_HASH sessionId=11111111-1111-4111-8111-111111111111 hash=c0068c9d750649d4bfbdcdd6243518bb02ae9a903eca67e8cdd8a71a250641db
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704451,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":"qr_session_create","sessionId":"11111111-1111-4111-8111-111111111111","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=11111111-1111-4111-8111-111111111111 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704453,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=11111111-1111-4111-8111-111111111111 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704453,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704453,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":"qr_session_create","sessionId":"11111111-1111-4111-8111-111111111111","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704453,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=11111111-1111-4111-8111-111111111111 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=11111111-1111-4111-8111-111111111111 ttlMs=119999
+RELAY_SESSION_CREATED session={"sessionId":"11111111-1111-4111-8111-111111111111","token":"eyJzZXNzaW9uSWQiOiIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ0NTN9.SqpnzXpHilprJSJblu10aHmqkj5fcPSQM4N90a3Cnak","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704455,"socketId":"127.0.0.1:1629:127.0.0.1:1628","messageType":"qr_session_create","sessionId":"11111111-1111-4111-8111-111111111111","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=11111111-1111-4111-8111-111111111111 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=11111111-1111-4111-8111-111111111111 type=qr_session_create sequence=1
+✔ qr_session_create (78.9001ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704469,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704469,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=178 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"22222222-2222-4222-8222-222222222222","timestamp":1775063704470,"sequence":1,"payload":{"token":"pair-attach-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704470,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":null,"sessionId":null,"rawMessageBytes":178}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=22222222-2222-4222-8222-222222222222
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704471,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":"qr_session_create","sessionId":"22222222-2222-4222-8222-222222222222"}
+RELAY_INGRESS_HASH sessionId=22222222-2222-4222-8222-222222222222 hash=9d41afcb72e003eb95001b757aa69d0158be7bb85d1073a5fe8b5344f06f2918
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704471,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":"qr_session_create","sessionId":"22222222-2222-4222-8222-222222222222","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=22222222-2222-4222-8222-222222222222 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704471,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=22222222-2222-4222-8222-222222222222 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704471,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704471,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":"qr_session_create","sessionId":"22222222-2222-4222-8222-222222222222","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704471,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=22222222-2222-4222-8222-222222222222 ttlMs=119999
+RELAY_SESSION_CREATED session={"sessionId":"22222222-2222-4222-8222-222222222222","token":"eyJzZXNzaW9uSWQiOiIyMjIyMjIyMi0yMjIyLTQyMjItODIyMi0yMjIyMjIyMjIyMjIiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ0NzF9.bXGM-mjfVvs0CHjd73dopd3OTrEnQX_inNduyL_5ZBQ","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704472,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":"qr_session_create","sessionId":"22222222-2222-4222-8222-222222222222","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=22222222-2222-4222-8222-222222222222 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=22222222-2222-4222-8222-222222222222 type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=355 raw={"protocolVersion":2,"type":"pair_request","sessionId":"22222222-2222-4222-8222-222222222222","timestamp":1775063704473,"sequence":3,"payload":{"sessionId":"22222222-2222-4222-8222-222222222222","toke type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704473,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":null,"sessionId":null,"rawMessageBytes":355}
+JSON_PARSE_SUCCESS type=pair_request sessionId=22222222-2222-4222-8222-222222222222
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704473,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":"pair_request","sessionId":"22222222-2222-4222-8222-222222222222"}
+RELAY_INGRESS_HASH sessionId=22222222-2222-4222-8222-222222222222 hash=82790adb32ed3d4cf9c1075daa1f156f4403eddb4fd4ae17047654c0b552676f
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704473,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":"pair_request","sessionId":"22222222-2222-4222-8222-222222222222","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=22222222-2222-4222-8222-222222222222 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704474,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=22222222-2222-4222-8222-222222222222 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704474,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704474,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":"pair_request","sessionId":"22222222-2222-4222-8222-222222222222","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704474,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiIyMjIyMjIyMi0yMjIyLTQyMjItODIyMi0yMjIyMjIyMjIyMjIiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ0NzF9.bXGM-mjfVvs0CHjd73dopd3OTrEnQX_inNduyL_5ZBQ requestToken=eyJzZXNzaW9uSWQiOiIyMjIyMjIyMi0yMjIyLTQyMjItODIyMi0yMjIyMjIyMjIyMjIiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ0NzF9.bXGM-mjfVvs0CHjd73dopd3OTrEnQX_inNduyL_5ZBQ
+[redis_session_registry] status=success action=pair sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704476,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":null,"sessionId":"22222222-2222-4222-8222-222222222222"}
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session 22222222-2222-4222-8222-222222222222
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704476,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":"pair_request","sessionId":"22222222-2222-4222-8222-222222222222","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=22222222-2222-4222-8222-222222222222 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=22222222-2222-4222-8222-222222222222 type=pair_request sequence=3
+RAW_WS_MESSAGE bytes=169 raw={"protocolVersion":2,"type":"protocol_handshake","sessionId":"22222222-2222-4222-8222-222222222222","timestamp":1775063704477,"sequence":4,"payload":{"client":"mobile"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704477,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":null,"sessionId":null,"rawMessageBytes":169}
+JSON_PARSE_SUCCESS type=protocol_handshake sessionId=22222222-2222-4222-8222-222222222222
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704477,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":"protocol_handshake","sessionId":"22222222-2222-4222-8222-222222222222"}
+RELAY_INGRESS_HASH sessionId=22222222-2222-4222-8222-222222222222 hash=d248e0bffaf97acbb90415042ec8e52e47ca71f4f6138a7a1bc7d8d5392dab76
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704478,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":"protocol_handshake","sessionId":"22222222-2222-4222-8222-222222222222","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=protocol_handshake sessionId=22222222-2222-4222-8222-222222222222 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704478,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":null,"sessionId":"22222222-2222-4222-8222-222222222222"}
+DISPATCH_LOOKUP type=protocol_handshake sessionId=22222222-2222-4222-8222-222222222222 handlerExists=false
+SESSION_LOOKUP type=protocol_handshake sessionId=22222222-2222-4222-8222-222222222222 found=true state=paired
+RELAY_EGRESS_HASH sessionId=22222222-2222-4222-8222-222222222222 hash=d248e0bffaf97acbb90415042ec8e52e47ca71f4f6138a7a1bc7d8d5392dab76
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=4
+[redis_session_registry] status=success action=activate sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=22222222-2222-4222-8222-222222222222
+TIMER_SET sessionId=22222222-2222-4222-8222-222222222222 ttlMs=120000
+SESSION_UPDATE active
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704480,"socketId":"127.0.0.1:1631:127.0.0.1:1630","messageType":null,"sessionId":"22222222-2222-4222-8222-222222222222"}
+FORWARD_MESSAGE type=protocol_handshake sessionId=22222222-2222-4222-8222-222222222222 targetSocket=127.0.0.1:1631:127.0.0.1:1630
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704480,"socketId":"127.0.0.1:1632:127.0.0.1:1630","messageType":"protocol_handshake","sessionId":"22222222-2222-4222-8222-222222222222","routed":true,"reason":null}
+ROUTING_DECISION type=protocol_handshake sessionId=22222222-2222-4222-8222-222222222222 routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=22222222-2222-4222-8222-222222222222 type=protocol_handshake sequence=4
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+✔ pair_request_attach_mobile (24.0915ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704491,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704492,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=181 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","timestamp":1775063704492,"sequence":1,"payload":{"token":"ignored-create-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704493,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":null,"sessionId":null,"rawMessageBytes":181}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704493,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":"qr_session_create","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d"}
+RELAY_INGRESS_HASH sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d hash=9250b6176c1a8a00ea8e012b70eca655b05f2f7ddeddec9e1df9630f0e7faf99
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704493,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":"qr_session_create","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704493,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704493,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704493,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":"qr_session_create","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704493,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d ttlMs=119999
+RELAY_SESSION_CREATED session={"sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","token":"eyJzZXNzaW9uSWQiOiIyZjc0NTFlMS1lNGEyLTRkYjUtYTYwZC02ZjQzNDlkMTZhNWQiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ0OTN9.545kZZSrVcVuwv3beg7JFBhCkF8RCwrujh9bggxK0mM","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704494,"socketId":"127.0.0.1:1634:127.0.0.1:1633","messageType":"qr_session_create","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=229 raw={"protocolVersion":2,"type":"pair_request","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","timestamp":1775063704494,"sequence":3,"payload":{"sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","toke type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704494,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":null,"sessionId":null,"rawMessageBytes":229}
+JSON_PARSE_SUCCESS type=pair_request sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704494,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":"pair_request","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d"}
+RELAY_INGRESS_HASH sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d hash=4ff9a289889376f96286f27e04181d5e94026de8104ac0278bed2544ac252558
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704494,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":"pair_request","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704495,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704495,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704495,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":"pair_request","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704495,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiIyZjc0NTFlMS1lNGEyLTRkYjUtYTYwZC02ZjQzNDlkMTZhNWQiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ0OTN9.545kZZSrVcVuwv3beg7JFBhCkF8RCwrujh9bggxK0mM requestToken=session-token-mismatch
+TOKEN_MISMATCH -> pairing rejected
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704495,"socketId":"127.0.0.1:1635:127.0.0.1:1633","messageType":"pair_request","sessionId":"2f7451e1-e4a2-4db5-a60d-6f4349d16a5d","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=2f7451e1-e4a2-4db5-a60d-6f4349d16a5d type=pair_request sequence=3
+✔ pair_request_rejects_invalid_token (13.4622ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704502,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=196 raw={"protocolVersion":2,"type":"pair_request","sessionId":"ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8","timestamp":1775063704502,"sequence":1,"payload":{"sessionId":"ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":null,"sessionId":null,"rawMessageBytes":196}
+JSON_PARSE_SUCCESS type=pair_request sessionId=ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":"pair_request","sessionId":"ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8"}
+RELAY_INGRESS_HASH sessionId=ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8 hash=98430a5b7e598213ba886fdfa123fd8011e583428a2e53ec13665b333f2ab3e7
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":"pair_request","sessionId":"ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":"pair_request","sessionId":"ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704503,"socketId":"127.0.0.1:1637:127.0.0.1:1636","messageType":"pair_request","sessionId":"ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=ef28ee13-63c7-4dd5-aecf-9d7dcf89d1f8 type=pair_request sequence=1
+[redis_session_registry] status=success action=create sessionId=bb18ca91-a858-4f8b-8ed7-eb39c883733d ttlSeconds=1
+[relay_ingress] pair_request received
+[redis_session_registry] status=success action=create sessionId=5b63f98a-7cd5-4878-b260-0f50093733c4 ttlSeconds=60
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=5b63f98a-7cd5-4878-b260-0f50093733c4 ttlMs=60000
+RELAY_SESSION_CREATED session={"sessionId":"5b63f98a-7cd5-4878-b260-0f50093733c4","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=5b63f98a-7cd5-4878-b260-0f50093733c4 ttlSeconds=60
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=5b63f98a-7cd5-4878-b260-0f50093733c4 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=5b63f98a-7cd5-4878-b260-0f50093733c4
+TIMER_SET sessionId=5b63f98a-7cd5-4878-b260-0f50093733c4 ttlMs=120000
+SESSION_UPDATE active
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=manual_logout
+[redis_session_registry] status=success action=create sessionId=e4d97709-18ec-44d1-bb79-cb1fe2474042 ttlSeconds=60
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=e4d97709-18ec-44d1-bb79-cb1fe2474042 ttlMs=60000
+RELAY_SESSION_CREATED session={"sessionId":"e4d97709-18ec-44d1-bb79-cb1fe2474042","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=e4d97709-18ec-44d1-bb79-cb1fe2474042 ttlSeconds=60
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=e4d97709-18ec-44d1-bb79-cb1fe2474042 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=e4d97709-18ec-44d1-bb79-cb1fe2474042
+TIMER_SET sessionId=e4d97709-18ec-44d1-bb79-cb1fe2474042 ttlMs=120000
+SESSION_UPDATE active
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[redis_session_registry] status=success action=create sessionId=d505df5e-ff38-4816-ab9f-b67e85af527b ttlSeconds=1
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=d505df5e-ff38-4816-ab9f-b67e85af527b ttlMs=100
+RELAY_SESSION_CREATED session={"sessionId":"d505df5e-ff38-4816-ab9f-b67e85af527b","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=timeout
+[redis_session_registry] status=success action=create sessionId=f9ebbfb2-f4c2-4ef6-b4ec-c88509be8ab1 ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=ef950ee6-f312-49fd-ae75-c34dc3ab71a1 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=ef950ee6-f312-49fd-ae75-c34dc3ab71a1 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"ef950ee6-f312-49fd-ae75-c34dc3ab71a1","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=ef950ee6-f312-49fd-ae75-c34dc3ab71a1 ttlSeconds=1
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=ef950ee6-f312-49fd-ae75-c34dc3ab71a1 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=ef950ee6-f312-49fd-ae75-c34dc3ab71a1
+TIMER_SET sessionId=ef950ee6-f312-49fd-ae75-c34dc3ab71a1 ttlMs=120000
+SESSION_UPDATE active
+[redis_session_registry] status=success action=create sessionId=1ca41f76-1a36-4fb7-84b2-12291690d7cf ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=1ca41f76-1a36-4fb7-84b2-12291690d7cf ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"1ca41f76-1a36-4fb7-84b2-12291690d7cf","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=1ca41f76-1a36-4fb7-84b2-12291690d7cf ttlSeconds=120
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=1ca41f76-1a36-4fb7-84b2-12291690d7cf ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=1ca41f76-1a36-4fb7-84b2-12291690d7cf
+TIMER_SET sessionId=1ca41f76-1a36-4fb7-84b2-12291690d7cf ttlMs=120000
+SESSION_UPDATE active
+[redis_session_registry] status=success action=create sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"f3b6ab14-0ddf-4786-970d-d702335cfd2f","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f ttlSeconds=120
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f
+TIMER_SET sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f ttlMs=120000
+SESSION_UPDATE active
+[redis_session_registry] status=success action=activity sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f
+TIMER_SET sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f ttlMs=120000
+MESSAGE_RECEIVED type=snapshot_start
+RELAY_EGRESS_HASH sessionId=f3b6ab14-0ddf-4786-970d-d702335cfd2f hash=4f26fa9fc06fddfe7bc99a44914609d978556bbf31bc599cbc46f1de7d27e428
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=21
+RELAY_QUEUE_PROCESS session=f3b6ab14-0ddf-4786-970d-d702335cfd2f type=snapshot_start sequence=21
+[redis_session_registry] status=success action=create sessionId=b6a868c8-a330-4aea-b57c-2027dff5e2ef ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=b6a868c8-a330-4aea-b57c-2027dff5e2ef ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=b6a868c8-a330-4aea-b57c-2027dff5e2ef ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"3f548d67-c48f-4f43-bc9d-66371507e0da","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da ttlSeconds=120
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da
+TIMER_SET sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da ttlMs=120000
+SESSION_UPDATE active
+[redis_session_registry] status=success action=activity sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da
+TIMER_SET sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da ttlMs=120000
+MESSAGE_RECEIVED type=event_stream
+RELAY_EGRESS_HASH sessionId=3f548d67-c48f-4f43-bc9d-66371507e0da hash=5b870457961df8b9ffc33bb7a9c81c1376f66cab95b82adc278a44e5117583b1
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=3f548d67-c48f-4f43-bc9d-66371507e0da type=event_stream sequence=1
+[redis_session_registry] status=success action=create sessionId=ca1dcd6d-b314-41ca-a989-5fc50f654ae3 ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=ca1dcd6d-b314-41ca-a989-5fc50f654ae3 ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=ca1dcd6d-b314-41ca-a989-5fc50f654ae3 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=ca1dcd6d-b314-41ca-a989-5fc50f654ae3 ttlSeconds=120
+RELAY_EGRESS_HASH sessionId=ca1dcd6d-b314-41ca-a989-5fc50f654ae3 hash=be59ebed4768fae8162c93cde338851ad45c16be3df6ef0382815a25304b4210
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=11
+RELAY_QUEUE_PROCESS session=ca1dcd6d-b314-41ca-a989-5fc50f654ae3 type=snapshot_start sequence=11
+[redis_session_registry] status=success action=create sessionId=6326b198-fec8-4d5d-b7d3-7d8289d8934f ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=6326b198-fec8-4d5d-b7d3-7d8289d8934f ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=6326b198-fec8-4d5d-b7d3-7d8289d8934f ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be ttlSeconds=3
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be ttlMs=2100
+RELAY_SESSION_CREATED session={"sessionId":"7bf98dc5-1f13-4940-81fb-74f1e7df57be","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be ttlSeconds=3
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be ttlSeconds=3
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be
+TIMER_SET sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be ttlMs=2100
+SESSION_UPDATE active
+[redis_session_registry] status=success action=activity sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be ttlSeconds=3
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be
+TIMER_SET sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be ttlMs=2100
+MESSAGE_RECEIVED type=protocol_handshake
+RELAY_EGRESS_HASH sessionId=7bf98dc5-1f13-4940-81fb-74f1e7df57be hash=eb2b29052f6c931aeb82889a12f31758761d72e4f12a5a79243f77eed6e454b8
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=12
+RELAY_QUEUE_PROCESS session=7bf98dc5-1f13-4940-81fb-74f1e7df57be type=protocol_handshake sequence=12
+[redis_session_registry] status=success action=create sessionId=8aa05a03-f0f1-4e15-96b5-a49a838ce262 ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=8aa05a03-f0f1-4e15-96b5-a49a838ce262 ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=8aa05a03-f0f1-4e15-96b5-a49a838ce262 ttlSeconds=120
+[redis_session_registry] status=success action=create sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlSeconds=3
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlMs=2100
+RELAY_SESSION_CREATED session={"sessionId":"7af8406c-8f98-4644-aa11-d6190f208700","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlSeconds=3
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlSeconds=3
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=7af8406c-8f98-4644-aa11-d6190f208700
+TIMER_SET sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlMs=2100
+SESSION_UPDATE active
+[redis_session_registry] status=success action=activity sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlSeconds=3
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=7af8406c-8f98-4644-aa11-d6190f208700
+TIMER_SET sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlMs=2100
+MESSAGE_RECEIVED type=protocol_handshake
+RELAY_EGRESS_HASH sessionId=7af8406c-8f98-4644-aa11-d6190f208700 hash=0561b59210ce332b4d1fe3525b5d72ce3c6fd59c8b4c4949b391f7cc89c68ee2
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=12
+RELAY_QUEUE_PROCESS session=7af8406c-8f98-4644-aa11-d6190f208700 type=protocol_handshake sequence=12
+[redis_session_registry] status=success action=activity sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlSeconds=3
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=7af8406c-8f98-4644-aa11-d6190f208700
+TIMER_SET sessionId=7af8406c-8f98-4644-aa11-d6190f208700 ttlMs=2100
+MESSAGE_RECEIVED type=snapshot_start
+RELAY_EGRESS_HASH sessionId=7af8406c-8f98-4644-aa11-d6190f208700 hash=35c2c379c1b8f52bb1790d6fc051059db2f2e39a6cd1dd76ecbbc888e314a6ef
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=13
+RELAY_QUEUE_PROCESS session=7af8406c-8f98-4644-aa11-d6190f208700 type=snapshot_start sequence=13
+[redis_session_registry] status=success action=create sessionId=6d62b7dc-00cf-482f-ba6c-ab24b50e14c2 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=6d62b7dc-00cf-482f-ba6c-ab24b50e14c2 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"6d62b7dc-00cf-482f-ba6c-ab24b50e14c2","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=6d62b7dc-00cf-482f-ba6c-ab24b50e14c2 ttlSeconds=120
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=6d62b7dc-00cf-482f-ba6c-ab24b50e14c2 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=6d62b7dc-00cf-482f-ba6c-ab24b50e14c2
+TIMER_SET sessionId=6d62b7dc-00cf-482f-ba6c-ab24b50e14c2 ttlMs=120000
+SESSION_UPDATE active
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=manual_logout
+[redis_session_registry] status=success action=create sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 ttlSeconds=3
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 ttlMs=2100
+RELAY_SESSION_CREATED session={"sessionId":"610a1142-e1c6-4ca1-80a2-859ab0d68a77","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 ttlSeconds=3
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 ttlSeconds=3
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77
+TIMER_SET sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 ttlMs=2100
+SESSION_UPDATE active
+[redis_session_registry] status=success action=activity sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 ttlSeconds=3
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77
+TIMER_SET sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 ttlMs=2100
+MESSAGE_RECEIVED type=snapshot_start
+RELAY_EGRESS_HASH sessionId=610a1142-e1c6-4ca1-80a2-859ab0d68a77 hash=9c26aa323ae5ecac0943f187c451e446060f45e0f18b229f90c53f6f710eca16
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=3
+RELAY_QUEUE_PROCESS session=610a1142-e1c6-4ca1-80a2-859ab0d68a77 type=snapshot_start sequence=3
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=timeout
+[redis_session_registry] status=success action=create sessionId=dd122ebb-331e-4e3b-b6c0-fb4f117120df ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=dd122ebb-331e-4e3b-b6c0-fb4f117120df ttlSeconds=120
+✔ pair_request_requires_existing_session (6.8575ms)
+✔ pair_request_expired (1.3903ms)
+✔ session_create (0.9236ms)
+✔ session_paired_to_active_lifecycle (1.1808ms)
+✔ session_active_to_closed (1.615ms)
+✔ disconnect_cleanup (1.2401ms)
+✔ session_expiration_cleanup (0.9134ms)
+✔ session_ttl_on_create (0.3187ms)
+✔ session_ttl_on_activate (0.7434ms)
+✔ single_timer_per_session (1.0266ms)
+✔ single_timeout_source (1.5027ms)
+✔ timer_reset_on_activation (0.8397ms)
+✔ session_ttl_refresh_on_message (1.3602ms)
+✔ timer_refresh_on_message (1.2291ms)
+✔ no_duplicate_timer_clear (0.887ms)
+✔ no_premature_timeout_after_handshake (1.5337ms)
+✔ close_session_idempotent (0.8741ms)
+✔ no_premature_close_after_handshake (4.0431ms)
+✔ no_timer_leak_after_session_close (0.9635ms)
+✔ no_premature_session_expiry (1.1921ms)
+✔ ttl_computation_correct (0.3909ms)
+✔ rate_limit_commands (0.3039ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704545,"socketId":"127.0.0.1:1641:127.0.0.1:1639","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=640 raw={"protocolVersion":2,"type":"event_stream","sessionId":"session-1","timestamp":1775063704546,"sequence":1,"payload":{"blob":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704546,"socketId":"127.0.0.1:1641:127.0.0.1:1639","messageType":null,"sessionId":null,"rawMessageBytes":640}
+MESSAGE_DROPPED type=unknown sessionId=unknown reason=payload_too_large
+✔ payload_size_limit (18.9044ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704559,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=151 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333331","timestamp":1775063704559,"sequence":1,"payload":{}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704560,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null,"rawMessageBytes":151}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=33333333-3333-4333-8333-333333333331
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704560,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333331"}
+RELAY_INGRESS_HASH sessionId=33333333-3333-4333-8333-333333333331 hash=3a830267e49df4e98df53578e449550ff10c6a10ea6285a8ff825c45ecca009a
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704560,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333331","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=33333333-3333-4333-8333-333333333331 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704560,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=33333333-3333-4333-8333-333333333331 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704560,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704560,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333331","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704560,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=33333333-3333-4333-8333-333333333331 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=33333333-3333-4333-8333-333333333331 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"33333333-3333-4333-8333-333333333331","token":"eyJzZXNzaW9uSWQiOiIzMzMzMzMzMy0zMzMzLTQzMzMtODMzMy0zMzMzMzMzMzMzMzEiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ1NjB9.bFwWZwnxPcqAJ9Y-QYz8SRfoV6vg-B38AtHlbK87apQ","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333331","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=33333333-3333-4333-8333-333333333331 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=33333333-3333-4333-8333-333333333331 type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=151 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333332","timestamp":1775063704561,"sequence":2,"payload":{}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null,"rawMessageBytes":151}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=33333333-3333-4333-8333-333333333332
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333332"}
+RELAY_INGRESS_HASH sessionId=33333333-3333-4333-8333-333333333332 hash=1b3965b066f7826049933b8873e8f8aa5882ed58ce4f8a0f4e53bcbc648e5168
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333332","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=33333333-3333-4333-8333-333333333332 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=33333333-3333-4333-8333-333333333332 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333332","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704561,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=33333333-3333-4333-8333-333333333332 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=33333333-3333-4333-8333-333333333332 ttlMs=119999
+RELAY_SESSION_CREATED session={"sessionId":"33333333-3333-4333-8333-333333333332","token":"eyJzZXNzaW9uSWQiOiIzMzMzMzMzMy0zMzMzLTQzMzMtODMzMy0zMzMzMzMzMzMzMzIiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ1NjF9.4DlWd8uYCNKJS4q4EkNJ-5Nqm0yhY4AV46ZojYjFuBU","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704562,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333332","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=33333333-3333-4333-8333-333333333332 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=33333333-3333-4333-8333-333333333332 type=qr_session_create sequence=2
+RAW_WS_MESSAGE bytes=151 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333333","timestamp":1775063704562,"sequence":3,"payload":{}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704562,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":null,"sessionId":null,"rawMessageBytes":151}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=33333333-3333-4333-8333-333333333333
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704562,"socketId":"127.0.0.1:1643:127.0.0.1:1642","messageType":"qr_session_create","sessionId":"33333333-3333-4333-8333-333333333333"}
+RELAY_INGRESS_HASH sessionId=33333333-3333-4333-8333-333333333333 hash=175b16ff03473044d87db0227c125de21200959291a593f67b5237d0498de575
+MESSAGE_DROPPED type=qr_session_create sessionId=33333333-3333-4333-8333-333333333333 reason=session_rate_exceeded
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+✔ session_limit_per_ip (14.8247ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704569,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=135 raw={"protocolVersion":2,"type":"event_stream","sessionId":"rate-limit-1","timestamp":1775063704569,"sequence":1,"payload":{"opaque":true}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":null,"sessionId":null,"rawMessageBytes":135}
+JSON_PARSE_SUCCESS type=event_stream sessionId=rate-limit-1
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":"event_stream","sessionId":"rate-limit-1"}
+RELAY_INGRESS_HASH sessionId=rate-limit-1 hash=098cc168c55eed317ee454c7d610af5a0c9627ba4ce86221056d9324a57634dd
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":"event_stream","sessionId":"rate-limit-1","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=event_stream sessionId=rate-limit-1 valid=true reason=none
+RAW_WS_MESSAGE bytes=135 raw={"protocolVersion":2,"type":"event_stream","sessionId":"rate-limit-1","timestamp":1775063704569,"sequence":2,"payload":{"opaque":true}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":null,"sessionId":null,"rawMessageBytes":135}
+JSON_PARSE_SUCCESS type=event_stream sessionId=rate-limit-1
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":"event_stream","sessionId":"rate-limit-1"}
+RELAY_INGRESS_HASH sessionId=rate-limit-1 hash=6f1041e674c783c174b291b40845d66ec92125569f91876cf86a04435ed5a779
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":"event_stream","sessionId":"rate-limit-1","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=event_stream sessionId=rate-limit-1 valid=true reason=none
+RAW_WS_MESSAGE bytes=135 raw={"protocolVersion":2,"type":"event_stream","sessionId":"rate-limit-1","timestamp":1775063704569,"sequence":3,"payload":{"opaque":true}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":null,"sessionId":null,"rawMessageBytes":135}
+MESSAGE_DROPPED type=unknown sessionId=unknown reason=command_rate_exceeded
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=event_stream sessionId=rate-limit-1 handlerExists=false
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704570,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":"event_stream","sessionId":"rate-limit-1","routed":false,"reason":"missing_sender_registration"}
+ROUTING_DECISION type=event_stream sessionId=rate-limit-1 routed=false reason=missing_sender_registration
+MESSAGE_DROPPED type=event_stream sessionId=rate-limit-1 reason=missing_sender_registration
+RELAY_QUEUE_PROCESS session=rate-limit-1 type=event_stream sequence=1
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704571,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=event_stream sessionId=rate-limit-1 handlerExists=false
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704571,"socketId":"127.0.0.1:1645:127.0.0.1:1644","messageType":"event_stream","sessionId":"rate-limit-1","routed":false,"reason":"missing_sender_registration"}
+ROUTING_DECISION type=event_stream sessionId=rate-limit-1 routed=false reason=missing_sender_registration
+MESSAGE_DROPPED type=event_stream sessionId=rate-limit-1 reason=missing_sender_registration
+RELAY_QUEUE_PROCESS session=rate-limit-1 type=event_stream sequence=2
+✔ connection_termination_on_violation (7.7971ms)
+RAW_WS_MESSAGE bytes=137 raw={"protocolVersion":2,"type":"event_stream","sessionId":"diag-session-1","timestamp":1775063704577,"sequence":1,"payload":{"opaque":true}} type=unknown sessionId=unknown
+JSON_PARSE_SUCCESS type=event_stream sessionId=diag-session-1
+RELAY_INGRESS_HASH sessionId=diag-session-1 hash=0f0e1503e342c42454c9ec26a096fdec65e1a478210eecdba607c361d5b7f7f0
+ENVELOPE_VALIDATION type=event_stream sessionId=diag-session-1 valid=true reason=none
+DISPATCH_LOOKUP type=event_stream sessionId=diag-session-1 handlerExists=false
+ROUTING_DECISION type=event_stream sessionId=diag-session-1 routed=false reason=missing_sender_registration
+MESSAGE_DROPPED type=event_stream sessionId=diag-session-1 reason=missing_sender_registration
+RELAY_QUEUE_PROCESS session=diag-session-1 type=event_stream sequence=1
+✔ ws_message_received (7.861ms)
+RAW_WS_MESSAGE bytes=137 raw={"protocolVersion":2,"type":"event_stream","sessionId":"diag-session-2","timestamp":1775063704585,"sequence":1,"payload":{"opaque":true}} type=unknown sessionId=unknown
+JSON_PARSE_SUCCESS type=event_stream sessionId=diag-session-2
+RELAY_INGRESS_HASH sessionId=diag-session-2 hash=b100d536818bf97234e3a2de57c31fba753afd3908393c863ffc69e76b2a39f8
+ENVELOPE_VALIDATION type=event_stream sessionId=diag-session-2 valid=true reason=none
+DISPATCH_LOOKUP type=event_stream sessionId=diag-session-2 handlerExists=false
+ROUTING_DECISION type=event_stream sessionId=diag-session-2 routed=false reason=missing_sender_registration
+MESSAGE_DROPPED type=event_stream sessionId=diag-session-2 reason=missing_sender_registration
+RELAY_QUEUE_PROCESS session=diag-session-2 type=event_stream sequence=1
+DISPATCH_LOOKUP type=event_stream sessionId=diag-router-session handlerExists=false
+SESSION_LOOKUP type=event_stream sessionId=diag-router-session found=true state=runtime_bound
+RELAY_EGRESS_HASH sessionId=diag-router-session hash=e9504845ed115a7f83c7f78097ed179af0c4c00396b2a8b0c6221289e7812fe1
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=1
+FORWARD_MESSAGE type=event_stream sessionId=diag-router-session targetSocket=diag-web
+ROUTING_DECISION type=event_stream sessionId=diag-router-session routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=diag-router-session type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=bootstrap-session type=protocol_handshake sequence=1
+RELAY_QUEUE_PROCESS session=bootstrap-session type=qr_session_create sequence=1
+RELAY_QUEUE_PROCESS session=bootstrap-session type=pair_request sequence=1
+RELAY_QUEUE_PROCESS session=non-bootstrap-session type=event_stream sequence=1
+DISPATCH_LOOKUP type=protocol_handshake sessionId=bootstrap-dispatch-session handlerExists=false
+ROUTING_DECISION type=protocol_handshake sessionId=bootstrap-dispatch-session routed=true reason=bootstrap_message_allowed
+RELAY_QUEUE_PROCESS session=bootstrap-dispatch-session type=protocol_handshake sequence=1
+RELAY_QUEUE_PROCESS session=bootstrap-dispatch-continues type=qr_session_create sequence=1
+DISPATCH_LOOKUP type=qr_session_create sessionId=dispatch-log-session handlerExists=true
+ROUTING_DECISION type=qr_session_create sessionId=dispatch-log-session routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=dispatch-log-session type=qr_session_create sequence=1
+RELAY_EGRESS_HASH sessionId=registered-dispatch-session hash=4a5050cf819300f00698d2e865f431a3f5b89247889d08041ad787068ceb1127
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=registered-dispatch-session type=event_stream sequence=1
+[redis_session_registry] status=success action=create sessionId=0a7fd6af-2a78-47a4-884d-a2ef10b7d161 ttlSeconds=60
+[redis_session_registry] status=success action=pair sessionId=0a7fd6af-2a78-47a4-884d-a2ef10b7d161 ttlSeconds=60
+RELAY_QUEUE_PROCESS session=0a7fd6af-2a78-47a4-884d-a2ef10b7d161 type=event_stream sequence=1
+[redis_session_registry] status=success action=create sessionId=3eb4cf16-0cd3-4c6e-90d9-080bf46c5ddb ttlSeconds=60
+[redis_session_registry] status=success action=pair sessionId=3eb4cf16-0cd3-4c6e-90d9-080bf46c5ddb ttlSeconds=60
+[redis_session_registry] status=success action=activate sessionId=3eb4cf16-0cd3-4c6e-90d9-080bf46c5ddb ttlSeconds=120
+RELAY_EGRESS_HASH sessionId=3eb4cf16-0cd3-4c6e-90d9-080bf46c5ddb hash=0fc060aec6d5bbc33c69de5c24e2c394e37c8d90d309159956cac51a34d9001d
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=3eb4cf16-0cd3-4c6e-90d9-080bf46c5ddb type=event_stream sequence=1
+[redis_session_registry] status=success action=create sessionId=7e7176da-0108-4f7c-8c18-b0c69e7e47ff ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=7e7176da-0108-4f7c-8c18-b0c69e7e47ff ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=7e7176da-0108-4f7c-8c18-b0c69e7e47ff ttlSeconds=120
+RELAY_RAW_FRAME_MISSING sessionId=7e7176da-0108-4f7c-8c18-b0c69e7e47ff
+[redis_session_registry] status=success action=create sessionId=e3a3973b-7d18-4b12-8643-92d21b4af06e ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=e3a3973b-7d18-4b12-8643-92d21b4af06e ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=e3a3973b-7d18-4b12-8643-92d21b4af06e ttlSeconds=120
+RELAY_INVALID_FRAME_TYPE sessionId=e3a3973b-7d18-4b12-8643-92d21b4af06e frameType=Object
+[redis_session_registry] status=success action=create sessionId=6b841682-80a0-4b93-bb6f-bff4ebbf8154 ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=6b841682-80a0-4b93-bb6f-bff4ebbf8154 ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=6b841682-80a0-4b93-bb6f-bff4ebbf8154 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=6b841682-80a0-4b93-bb6f-bff4ebbf8154 ttlSeconds=120
+RELAY_EGRESS_HASH sessionId=6b841682-80a0-4b93-bb6f-bff4ebbf8154 hash=c9f047def0536ddedd09501d934c273be15baac916b8e31644640172d763d13c
+RELAY_BYTE_VIOLATION sessionId=6b841682-80a0-4b93-bb6f-bff4ebbf8154 sessionId=6b841682-80a0-4b93-bb6f-bff4ebbf8154 ingressHash=tampered-ingress-hash egressHash=c9f047def0536ddedd09501d934c273be15baac916b8e31644640172d763d13c
+✔ transport_envelope_parsed (6.1061ms)
+✔ router_dispatch_logged (0.8163ms)
+✔ bootstrap_message_allowed (0.5654ms)
+✔ non_bootstrap_blocked (0.2557ms)
+✔ router_dispatch_bootstrap (0.4397ms)
+✔ bootstrap_dispatch_continues (0.4244ms)
+✔ dispatch_table_handler_logged (0.5547ms)
+✔ router_dispatch_registered (0.4681ms)
+✔ router_rejects_non_active_session (0.7352ms)
+✔ router_allows_active_session (0.9174ms)
+✔ router_rejects_missing_raw_frame (1.1908ms)
+✔ router_rejects_invalid_raw_frame_type (0.8865ms)
+✔ router_rejects_hash_mismatch_before_forwarding (1.0811ms)
+RAW_WS_MESSAGE bytes=151 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"44444444-4444-4444-8444-444444444444","timestamp":1775063704603,"sequence":1,"payload":{}} type=unknown sessionId=unknown
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=44444444-4444-4444-8444-444444444444
+RELAY_INGRESS_HASH sessionId=44444444-4444-4444-8444-444444444444 hash=2e239e3655e845a3bf1b66092d23dc92d341d745de77ba2a3a07f80868e24c07
+ENVELOPE_VALIDATION type=qr_session_create sessionId=44444444-4444-4444-8444-444444444444 valid=true reason=none
+DISPATCH_LOOKUP type=qr_session_create sessionId=44444444-4444-4444-8444-444444444444 handlerExists=true
+[relay_ingress] qr_session_create received
+[redis_session_registry] status=success action=create sessionId=44444444-4444-4444-8444-444444444444 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=44444444-4444-4444-8444-444444444444 ttlMs=119999
+RELAY_SESSION_CREATED session={"sessionId":"44444444-4444-4444-8444-444444444444","token":"eyJzZXNzaW9uSWQiOiI0NDQ0NDQ0NC00NDQ0LTQ0NDQtODQ0NC00NDQ0NDQ0NDQ0NDQiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ2MDN9.4xDyywWZsn055j2OqeZTUyiK2votHS8nudvZBtQmgBA","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+ROUTING_DECISION type=qr_session_create sessionId=44444444-4444-4444-8444-444444444444 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=44444444-4444-4444-8444-444444444444 type=qr_session_create sequence=1
+✔ qr_handler_invoked (10.1588ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=151 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"55555555-5555-4555-8555-555555555555","timestamp":1775063704610,"sequence":9,"payload":{}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":null,"sessionId":null,"rawMessageBytes":151}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=55555555-5555-4555-8555-555555555555
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":"qr_session_create","sessionId":"55555555-5555-4555-8555-555555555555"}
+RELAY_INGRESS_HASH sessionId=55555555-5555-4555-8555-555555555555 hash=67b2aa00b3d1523ecc3ad2c48ee19d0b1cd507b855ca570839142fb4454a0761
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":"qr_session_create","sessionId":"55555555-5555-4555-8555-555555555555","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=55555555-5555-4555-8555-555555555555 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=55555555-5555-4555-8555-555555555555 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":"qr_session_create","sessionId":"55555555-5555-4555-8555-555555555555","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704610,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=55555555-5555-4555-8555-555555555555 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=55555555-5555-4555-8555-555555555555 ttlMs=119999
+RELAY_SESSION_CREATED session={"sessionId":"55555555-5555-4555-8555-555555555555","token":"eyJzZXNzaW9uSWQiOiI1NTU1NTU1NS01NTU1LTQ1NTUtODU1NS01NTU1NTU1NTU1NTUiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ2MTB9.SDmTm8Rl8_jItLfGqx6PaXIlOHdF9ux2Ml0t1ysCC7A","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704611,"socketId":"127.0.0.1:1653:127.0.0.1:1652","messageType":"qr_session_create","sessionId":"55555555-5555-4555-8555-555555555555","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=55555555-5555-4555-8555-555555555555 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=55555555-5555-4555-8555-555555555555 type=qr_session_create sequence=9
+✔ session_created_after_router (6.4978ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704617,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704617,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=180 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"66666666-6666-4666-8666-666666666666","timestamp":1775063704618,"sequence":1,"payload":{"token":"pair-approved-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704618,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":null,"sessionId":null,"rawMessageBytes":180}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=66666666-6666-4666-8666-666666666666
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704618,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":"qr_session_create","sessionId":"66666666-6666-4666-8666-666666666666"}
+RELAY_INGRESS_HASH sessionId=66666666-6666-4666-8666-666666666666 hash=e5b514a2c61072ad15fad64ae0dea6e6b20aa213c0341e8a04576448fba074f2
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704618,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":"qr_session_create","sessionId":"66666666-6666-4666-8666-666666666666","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=66666666-6666-4666-8666-666666666666 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704618,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=66666666-6666-4666-8666-666666666666 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704618,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704618,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":"qr_session_create","sessionId":"66666666-6666-4666-8666-666666666666","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704618,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=66666666-6666-4666-8666-666666666666 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=66666666-6666-4666-8666-666666666666 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"66666666-6666-4666-8666-666666666666","token":"eyJzZXNzaW9uSWQiOiI2NjY2NjY2Ni02NjY2LTQ2NjYtODY2Ni02NjY2NjY2NjY2NjYiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ2MTh9.9kJiEJeCIcWVpK4QAXph9S6_SxxdLV6HlwOqrvMjHM0","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704619,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":"qr_session_create","sessionId":"66666666-6666-4666-8666-666666666666","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=66666666-6666-4666-8666-666666666666 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=66666666-6666-4666-8666-666666666666 type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=355 raw={"protocolVersion":2,"type":"pair_request","sessionId":"66666666-6666-4666-8666-666666666666","timestamp":1775063704619,"sequence":3,"payload":{"sessionId":"66666666-6666-4666-8666-666666666666","toke type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704619,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":null,"sessionId":null,"rawMessageBytes":355}
+JSON_PARSE_SUCCESS type=pair_request sessionId=66666666-6666-4666-8666-666666666666
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704619,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":"pair_request","sessionId":"66666666-6666-4666-8666-666666666666"}
+RELAY_INGRESS_HASH sessionId=66666666-6666-4666-8666-666666666666 hash=0299de0a83eb13033e6b51e04303d568561b83fb34ffa0c551c4f88d4f44eb35
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704619,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":"pair_request","sessionId":"66666666-6666-4666-8666-666666666666","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=66666666-6666-4666-8666-666666666666 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704619,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=66666666-6666-4666-8666-666666666666 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704619,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704619,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":"pair_request","sessionId":"66666666-6666-4666-8666-666666666666","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704619,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiI2NjY2NjY2Ni02NjY2LTQ2NjYtODY2Ni02NjY2NjY2NjY2NjYiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ2MTh9.9kJiEJeCIcWVpK4QAXph9S6_SxxdLV6HlwOqrvMjHM0 requestToken=eyJzZXNzaW9uSWQiOiI2NjY2NjY2Ni02NjY2LTQ2NjYtODY2Ni02NjY2NjY2NjY2NjYiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ2MTh9.9kJiEJeCIcWVpK4QAXph9S6_SxxdLV6HlwOqrvMjHM0
+[redis_session_registry] status=success action=pair sessionId=66666666-6666-4666-8666-666666666666 ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704620,"socketId":"127.0.0.1:1655:127.0.0.1:1654","messageType":null,"sessionId":"66666666-6666-4666-8666-666666666666"}
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session 66666666-6666-4666-8666-666666666666
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704620,"socketId":"127.0.0.1:1656:127.0.0.1:1654","messageType":"pair_request","sessionId":"66666666-6666-4666-8666-666666666666","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=66666666-6666-4666-8666-666666666666 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=66666666-6666-4666-8666-666666666666 type=pair_request sequence=3
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+✔ pair_approved_emitted (10.0221ms)
+RELAY_EGRESS_HASH sessionId=7c8f250c-c7ef-4d27-a302-f5d0f0dca101 hash=e9562fcbe579242d5232968a5ccee115cb122164720c5747b6cf00905f83d4dd
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=7c8f250c-c7ef-4d27-a302-f5d0f0dca101 type=event_stream sequence=1
+[chano_relay] Relay starting
+[chano_relay] Redis connected
+[chano_relay] listening on ws://127.0.0.1:1657/relay
+[chano_relay] Relay starting
+[chano_relay] Redis connected
+✔ routing_after_activation (1.8111ms)
+[chano_relay] listening on ws://127.0.0.1:1658/relay
+✔ redis_connect_success (3.2737ms)
+✔ server_bootstrap_registry (2.3891ms)
+✔ relay_start_with_registry (2.4208ms)
+✔ server_start (54.8256ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704788,"socketId":"127.0.0.1:1663:127.0.0.1:1662","messageType":null,"sessionId":null}
+✔ websocket_upgrade (105.2992ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704797,"socketId":"127.0.0.1:1665:127.0.0.1:1664","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=132 raw={"protocolVersion":2,"type":"event_stream","sessionId":"session-1","timestamp":1775063704795,"sequence":1,"payload":{"opaque":true}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704797,"socketId":"127.0.0.1:1665:127.0.0.1:1664","messageType":null,"sessionId":null,"rawMessageBytes":132}
+JSON_PARSE_SUCCESS type=event_stream sessionId=session-1
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704798,"socketId":"127.0.0.1:1665:127.0.0.1:1664","messageType":"event_stream","sessionId":"session-1"}
+RELAY_INGRESS_HASH sessionId=session-1 hash=a8348c56897f3b3aa3566ce28b805ea0225e46ea9dfba3ff73cc1d8bb7d3ed14
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704798,"socketId":"127.0.0.1:1665:127.0.0.1:1664","messageType":"event_stream","sessionId":"session-1","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=event_stream sessionId=session-1 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704798,"socketId":"127.0.0.1:1665:127.0.0.1:1664","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=event_stream sessionId=session-1 handlerExists=false
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704798,"socketId":"127.0.0.1:1665:127.0.0.1:1664","messageType":"event_stream","sessionId":"session-1","routed":false,"reason":"missing_sender_registration"}
+ROUTING_DECISION type=event_stream sessionId=session-1 routed=false reason=missing_sender_registration
+MESSAGE_DROPPED type=event_stream sessionId=session-1 reason=missing_sender_registration
+RELAY_QUEUE_PROCESS session=session-1 type=event_stream sequence=1
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704801,"socketId":"127.0.0.1:6101:127.0.0.1:8080","messageType":null,"sessionId":null}
+✔ connection_accept (6.6568ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704804,"socketId":"127.0.0.1:6201:127.0.0.1:8080","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704804,"socketId":"127.0.0.1:6202:127.0.0.1:8080","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210 ttlMs=119998
+RELAY_SESSION_CREATED session={"sessionId":"2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210","token":null,"webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[redis_session_registry] status=success action=pair sessionId=2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210 ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704805,"socketId":"127.0.0.1:6201:127.0.0.1:8080","messageType":null,"sessionId":"2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210"}
+SESSION_UPDATE paired
+[redis_session_registry] status=success action=activate sessionId=2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210
+TIMER_SET sessionId=2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210 ttlMs=120000
+SESSION_UPDATE active
+✔ heartbeat_pong_keeps_connection_alive (3.3311ms)
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704806,"socketId":"127.0.0.1:6202:127.0.0.1:8080","messageType":null,"sessionId":"2f62f1dd-1aa3-4c1e-a2c7-c6b817ff3210"}
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=heartbeat_timeout
+✔ heartbeat_timeout_closes_active_session (4.3388ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704812,"socketId":"127.0.0.1:1669:127.0.0.1:1668","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=132 raw={"protocolVersion":1,"type":"event_stream","sessionId":"session-1","timestamp":1775063704810,"sequence":1,"payload":{"opaque":true}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704812,"socketId":"127.0.0.1:1669:127.0.0.1:1668","messageType":null,"sessionId":null,"rawMessageBytes":132}
+JSON_PARSE_SUCCESS type=event_stream sessionId=session-1
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704812,"socketId":"127.0.0.1:1669:127.0.0.1:1668","messageType":"event_stream","sessionId":"session-1"}
+RELAY_INGRESS_HASH sessionId=session-1 hash=d2d8b891d3086e541e770e38d699741d74f996916a1d94abd244273aa05a69e5
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704812,"socketId":"127.0.0.1:1669:127.0.0.1:1668","messageType":"event_stream","sessionId":"session-1","valid":false,"reason":"unsupported_protocol_version"}
+ENVELOPE_VALIDATION type=event_stream sessionId=session-1 valid=false reason=unsupported_protocol_version
+MESSAGE_DROPPED type=event_stream sessionId=session-1 reason=unsupported_protocol_version
+✔ invalid_protocol_version (6.8587ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704818,"socketId":"127.0.0.1:1671:127.0.0.1:1670","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=123 raw={"protocolVersion":2,"type":"event_stream","sessionId":"","timestamp":1775063704816,"sequence":1,"payload":{"opaque":true}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704818,"socketId":"127.0.0.1:1671:127.0.0.1:1670","messageType":null,"sessionId":null,"rawMessageBytes":123}
+JSON_PARSE_SUCCESS type=event_stream sessionId=unknown
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704818,"socketId":"127.0.0.1:1671:127.0.0.1:1670","messageType":"event_stream","sessionId":null}
+RELAY_INGRESS_HASH sessionId=unknown hash=6fc1e1d38d38052622b76f33be3ad3386bd870f511120afcdfdeebe993599c17
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704818,"socketId":"127.0.0.1:1671:127.0.0.1:1670","messageType":"event_stream","sessionId":null,"valid":false,"reason":"missing_session_id"}
+ENVELOPE_VALIDATION type=event_stream sessionId=unknown valid=false reason=missing_session_id
+MESSAGE_DROPPED type=event_stream sessionId=unknown reason=missing_session_id
+✔ missing_session_id (5.6885ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704825,"socketId":"127.0.0.1:1673:127.0.0.1:1672","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=120 raw={"protocolVersion":2,"type":"","sessionId":"session-1","timestamp":1775063704822,"sequence":1,"payload":{"opaque":true}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704825,"socketId":"127.0.0.1:1673:127.0.0.1:1672","messageType":null,"sessionId":null,"rawMessageBytes":120}
+JSON_PARSE_SUCCESS type=unknown sessionId=session-1
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704825,"socketId":"127.0.0.1:1673:127.0.0.1:1672","messageType":null,"sessionId":"session-1"}
+RELAY_INGRESS_HASH sessionId=session-1 hash=1981c1c27e0fd91d1f2edb5fb41c057a77d32627e1f5c5af797f5bbe50dd9c7f
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704825,"socketId":"127.0.0.1:1673:127.0.0.1:1672","messageType":null,"sessionId":"session-1","valid":false,"reason":"missing_type"}
+ENVELOPE_VALIDATION type=unknown sessionId=session-1 valid=false reason=missing_type
+MESSAGE_DROPPED type=unknown sessionId=session-1 reason=missing_type
+✔ missing_type (7.4424ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704831,"socketId":"127.0.0.1:1675:127.0.0.1:1674","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=192 raw={"protocolVersion":2,"type":"event_stream","sessionId":"session-1","timestamp":1775063704829,"sequence":1,"payload":{"blob":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704832,"socketId":"127.0.0.1:1675:127.0.0.1:1674","messageType":null,"sessionId":null,"rawMessageBytes":192}
+JSON_PARSE_SUCCESS type=event_stream sessionId=session-1
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704832,"socketId":"127.0.0.1:1675:127.0.0.1:1674","messageType":"event_stream","sessionId":"session-1"}
+RELAY_INGRESS_HASH sessionId=session-1 hash=0c0e2f70ab9c79359697edf6ff170b1a554b0572e293b4b3eedfa4e12be2c3b7
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704832,"socketId":"127.0.0.1:1675:127.0.0.1:1674","messageType":"event_stream","sessionId":"session-1","valid":false,"reason":"payload_too_large"}
+ENVELOPE_VALIDATION type=event_stream sessionId=session-1 valid=false reason=payload_too_large
+MESSAGE_DROPPED type=event_stream sessionId=session-1 reason=payload_too_large
+✔ transport_payload_size_limit (5.8688ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704839,"socketId":"127.0.0.1:1677:127.0.0.1:1676","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=130 raw={"protocolVersion":2,"type":"event_stream","sessionId":"session-1","timestamp":1775063704836,"sequence":1,"payload":{"blob":"ok"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704839,"socketId":"127.0.0.1:1677:127.0.0.1:1676","messageType":null,"sessionId":null,"rawMessageBytes":130}
+JSON_PARSE_SUCCESS type=event_stream sessionId=session-1
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704839,"socketId":"127.0.0.1:1677:127.0.0.1:1676","messageType":"event_stream","sessionId":"session-1"}
+RELAY_INGRESS_HASH sessionId=session-1 hash=99f84ef03f5e6754c220c59e590e806758d90c6e5c4d66b318751b91cb590df9
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704839,"socketId":"127.0.0.1:1677:127.0.0.1:1676","messageType":"event_stream","sessionId":"session-1","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=event_stream sessionId=session-1 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704840,"socketId":"127.0.0.1:1677:127.0.0.1:1676","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=event_stream sessionId=session-1 handlerExists=false
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704840,"socketId":"127.0.0.1:1677:127.0.0.1:1676","messageType":"event_stream","sessionId":"session-1","routed":false,"reason":"missing_sender_registration"}
+ROUTING_DECISION type=event_stream sessionId=session-1 routed=false reason=missing_sender_registration
+MESSAGE_DROPPED type=event_stream sessionId=session-1 reason=missing_sender_registration
+RELAY_QUEUE_PROCESS session=session-1 type=event_stream sequence=1
+RELAY_EGRESS_HASH sessionId=session-route-1 hash=1d741824c372b2b0d36d3dc5562d057743160047802b2ca024a13791bf166cc8
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=session-route-1 type=event_stream sequence=1
+RELAY_EGRESS_HASH sessionId=relay-forward-session hash=beec95a81b263f9cccc9fe6f35494b4edcece0fe797915cbaf61ae98a7488fd4
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=1
+RELAY_QUEUE_PROCESS session=relay-forward-session type=snapshot_start sequence=1
+RELAY_EGRESS_HASH sessionId=snapshot-start-session hash=cc17a99a28decb1eb8c457ddb17bd08c5ee79dd08f87926641f74eb427e12abe
+RELAY_EGRESS_HASH sessionId=snapshot-chunk-session hash=02a4fd07f3c167565db3d3789700c6b7e47c35a506940fbec7e4705fbf7acf6d
+RELAY_EGRESS_HASH sessionId=snapshot-chunk-session hash=4867fb36bedcab9c4b691e1c0381a8c4324674fc0e9a3c9ea1e6430bae137b47
+RELAY_EGRESS_HASH sessionId=snapshot-chunk-session hash=7a2b730fc7d52d441c824d95d2d79b85e0c3216fee64228e647caa995ee6683e
+RELAY_EGRESS_HASH sessionId=snapshot-complete-session hash=cf959fbb73fa03c54ba881e1f72f094ffa420f8a9c46c01f4c9b3d7acfa141c7
+RELAY_EGRESS_HASH sessionId=snapshot-complete-session hash=543919740f6a1691a87dd0a7af63aea7238357235767d5818f05e8071dc69c33
+RELAY_EGRESS_HASH sessionId=relay-payload-opaque hash=fc572d4acb6f8a6056d72fec0b46f518cf53c05c96a08b12c3648ef644c38b63
+RELAY_EGRESS_HASH sessionId=relay-event-forward-order hash=efc364cf27c7c4e9f9571d657db05eef44e3bdd206fa50d1e51ed4ec4aba5e6d
+RELAY_EGRESS_HASH sessionId=relay-event-forward-order hash=883bbfb14c35f65af071a30fc9a78751a84c1e752c724aa0423d4edbdea70d54
+RELAY_EGRESS_HASH sessionId=relay-event-forward-order hash=72ca5d03240660b3deec3b4094d140a7814243c035425f9d34b1daa220c4aa71
+RELAY_EGRESS_HASH sessionId=ordering-preserved-session hash=a7526709551f6251cd65cacf118d194fbcd644e40178aa0dc9974a2c10e608d0
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=9
+RELAY_QUEUE_PROCESS session=ordering-preserved-session type=snapshot_start sequence=9
+✔ valid_envelope_pass (8.1951ms)
+✔ socket_register (0.2952ms)
+✔ socket_remove (0.1655ms)
+✔ session_binding (0.1672ms)
+✔ disconnect_cleanup (0.2093ms)
+✔ mobile_to_web_routing (0.465ms)
+✔ relay_forward_envelope (0.3634ms)
+✔ snapshot_start_forward (0.4505ms)
+✔ snapshot_chunk_forward (0.6705ms)
+✔ snapshot_complete_forward (0.5155ms)
+✔ relay_payload_opaque (0.5071ms)
+✔ relay_event_forward_order (0.8755ms)
+RELAY_EGRESS_HASH sessionId=ordering-preserved-session hash=ec125c7fd4e489d9a82e08319e16653069db363ddc060e2136a7f82c91dd42dd
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=10
+RELAY_QUEUE_PROCESS session=ordering-preserved-session type=snapshot_chunk sequence=10
+RELAY_EGRESS_HASH sessionId=ordering-preserved-session hash=b5db0589f68d5bcce7ea5e5053b512f6aa4921c9c797c31e53836699ffce3016
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=11
+RELAY_QUEUE_PROCESS session=ordering-preserved-session type=snapshot_chunk sequence=11
+RELAY_EGRESS_HASH sessionId=ordering-preserved-session hash=d74796a1b5cc31398755a1ad8933a4bb01db38482afe1ab6ec1b3ab5144e14e5
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=12
+RELAY_QUEUE_PROCESS session=ordering-preserved-session type=snapshot_chunk sequence=12
+RELAY_EGRESS_HASH sessionId=ordering-preserved-session hash=7e8bc9e1b610e12376b4faeb0fbf18ad9620212bfe200e562152d73d7ab67db5
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=13
+RELAY_QUEUE_PROCESS session=ordering-preserved-session type=snapshot_chunk sequence=13
+RELAY_EGRESS_HASH sessionId=ordering-preserved-session hash=129fd71f33dfacc5fa9c4423e200a0bdfa5bc27c7963222642d7ea017e6b0922
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_complete sequence=14
+RELAY_QUEUE_PROCESS session=ordering-preserved-session type=snapshot_complete sequence=14
+✔ ordering_preserved (5.1416ms)
+RELAY_EGRESS_HASH sessionId=relay-session-ordering hash=a1c554126097fa34afa4d4513d12540bd9a032a8dd5f439f8b69fa2d6921c64c
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=13
+RELAY_QUEUE_PROCESS session=relay-session-ordering type=event_stream sequence=13
+RELAY_EGRESS_HASH sessionId=relay-session-ordering hash=f35ab5e74a2736199eacd1d52cead29ec2a1b54047e337ecf4ac72d40992dda5
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=10
+RELAY_QUEUE_PROCESS session=relay-session-ordering type=event_stream sequence=10
+RELAY_EGRESS_HASH sessionId=relay-session-ordering hash=28b54553dc91c6314118a10c800eadb15798b80e37c8e61a6c27a486be842b80
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=12
+RELAY_QUEUE_PROCESS session=relay-session-ordering type=event_stream sequence=12
+RELAY_EGRESS_HASH sessionId=relay-session-ordering hash=76771e948399e5897c2d1e0c299df3e6cb794166cc3d37abb401bc9f44526775
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=11
+RELAY_QUEUE_PROCESS session=relay-session-ordering type=event_stream sequence=11
+✔ relay_session_ordering (1.7225ms)
+RELAY_EGRESS_HASH sessionId=relay-no-reorder-async hash=d3a07ceb1d854b38e7e444e2d5efb6e6b8b27179d91eecacb9812bd08362678e
+RELAY_EGRESS_HASH sessionId=relay-no-reorder-async hash=8ca8fba636d0bb4b517dd62c4d6cd8d43afade89ec62b8c18aa352c84afb084b
+RELAY_EGRESS_HASH sessionId=relay-no-reorder-async hash=0315abc59d0d6e7921838cc6aeb24a58eb3d12392fbe8dbde8956203e6d548f7
+RELAY_EGRESS_HASH sessionId=abc hash=1a1510ec0df681a7000c05f9e3175201ffbe17e1bce87dce8db8f973a63b74bc
+RELAY_EGRESS_HASH sessionId=abc hash=4cc6c6777a8b5b0ffc29951746f5e647a703972f9bd4b3e0819e03f821846894
+RELAY_EGRESS_HASH sessionId=abc hash=783db7412fd93a81f89c6fe72dd80dc4383fa0d845a69c439359440cb2ff223d
+RELAY_EGRESS_HASH sessionId=abc hash=6958e4e8121acc6f3aac5bca124c4b68099feb30aef71bd2b225b3b71a90b786
+RELAY_EGRESS_HASH sessionId=abc hash=4dbdb9fbc5fce2dc41adc66115e566593b7cc37dcfbe69f85e1eca8d7990f470
+RELAY_EGRESS_HASH sessionId=abc hash=1a1510ec0df681a7000c05f9e3175201ffbe17e1bce87dce8db8f973a63b74bc
+RELAY_EGRESS_HASH sessionId=abc hash=4cc6c6777a8b5b0ffc29951746f5e647a703972f9bd4b3e0819e03f821846894
+RELAY_EGRESS_HASH sessionId=abc hash=783db7412fd93a81f89c6fe72dd80dc4383fa0d845a69c439359440cb2ff223d
+RELAY_EGRESS_HASH sessionId=abc hash=6958e4e8121acc6f3aac5bca124c4b68099feb30aef71bd2b225b3b71a90b786
+RELAY_EGRESS_HASH sessionId=abc hash=4dbdb9fbc5fce2dc41adc66115e566593b7cc37dcfbe69f85e1eca8d7990f470
+RELAY_EGRESS_HASH sessionId=relay-snapshot-event-isolation hash=ad22bd6d974c1ffee47e35476bbd01850919d3bfc8a0bec3f9b821c3d96857e4
+RELAY_EGRESS_HASH sessionId=relay-snapshot-event-isolation hash=a812254f13ef8d468097161a0550f6806b31d21e032eac705fd67942c132aa80
+RELAY_EGRESS_HASH sessionId=relay-snapshot-event-isolation hash=08cc8cf333e698847539b8a50763427f75244703af722c1df9b04ebf22d48439
+RELAY_EGRESS_HASH sessionId=relay-snapshot-event-isolation hash=58e7afbf013e8d3fd57ae1707dbf5ea7e432a3fe7c352de556ad305e4043e21b
+RELAY_EGRESS_HASH sessionId=abc hash=34453dc829c0cd6a4f2307c355df7099a0225323a6302b58bcd540ee2af1f3b2
+RELAY_EGRESS_HASH sessionId=abc hash=2450acceb9611fc430175c2201a9bf6d9a1661774cf7f5a910589e40a48a1343
+RELAY_EGRESS_HASH sessionId=abc hash=d7dddc74aaa807311dd8cf9e6809998a863c43ccae0a1a0f5ee1ea5fa68cd84d
+✔ relay_no_reorder_async (1.8713ms)
+✔ relay_snapshot_isolation_transparency (1.7381ms)
+✔ relay_no_interleaving_fix (1.4277ms)
+✔ relay_snapshot_event_isolation (1.6505ms)
+✔ relay_fifo_ordering (1.0105ms)
+RELAY_EGRESS_HASH sessionId=abc hash=a693d01661b8832e7dfa8b8f6dd40db671ef1e613e262796680c51b16ef1c18f
+RELAY_EGRESS_HASH sessionId=abc hash=e0ce6beda25a392726f2c1ad195dff67e6652df07825b45a9a6d80f802d47f26
+RELAY_EGRESS_HASH sessionId=abc hash=c62ee794946b9612ae0406b440b1d641f2ff57c5d31c4c9bae9029073e0f4357
+RELAY_EGRESS_HASH sessionId=abc hash=72602e8eb4326a82d60716b89873d78078f336cbbda1edf89879ccd067d4a8e5
+RELAY_EGRESS_HASH sessionId=abc hash=c92bccac8ec62dc34c27386106f954933a8e1be776f73843830314d0ec5d5eb3
+RELAY_EGRESS_HASH sessionId=abc hash=c92bccac8ec62dc34c27386106f954933a8e1be776f73843830314d0ec5d5eb3
+RELAY_EGRESS_HASH sessionId=abc hash=7de254e16bcfe8f261fd2a7d1f3565f1aa6619f058cc2deee0629e6241997f6f
+RELAY_EGRESS_HASH sessionId=duplicate-no-dedup hash=f0e36082353deeffc03ba9238e2d82abbb83e2470b1936b1306af051d792f12d
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=101
+RELAY_QUEUE_PROCESS session=duplicate-no-dedup type=event_stream sequence=101
+RELAY_EGRESS_HASH sessionId=duplicate-no-dedup hash=7af1968d0c380af86415f63c0895cb8c78b1979480e400ec5bb5c687c7ec161f
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=102
+RELAY_QUEUE_PROCESS session=duplicate-no-dedup type=event_stream sequence=102
+RELAY_EGRESS_HASH sessionId=duplicate-no-dedup hash=7af1968d0c380af86415f63c0895cb8c78b1979480e400ec5bb5c687c7ec161f
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=102
+RELAY_QUEUE_PROCESS session=duplicate-no-dedup type=event_stream sequence=102
+RELAY_EGRESS_HASH sessionId=duplicate-no-dedup hash=f7fe76d51362feb34c4260866344be44809ceccbf7dbabcd6f7dce57c55bb8bf
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=103
+RELAY_QUEUE_PROCESS session=duplicate-no-dedup type=event_stream sequence=103
+✔ relay_async_order_preservation (2.3448ms)
+✔ relay_duplicate_forwarding (1.2895ms)
+✔ relay_no_deduplication (0.989ms)
+RELAY_EGRESS_HASH sessionId=abc hash=72602e8eb4326a82d60716b89873d78078f336cbbda1edf89879ccd067d4a8e5
+RELAY_EGRESS_HASH sessionId=abc hash=106a0a7d4c5dfa6afff6bc53029b748c34a9ab057714051eb8b05de2e40aae07
+RELAY_EGRESS_HASH sessionId=abc hash=13988edb550041ab3dd1a7c229056cfc5a07352bfe4d2564d0083d440267a35a
+RELAY_EGRESS_HASH sessionId=abc hash=75aac5cc4562f3d5d696d6552188fd62e9966fc706a0d27acfedbf2c0363eb62
+RELAY_EGRESS_HASH sessionId=abc hash=f67be76d5d45dc6fcf6016b3ed63de72655dd68057d669000522b8e0a97c6263
+RELAY_EGRESS_HASH sessionId=abc hash=d5065b313cfc5971e2d98a1a015c26d42833778fa964170efb70668ef8c338ce
+RELAY_EGRESS_HASH sessionId=snapshot-gap-fallback hash=b3fb828894ea79d7edbf4d1fd95f01bea81a8c178deb5a392c134a6879f887cf
+RELAY_EGRESS_HASH sessionId=snapshot-gap-fallback hash=8fcd28b54ad3ea8c9307f825d6de2d047cd873c9217ac1688a84af6c96d2ee68
+RELAY_EGRESS_HASH sessionId=snapshot-gap-fallback hash=f8cdc6c6825979b50efee1f588ddaf5301cc5576c2cdf654f12bdf8b4e9c8572
+RELAY_EGRESS_HASH sessionId=gap-no-recovery hash=98dd76e2d928127b69a39e63409c2c4734a08cd5259ba4954a2bcc7201fda055
+RELAY_EGRESS_HASH sessionId=gap-no-recovery hash=80bc98331dd90db68571134f1b86a9de7afd05c7feb671abe9b05e3061fc126b
+RELAY_EGRESS_HASH sessionId=snapshot-ordering hash=5dc95200ee10ac97605ae43fa75630120cb294be14de621601c7c6bf874ad2dd
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=1
+RELAY_QUEUE_PROCESS session=snapshot-ordering type=snapshot_start sequence=1
+RELAY_EGRESS_HASH sessionId=snapshot-ordering hash=11dfb8d23803d78d40fac4d9d76b6becdbadbcb4d604ff4be43887d7b4128a7b
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=2
+RELAY_QUEUE_PROCESS session=snapshot-ordering type=snapshot_chunk sequence=2
+RELAY_EGRESS_HASH sessionId=snapshot-ordering hash=76730dfc151b26f04f52e309f05d5bb01825ca2c8f14a5805bee4b3cacb5e35f
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=5
+RELAY_QUEUE_PROCESS session=snapshot-ordering type=event_stream sequence=5
+RELAY_EGRESS_HASH sessionId=snapshot-ordering hash=6dffc6ef1b3b69309b985d11192904571e04a67e81ee987367cf280f4931aacf
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=3
+RELAY_QUEUE_PROCESS session=snapshot-ordering type=snapshot_chunk sequence=3
+RELAY_EGRESS_HASH sessionId=snapshot-ordering hash=ca7fbca0e039d5d308961ab8c9f3066d00eb436caf6dbde49f1801e7c205b551
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_complete sequence=4
+RELAY_QUEUE_PROCESS session=snapshot-ordering type=snapshot_complete sequence=4
+RELAY_EGRESS_HASH sessionId=snapshot-blocked-event hash=06be33c9a1e08f2497461b161b9fd78c5b991070c6822c34a2452c42432c75a3
+RELAY_EGRESS_HASH sessionId=snapshot-blocked-event hash=0223ec852245ecc00aa2ccf8acecb3e54470240b083b7032c3e61a69d92e0fab
+RELAY_EGRESS_HASH sessionId=snapshot-blocked-event hash=d60af710bed0cc5354931e19e4ec10851c94238a266ff2e17966473cb26027ce
+RELAY_EGRESS_HASH sessionId=snapshot-blocked-event hash=df1f1f6042c63a6ab06ae292acaebe9219cc19fb71f7c833e0af8a4bec67d6b3
+RELAY_EGRESS_HASH sessionId=snapshot-blocked-event hash=b3ef4c237d4e0e3d083f23122f555d8cae5041cd3d81720576fdc3fa1aca5235
+RELAY_EGRESS_HASH sessionId=snapshot-chunk-without-start hash=0d251edba68b908725cc765ae4c5adeda24c59d8faa9659e17a7ebab909ff4e1
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=1
+RELAY_QUEUE_PROCESS session=snapshot-chunk-without-start type=snapshot_chunk sequence=1
+RELAY_EGRESS_HASH sessionId=nested-snapshot-start hash=86f06db477c212a2783ab44090fbc95d07e27861a1982bab389db52fe73ece98
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=1
+RELAY_QUEUE_PROCESS session=nested-snapshot-start type=snapshot_start sequence=1
+RELAY_EGRESS_HASH sessionId=nested-snapshot-start hash=0d0b844626a68548bc5f54f6a24d9bf6fd0599ed5b9b8bc26a200701655bcfe4
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=2
+RELAY_QUEUE_PROCESS session=nested-snapshot-start type=snapshot_start sequence=2
+✔ relay_preserve_duplicate_order (6.0207ms)
+✔ relay_gap_transparency (1.4039ms)
+✔ relay_snapshot_forwarding (2.0497ms)
+✔ relay_no_recovery_logic (0.7972ms)
+✔ snapshot_stream_contiguity (1.2965ms)
+✔ event_block_during_snapshot (0.9387ms)
+✔ snapshot_chunk_without_start_forwarded_without_interpretation (0.3262ms)
+✔ nested_snapshot_start_forwarded_without_interpretation (0.6916ms)
+RELAY_EGRESS_HASH sessionId=queue-process-sequential hash=20550e5628fa1d0fd5f34191e60371dd89170ef0e4834abffab0d84cfd883a21
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=3
+RELAY_QUEUE_PROCESS session=queue-process-sequential type=event_stream sequence=3
+RELAY_EGRESS_HASH sessionId=queue-process-sequential hash=fbf503b30432fb96b72640e1ded4e239b34c2be64a5b31ac34190adaf5049ef2
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=queue-process-sequential type=event_stream sequence=1
+RELAY_EGRESS_HASH sessionId=queue-process-sequential hash=3edb2b5ae4bfbae93791c54bfa53fb41325c454c48e5cee44e6280f76762cd68
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=2
+RELAY_QUEUE_PROCESS session=queue-process-sequential type=event_stream sequence=2
+RELAY_EGRESS_HASH sessionId=session-route-2 hash=44fc9f75416d5dbba2cebe0d2c4914d03b445dd19f871a22064110dd231e1275
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE web→mobile type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=session-route-2 type=event_stream sequence=1
+RELAY_QUEUE_PROCESS session=session-route-3 type=event_stream sequence=1
+RELAY_EGRESS_HASH sessionId=session-route-4 hash=39a6630be3455ccfb191f303b6d433ec16751efd1dc1ec48a7a72192d10989fc
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=77
+RELAY_QUEUE_PROCESS session=session-route-4 type=event_stream sequence=77
+RELAY_EGRESS_HASH sessionId=relay-preserve-session hash=17f37b0acf4ecf7acd8c506abfca5f2c2d70ebad37a2d7afffff1d05b6305784
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=command_result sequence=29
+RELAY_QUEUE_PROCESS session=relay-preserve-session type=command_result sequence=29
+RELAY_EGRESS_HASH sessionId=relay-mutation-forward hash=9bf0053c11accd5d40a3dc57e6165339be70467969fb6eec1f10523694d3ad88
+RELAY_EGRESS_HASH sessionId=relay-command-result-routing-1 hash=52f0bf6241a71638764dc40f3ee001cd5c7f373b824bc672020f38d23a37a3a1
+✔ queue_process_sequential (3.6779ms)
+✔ web_to_mobile_routing (0.4078ms)
+✔ missing_destination_drop (0.3212ms)
+✔ envelope_integrity_preserved (0.3182ms)
+✔ relay_preserve_envelope_fields (0.4043ms)
+✔ relay_mutation_forward (0.6524ms)
+✔ relay_command_result_routing (0.4785ms)
+RELAY_EGRESS_HASH sessionId=relay-mutation-ordering hash=b694b42aa64e9b88b96553c695820f595d1afe19d1b42b8691a8097c090c7b2b
+RELAY_EGRESS_HASH sessionId=relay-mutation-ordering hash=b0f6c112e7007c79a98d34b4bbf19e0d2f676f2675bc81b6631301f06ff8cf46
+RELAY_EGRESS_HASH sessionId=relay-mutation-ordering hash=529c320a1d283685c7bd80abd45474c5f0dd37c89dc240d2e45819fb61cbd922
+RELAY_EGRESS_HASH sessionId=relay-payload-opaque-mutation hash=3799c097068602fb1272f3218e2261772e08c707fd27cb921996ecaca4be207d
+RELAY_EGRESS_HASH sessionId=relay-no-dispatch-session hash=8e7eb4e62739d0f2081beac924b4040764bf9c11dcbd12ae8db0e4d2fc720289
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=totally_unknown_type sequence=1
+RELAY_QUEUE_PROCESS session=relay-no-dispatch-session type=totally_unknown_type sequence=1
+✔ relay_mutation_ordering (4.8986ms)
+✔ relay_payload_opaque_mutation (0.6143ms)
+✔ relay_no_message_dispatch (0.3904ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704897,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=152 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"77777777-7777-4777-8777-777777777777","timestamp":1775063704897,"sequence":11,"payload":{}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":null,"sessionId":null,"rawMessageBytes":152}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=77777777-7777-4777-8777-777777777777
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":"qr_session_create","sessionId":"77777777-7777-4777-8777-777777777777"}
+RELAY_INGRESS_HASH sessionId=77777777-7777-4777-8777-777777777777 hash=fcc6885d6f749801820fbe385367c0a9fc5a6b33e423d06f4c114dca22befdc7
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":"qr_session_create","sessionId":"77777777-7777-4777-8777-777777777777","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=77777777-7777-4777-8777-777777777777 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=77777777-7777-4777-8777-777777777777 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":"qr_session_create","sessionId":"77777777-7777-4777-8777-777777777777","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=77777777-7777-4777-8777-777777777777 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=77777777-7777-4777-8777-777777777777 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"77777777-7777-4777-8777-777777777777","token":"eyJzZXNzaW9uSWQiOiI3Nzc3Nzc3Ny03Nzc3LTQ3NzctODc3Ny03Nzc3Nzc3Nzc3NzciLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ4OTh9.9k_nCnE2O9tcTFOMA7-sdqrvMQXOHtLNwlHembEerLI","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704898,"socketId":"127.0.0.1:1679:127.0.0.1:1678","messageType":"qr_session_create","sessionId":"77777777-7777-4777-8777-777777777777","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=77777777-7777-4777-8777-777777777777 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=77777777-7777-4777-8777-777777777777 type=qr_session_create sequence=11
+✔ qr_session_ready_sent (6.7144ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704905,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=182 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"88888888-8888-4888-8888-888888888888","timestamp":1775063704905,"sequence":3,"payload":{"token":"session-created-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704906,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":null,"sessionId":null,"rawMessageBytes":182}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=88888888-8888-4888-8888-888888888888
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704906,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":"qr_session_create","sessionId":"88888888-8888-4888-8888-888888888888"}
+RELAY_INGRESS_HASH sessionId=88888888-8888-4888-8888-888888888888 hash=0f7c9c61f2d3cf76c8c232750d55f361d6fd4cef912ed616645544fcb0ef82da
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704906,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":"qr_session_create","sessionId":"88888888-8888-4888-8888-888888888888","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=88888888-8888-4888-8888-888888888888 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704906,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=88888888-8888-4888-8888-888888888888 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704906,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704906,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":"qr_session_create","sessionId":"88888888-8888-4888-8888-888888888888","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704906,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=88888888-8888-4888-8888-888888888888 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=88888888-8888-4888-8888-888888888888 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"88888888-8888-4888-8888-888888888888","token":"eyJzZXNzaW9uSWQiOiI4ODg4ODg4OC04ODg4LTQ4ODgtODg4OC04ODg4ODg4ODg4ODgiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5MDZ9.nl5_vDCbwGBywPaPIFmJ-cvr48GD6e7wv7EMtU8TM_8","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704907,"socketId":"127.0.0.1:1681:127.0.0.1:1680","messageType":"qr_session_create","sessionId":"88888888-8888-4888-8888-888888888888","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=88888888-8888-4888-8888-888888888888 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=88888888-8888-4888-8888-888888888888 type=qr_session_create sequence=3
+✔ session_created_in_registry (8.8239ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704914,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704914,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=180 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","timestamp":1775063704914,"sequence":1,"payload":{"token":"session-state-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704915,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":null,"sessionId":null,"rawMessageBytes":180}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704915,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=5ec66960aa55166f9408afe0d5397e3494893b6c3d792f11289ff11a04be1cff
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704915,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704915,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704915,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704915,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704915,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=99999999-9999-4999-8999-999999999999 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"99999999-9999-4999-8999-999999999999","token":"eyJzZXNzaW9uSWQiOiI5OTk5OTk5OS05OTk5LTQ5OTktODk5OS05OTk5OTk5OTk5OTkiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5MTV9.ZMpU3Yeo6Z5d5ueVsxz7IHTrWGa8o0J_tTn6eXbLrN4","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704916,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=355 raw={"protocolVersion":2,"type":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","timestamp":1775063704916,"sequence":2,"payload":{"sessionId":"99999999-9999-4999-8999-999999999999","toke type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704916,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":null,"sessionId":null,"rawMessageBytes":355}
+JSON_PARSE_SUCCESS type=pair_request sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704916,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=3b48b4c47da88bebf052a404b201a2f3746a43e2964732c1d748d4faba39465b
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704916,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704916,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=99999999-9999-4999-8999-999999999999 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704916,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704916,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704916,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiI5OTk5OTk5OS05OTk5LTQ5OTktODk5OS05OTk5OTk5OTk5OTkiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5MTV9.ZMpU3Yeo6Z5d5ueVsxz7IHTrWGa8o0J_tTn6eXbLrN4 requestToken=eyJzZXNzaW9uSWQiOiI5OTk5OTk5OS05OTk5LTQ5OTktODk5OS05OTk5OTk5OTk5OTkiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5MTV9.ZMpU3Yeo6Z5d5ueVsxz7IHTrWGa8o0J_tTn6eXbLrN4
+[redis_session_registry] status=success action=pair sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704917,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session 99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704917,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=pair_request sequence=2
+RAW_WS_MESSAGE bytes=169 raw={"protocolVersion":2,"type":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999","timestamp":1775063704917,"sequence":3,"payload":{"client":"mobile"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704917,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":null,"sessionId":null,"rawMessageBytes":169}
+JSON_PARSE_SUCCESS type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704918,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=fd86d700e317c33571949ffbeecfa58e0aeb770cec161d46c8d2dfa12b51c42d
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704918,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704918,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+DISPATCH_LOOKUP type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 handlerExists=false
+SESSION_LOOKUP type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 found=true state=paired
+RELAY_EGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=fd86d700e317c33571949ffbeecfa58e0aeb770cec161d46c8d2dfa12b51c42d
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=3
+[redis_session_registry] status=success action=activate sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=99999999-9999-4999-8999-999999999999
+TIMER_SET sessionId=99999999-9999-4999-8999-999999999999 ttlMs=120000
+SESSION_UPDATE active
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704918,"socketId":"127.0.0.1:1683:127.0.0.1:1682","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+FORWARD_MESSAGE type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 targetSocket=127.0.0.1:1683:127.0.0.1:1682
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704918,"socketId":"127.0.0.1:1684:127.0.0.1:1682","messageType":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":null}
+ROUTING_DECISION type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=protocol_handshake sequence=3
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+✔ session_state_active (11.4817ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704926,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704926,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=184 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","timestamp":1775063704927,"sequence":31,"payload":{"token":"byte-transparent-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704927,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":null,"rawMessageBytes":184}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704927,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=d345e0f1fec44038a58cb98900346a638dc5763056b0da63428ab80270038ecc
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704927,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704927,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704927,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704927,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704927,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=99999999-9999-4999-8999-999999999999 ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"99999999-9999-4999-8999-999999999999","token":"eyJzZXNzaW9uSWQiOiI5OTk5OTk5OS05OTk5LTQ5OTktODk5OS05OTk5OTk5OTk5OTkiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5Mjd9.9s9PFyGecoi3kIVq_W0aP249_RVHWTahGgJ9rdMkvPI","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704928,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":"qr_session_create","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=qr_session_create sequence=31
+RAW_WS_MESSAGE bytes=356 raw={"protocolVersion":2,"type":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","timestamp":1775063704928,"sequence":32,"payload":{"sessionId":"99999999-9999-4999-8999-999999999999","tok type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704928,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null,"rawMessageBytes":356}
+JSON_PARSE_SUCCESS type=pair_request sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704928,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=0eaca002b0b22f9e24f826822b3b4a3421ad4526e40d7a7375a77780cdbab88f
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704928,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704928,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=99999999-9999-4999-8999-999999999999 handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704928,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704928,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704928,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiI5OTk5OTk5OS05OTk5LTQ5OTktODk5OS05OTk5OTk5OTk5OTkiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5Mjd9.9s9PFyGecoi3kIVq_W0aP249_RVHWTahGgJ9rdMkvPI requestToken=eyJzZXNzaW9uSWQiOiI5OTk5OTk5OS05OTk5LTQ5OTktODk5OS05OTk5OTk5OTk5OTkiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5Mjd9.9s9PFyGecoi3kIVq_W0aP249_RVHWTahGgJ9rdMkvPI
+[redis_session_registry] status=success action=pair sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704929,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session 99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704929,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"pair_request","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=pair_request sequence=32
+RAW_WS_MESSAGE bytes=170 raw={"protocolVersion":2,"type":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999","timestamp":1775063704929,"sequence":33,"payload":{"client":"mobile"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704929,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null,"rawMessageBytes":170}
+JSON_PARSE_SUCCESS type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704930,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=cda6462acab3b80091f800d1f896499d2f5a2c067b8cfc9c99c4af2cbfe9e921
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704930,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704930,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+DISPATCH_LOOKUP type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 handlerExists=false
+SESSION_LOOKUP type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 found=true state=paired
+RELAY_EGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=cda6462acab3b80091f800d1f896499d2f5a2c067b8cfc9c99c4af2cbfe9e921
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=33
+[redis_session_registry] status=success action=activate sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=99999999-9999-4999-8999-999999999999
+TIMER_SET sessionId=99999999-9999-4999-8999-999999999999 ttlMs=120000
+SESSION_UPDATE active
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704930,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+FORWARD_MESSAGE type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 targetSocket=127.0.0.1:1686:127.0.0.1:1685
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704930,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"protocol_handshake","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":null}
+ROUTING_DECISION type=protocol_handshake sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=protocol_handshake sequence=33
+RAW_WS_MESSAGE bytes=247 raw={\n  "protocolVersion": 2,\n  "type": "snapshot_start",\n  "sessionId": "99999999-9999-4999-8999-999999999999",\n  "timestamp": 1700000000000,\n  "sequence": 33,\n  "payload": { "snapshotId": "opaque-start" type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704931,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null,"rawMessageBytes":247}
+JSON_PARSE_SUCCESS type=snapshot_start sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704931,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"snapshot_start","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=aec709cde14955b06e09c3065e3976e1722e6c508ee8991079c91c0a9d8b05b0
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704931,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"snapshot_start","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=snapshot_start sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704931,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+DISPATCH_LOOKUP type=snapshot_start sessionId=99999999-9999-4999-8999-999999999999 handlerExists=false
+SESSION_LOOKUP type=snapshot_start sessionId=99999999-9999-4999-8999-999999999999 found=true state=active
+[redis_session_registry] status=success action=activity sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=99999999-9999-4999-8999-999999999999
+TIMER_SET sessionId=99999999-9999-4999-8999-999999999999 ttlMs=120000
+MESSAGE_RECEIVED type=snapshot_start
+RELAY_EGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=aec709cde14955b06e09c3065e3976e1722e6c508ee8991079c91c0a9d8b05b0
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=33
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704932,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+FORWARD_MESSAGE type=snapshot_start sessionId=99999999-9999-4999-8999-999999999999 targetSocket=127.0.0.1:1686:127.0.0.1:1685
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704932,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"snapshot_start","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":null}
+ROUTING_DECISION type=snapshot_start sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=snapshot_start sequence=33
+RAW_WS_MESSAGE bytes=222 raw={\n  "protocolVersion": 2,\n  "type": "snapshot_chunk",\n  "sessionId": "99999999-9999-4999-8999-999999999999",\n  "timestamp": 1700000000001,\n  "sequence": 34,\n  "payload": { "snapshotChunk": "alpha", "p type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704932,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":null,"rawMessageBytes":222}
+JSON_PARSE_SUCCESS type=snapshot_chunk sessionId=99999999-9999-4999-8999-999999999999
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704932,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"snapshot_chunk","sessionId":"99999999-9999-4999-8999-999999999999"}
+RELAY_INGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=0f37ab1c0d30da29603edbe0beb5f1a03a463875b42f9fc5ea66bce647feede2
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704932,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"snapshot_chunk","sessionId":"99999999-9999-4999-8999-999999999999","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=snapshot_chunk sessionId=99999999-9999-4999-8999-999999999999 valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704932,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+DISPATCH_LOOKUP type=snapshot_chunk sessionId=99999999-9999-4999-8999-999999999999 handlerExists=false
+SESSION_LOOKUP type=snapshot_chunk sessionId=99999999-9999-4999-8999-999999999999 found=true state=active
+[redis_session_registry] status=success action=activity sessionId=99999999-9999-4999-8999-999999999999 ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=99999999-9999-4999-8999-999999999999
+TIMER_SET sessionId=99999999-9999-4999-8999-999999999999 ttlMs=120000
+MESSAGE_RECEIVED type=snapshot_chunk
+RELAY_EGRESS_HASH sessionId=99999999-9999-4999-8999-999999999999 hash=0f37ab1c0d30da29603edbe0beb5f1a03a463875b42f9fc5ea66bce647feede2
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=34
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704933,"socketId":"127.0.0.1:1686:127.0.0.1:1685","messageType":null,"sessionId":"99999999-9999-4999-8999-999999999999"}
+FORWARD_MESSAGE type=snapshot_chunk sessionId=99999999-9999-4999-8999-999999999999 targetSocket=127.0.0.1:1686:127.0.0.1:1685
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704933,"socketId":"127.0.0.1:1687:127.0.0.1:1685","messageType":"snapshot_chunk","sessionId":"99999999-9999-4999-8999-999999999999","routed":true,"reason":null}
+ROUTING_DECISION type=snapshot_chunk sessionId=99999999-9999-4999-8999-999999999999 routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=99999999-9999-4999-8999-999999999999 type=snapshot_chunk sequence=34
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+✔ relay_forwards_text_frames_byte_for_byte (14.7254ms)
+RAW_WS_MESSAGE bytes=178 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","timestamp":1775063704940,"sequence":4,"payload":{"token":"pair-routed-token"}} type=unknown sessionId=unknown
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+RELAY_INGRESS_HASH sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa hash=849e20d1c72300b9b6fb9e61bde83bc6101c21d4889e3621b08e117b9513c239
+ENVELOPE_VALIDATION type=qr_session_create sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa valid=true reason=none
+DISPATCH_LOOKUP type=qr_session_create sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa handlerExists=true
+[relay_ingress] qr_session_create received
+[redis_session_registry] status=success action=create sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","token":"eyJzZXNzaW9uSWQiOiJhYWFhYWFhYS1hYWFhLTRhYWEtOGFhYS1hYWFhYWFhYWFhYWEiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NDF9.0AMmSJULPjX2YhDK5WGQLy5NlClyNwQnTpZu1o-NY90","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+ROUTING_DECISION type=qr_session_create sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa type=qr_session_create sequence=4
+RAW_WS_MESSAGE bytes=355 raw={"protocolVersion":2,"type":"pair_request","sessionId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","timestamp":1775063704942,"sequence":5,"payload":{"sessionId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","toke type=unknown sessionId=unknown
+JSON_PARSE_SUCCESS type=pair_request sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+RELAY_INGRESS_HASH sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa hash=fe49e8ecec5b4695c93b974963d23b6a01747d40238640aaa820287cd9334449
+ENVELOPE_VALIDATION type=pair_request sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa valid=true reason=none
+DISPATCH_LOOKUP type=pair_request sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa handlerExists=true
+[relay_ingress] pair_request received
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiJhYWFhYWFhYS1hYWFhLTRhYWEtOGFhYS1hYWFhYWFhYWFhYWEiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NDF9.0AMmSJULPjX2YhDK5WGQLy5NlClyNwQnTpZu1o-NY90 requestToken=eyJzZXNzaW9uSWQiOiJhYWFhYWFhYS1hYWFhLTRhYWEtOGFhYS1hYWFhYWFhYWFhYWEiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NDF9.0AMmSJULPjX2YhDK5WGQLy5NlClyNwQnTpZu1o-NY90
+[redis_session_registry] status=success action=pair sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa ttlSeconds=120
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+ROUTING_DECISION type=pair_request sessionId=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa type=pair_request sequence=5
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+✔ pair_request_routed (9.4641ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704948,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704949,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=182 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","timestamp":1775063704949,"sequence":1,"payload":{"token":"routing-enabled-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704949,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":null,"rawMessageBytes":182}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704949,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":"qr_session_create","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+RELAY_INGRESS_HASH sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb hash=58efb414d1db9bc085ba96712a5f087887d5b7f9f17f9a5434b02a56e46f0040
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704950,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":"qr_session_create","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704950,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704950,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704950,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":"qr_session_create","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704950,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","token":"eyJzZXNzaW9uSWQiOiJiYmJiYmJiYi1iYmJiLTRiYmItOGJiYi1iYmJiYmJiYmJiYmIiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NTB9.DqCvkdk3x1GsGmzsnu9hCEZBOGtcYJkCjqZ5n30c_B8","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704950,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":"qr_session_create","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=355 raw={"protocolVersion":2,"type":"pair_request","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","timestamp":1775063704950,"sequence":2,"payload":{"sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","toke type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":null,"rawMessageBytes":355}
+JSON_PARSE_SUCCESS type=pair_request sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"pair_request","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+RELAY_INGRESS_HASH sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb hash=ff1aacba25cd746c6fcde59f881da8fb7228362a98231d4732173fb2f69842e0
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"pair_request","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"pair_request","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiJiYmJiYmJiYi1iYmJiLTRiYmItOGJiYi1iYmJiYmJiYmJiYmIiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NTB9.DqCvkdk3x1GsGmzsnu9hCEZBOGtcYJkCjqZ5n30c_B8 requestToken=eyJzZXNzaW9uSWQiOiJiYmJiYmJiYi1iYmJiLTRiYmItOGJiYi1iYmJiYmJiYmJiYmIiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NTB9.DqCvkdk3x1GsGmzsnu9hCEZBOGtcYJkCjqZ5n30c_B8
+[redis_session_registry] status=success action=pair sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704951,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704951,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"pair_request","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb type=pair_request sequence=2
+RAW_WS_MESSAGE bytes=169 raw={"protocolVersion":2,"type":"protocol_handshake","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","timestamp":1775063704952,"sequence":3,"payload":{"client":"mobile"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704952,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":null,"rawMessageBytes":169}
+JSON_PARSE_SUCCESS type=protocol_handshake sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704952,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"protocol_handshake","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+RELAY_INGRESS_HASH sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb hash=d0b421db8e218c0f20d0b0e301e4d6b92bda3a78ed552f2df8453df72b516d5e
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704952,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"protocol_handshake","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=protocol_handshake sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704952,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+DISPATCH_LOOKUP type=protocol_handshake sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb handlerExists=false
+SESSION_LOOKUP type=protocol_handshake sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb found=true state=paired
+RELAY_EGRESS_HASH sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb hash=d0b421db8e218c0f20d0b0e301e4d6b92bda3a78ed552f2df8453df72b516d5e
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=3
+[redis_session_registry] status=success action=activate sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+TIMER_SET sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ttlMs=120000
+SESSION_UPDATE active
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704952,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+FORWARD_MESSAGE type=protocol_handshake sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb targetSocket=127.0.0.1:1692:127.0.0.1:1691
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704952,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"protocol_handshake","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","routed":true,"reason":null}
+ROUTING_DECISION type=protocol_handshake sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb type=protocol_handshake sequence=3
+RAW_WS_MESSAGE bytes=166 raw={"protocolVersion":2,"type":"event_stream","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","timestamp":1775063704953,"sequence":4,"payload":{"opaque":"unchanged"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704953,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":null,"rawMessageBytes":166}
+JSON_PARSE_SUCCESS type=event_stream sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704953,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"event_stream","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+RELAY_INGRESS_HASH sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb hash=a6a7e1b6af286c523c17cd5fa5faa2217774bc978d1e42920bed67bf0817cf63
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704953,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"event_stream","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=event_stream sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704953,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":null,"sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+DISPATCH_LOOKUP type=event_stream sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb handlerExists=false
+SESSION_LOOKUP type=event_stream sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb found=true state=active
+[redis_session_registry] status=success action=activity sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+TIMER_SET sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ttlMs=120000
+MESSAGE_RECEIVED type=event_stream
+RELAY_EGRESS_HASH sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb hash=a6a7e1b6af286c523c17cd5fa5faa2217774bc978d1e42920bed67bf0817cf63
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=4
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704954,"socketId":"127.0.0.1:1692:127.0.0.1:1691","messageType":null,"sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+FORWARD_MESSAGE type=event_stream sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb targetSocket=127.0.0.1:1692:127.0.0.1:1691
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704954,"socketId":"127.0.0.1:1693:127.0.0.1:1691","messageType":"event_stream","sessionId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","routed":true,"reason":null}
+ROUTING_DECISION type=event_stream sessionId=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb type=event_stream sequence=4
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+✔ routing_enabled_after_pairing (13.2292ms)
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704962,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704962,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=191 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","timestamp":1775063704963,"sequence":1,"payload":{"token":"snapshot-schema-v2-start-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":null,"rawMessageBytes":191}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":"qr_session_create","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+RELAY_INGRESS_HASH sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc hash=5d7d32cf62fa5e7ea2f9d7ef6f31c3cba43f36a318fe6bc7ed3df28e57184843
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":"qr_session_create","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":"qr_session_create","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc ttlMs=120000
+RELAY_SESSION_CREATED session={"sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","token":"eyJzZXNzaW9uSWQiOiJjY2NjY2NjYy1jY2NjLTRjY2MtOGNjYy1jY2NjY2NjY2NjY2MiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NjN9.sF8AxQvxY1SPh2KA_AH4BdAMuKObOR3iQGOqCt4HmU8","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704963,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":"qr_session_create","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=cccccccc-cccc-4ccc-8ccc-cccccccccccc type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=355 raw={"protocolVersion":2,"type":"pair_request","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","timestamp":1775063704963,"sequence":2,"payload":{"sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","toke type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":null,"rawMessageBytes":355}
+JSON_PARSE_SUCCESS type=pair_request sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"pair_request","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+RELAY_INGRESS_HASH sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc hash=679ebe82516077f7d7c59969309ef3652c91d77ca550b03c6db0cae5073e6f0b
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"pair_request","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"pair_request","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiJjY2NjY2NjYy1jY2NjLTRjY2MtOGNjYy1jY2NjY2NjY2NjY2MiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NjN9.sF8AxQvxY1SPh2KA_AH4BdAMuKObOR3iQGOqCt4HmU8 requestToken=eyJzZXNzaW9uSWQiOiJjY2NjY2NjYy1jY2NjLTRjY2MtOGNjYy1jY2NjY2NjY2NjY2MiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NjN9.sF8AxQvxY1SPh2KA_AH4BdAMuKObOR3iQGOqCt4HmU8
+[redis_session_registry] status=success action=pair sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704964,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session cccccccc-cccc-4ccc-8ccc-cccccccccccc
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704964,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"pair_request","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=cccccccc-cccc-4ccc-8ccc-cccccccccccc type=pair_request sequence=2
+RAW_WS_MESSAGE bytes=169 raw={"protocolVersion":2,"type":"protocol_handshake","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","timestamp":1775063704964,"sequence":3,"payload":{"client":"mobile"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704965,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":null,"rawMessageBytes":169}
+JSON_PARSE_SUCCESS type=protocol_handshake sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704965,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"protocol_handshake","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+RELAY_INGRESS_HASH sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc hash=501d70b410f112760836ef973ed5f69d3a4c4212092df02c30c4e05476b953f4
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704965,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"protocol_handshake","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=protocol_handshake sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704965,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+DISPATCH_LOOKUP type=protocol_handshake sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc handlerExists=false
+SESSION_LOOKUP type=protocol_handshake sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc found=true state=paired
+RELAY_EGRESS_HASH sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc hash=501d70b410f112760836ef973ed5f69d3a4c4212092df02c30c4e05476b953f4
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=3
+[redis_session_registry] status=success action=activate sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc
+TIMER_SET sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc ttlMs=120000
+SESSION_UPDATE active
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704965,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+FORWARD_MESSAGE type=protocol_handshake sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc targetSocket=127.0.0.1:1695:127.0.0.1:1694
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704965,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"protocol_handshake","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","routed":true,"reason":null}
+ROUTING_DECISION type=protocol_handshake sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=cccccccc-cccc-4ccc-8ccc-cccccccccccc type=protocol_handshake sequence=3
+RAW_WS_MESSAGE bytes=275 raw={"protocolVersion":2,"type":"snapshot_start","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","timestamp":1775063704965,"sequence":3,"payload":{"schemaVersion":2,"lastEventVersion":7001,"snapshotId" type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704965,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":null,"rawMessageBytes":275}
+JSON_PARSE_SUCCESS type=snapshot_start sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704966,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"snapshot_start","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+RELAY_INGRESS_HASH sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc hash=6b0ee5bd66f9e380357b8eb1a7b5a9e5588dbe69cd4b0bed49b80cab8631e85e
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704966,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"snapshot_start","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=snapshot_start sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704966,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":null,"sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+DISPATCH_LOOKUP type=snapshot_start sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc handlerExists=false
+SESSION_LOOKUP type=snapshot_start sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc found=true state=active
+[redis_session_registry] status=success action=activity sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc
+TIMER_SET sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc ttlMs=120000
+MESSAGE_RECEIVED type=snapshot_start
+RELAY_EGRESS_HASH sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc hash=6b0ee5bd66f9e380357b8eb1a7b5a9e5588dbe69cd4b0bed49b80cab8631e85e
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=3
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704966,"socketId":"127.0.0.1:1695:127.0.0.1:1694","messageType":null,"sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+FORWARD_MESSAGE type=snapshot_start sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc targetSocket=127.0.0.1:1695:127.0.0.1:1694
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704966,"socketId":"127.0.0.1:1696:127.0.0.1:1694","messageType":"snapshot_start","sessionId":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","routed":true,"reason":null}
+ROUTING_DECISION type=snapshot_start sessionId=cccccccc-cccc-4ccc-8ccc-cccccccccccc routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=cccccccc-cccc-4ccc-8ccc-cccccccccccc type=snapshot_start sequence=3
+✔ snapshot_schema_v2_start_preserved_end_to_end (10.3883ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704973,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704973,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null}
+RAW_WS_MESSAGE bytes=191 raw={"protocolVersion":2,"type":"qr_session_create","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","timestamp":1775063704974,"sequence":1,"payload":{"token":"snapshot-schema-v2-chunk-token"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704974,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":null,"rawMessageBytes":191}
+JSON_PARSE_SUCCESS type=qr_session_create sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704974,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":"qr_session_create","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+RELAY_INGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=fb953f5f8e99f81c27db7164eecc0ad3b996635cec0438a8d4ca1ff79ca8630f
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704974,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":"qr_session_create","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=qr_session_create sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704974,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=qr_session_create sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704974,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704974,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":"qr_session_create","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","handled":true}
+[relay_ingress] qr_session_create received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704974,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":null}
+[redis_session_registry] status=success action=create sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlSeconds=120
+TIMER_CLEAR previousHandle=false
+TIMER_SET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlMs=119999
+RELAY_SESSION_CREATED session={"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","token":"eyJzZXNzaW9uSWQiOiJkZGRkZGRkZC1kZGRkLTRkZGQtOGRkZC1kZGRkZGRkZGRkZGQiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NzR9.Baj7aGApBHud1hjPargZN71Jd4Rkj9ZadsH3Ff97G-4","webSocketId":null,"mobileSocketId":null,"state":"waiting"}
+SESSION_CREATE persisted
+[relay_session] session created
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704975,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":"qr_session_create","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=qr_session_create sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=dddddddd-dddd-4ddd-8ddd-dddddddddddd type=qr_session_create sequence=1
+RAW_WS_MESSAGE bytes=355 raw={"protocolVersion":2,"type":"pair_request","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","timestamp":1775063704975,"sequence":2,"payload":{"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","toke type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704975,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null,"rawMessageBytes":355}
+JSON_PARSE_SUCCESS type=pair_request sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704975,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"pair_request","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+RELAY_INGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=c37af8f766bc1815242d0d9a91e62698c657745989fdfb8547ebbbc0ec5f66cc
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704975,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"pair_request","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=pair_request sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704975,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null}
+DISPATCH_LOOKUP type=pair_request sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd handlerExists=true
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704975,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"qr_handler_invoked","timestamp":1775063704975,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"pair_request","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","handled":true}
+[relay_ingress] pair_request received
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704976,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null}
+RELAY_PAIRING_VALIDATE sessionToken=eyJzZXNzaW9uSWQiOiJkZGRkZGRkZC1kZGRkLTRkZGQtOGRkZC1kZGRkZGRkZGRkZGQiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NzR9.Baj7aGApBHud1hjPargZN71Jd4Rkj9ZadsH3Ff97G-4 requestToken=eyJzZXNzaW9uSWQiOiJkZGRkZGRkZC1kZGRkLTRkZGQtOGRkZC1kZGRkZGRkZGRkZGQiLCJleHBpcmVzQXQiOjE3NzUwNjM4MjQ5NzR9.Baj7aGApBHud1hjPargZN71Jd4Rkj9ZadsH3Ff97G-4
+[redis_session_registry] status=success action=pair sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlSeconds=120
+[relay_ingress] {"stage":"session_sockets_bound","timestamp":1775063704976,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+SESSION_UPDATE paired
+[relay_session] state=paired
+TOKEN_MATCH -> pairing approved
+RELAY_ROUTE relay→web type=pair_approved
+[relay_router] pairing ready for session dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704976,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"pair_request","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","routed":true,"reason":"dispatch_table_handler"}
+ROUTING_DECISION type=pair_request sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd routed=true reason=dispatch_table_handler
+RELAY_QUEUE_PROCESS session=dddddddd-dddd-4ddd-8ddd-dddddddddddd type=pair_request sequence=2
+RAW_WS_MESSAGE bytes=169 raw={"protocolVersion":2,"type":"protocol_handshake","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","timestamp":1775063704976,"sequence":3,"payload":{"client":"mobile"}} type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704976,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null,"rawMessageBytes":169}
+JSON_PARSE_SUCCESS type=protocol_handshake sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704977,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"protocol_handshake","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+RELAY_INGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=d163b986537756605212ba68fa27c07ad5fb0fc29fb6d84b77dd1800228aa4f0
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704977,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"protocol_handshake","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=protocol_handshake sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704977,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+DISPATCH_LOOKUP type=protocol_handshake sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd handlerExists=false
+SESSION_LOOKUP type=protocol_handshake sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd found=true state=paired
+RELAY_EGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=d163b986537756605212ba68fa27c07ad5fb0fc29fb6d84b77dd1800228aa4f0
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=protocol_handshake sequence=3
+[redis_session_registry] status=success action=activate sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+TIMER_SET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlMs=120000
+SESSION_UPDATE active
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704977,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+FORWARD_MESSAGE type=protocol_handshake sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd targetSocket=127.0.0.1:1698:127.0.0.1:1697
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704977,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"protocol_handshake","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","routed":true,"reason":null}
+ROUTING_DECISION type=protocol_handshake sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=dddddddd-dddd-4ddd-8ddd-dddddddddddd type=protocol_handshake sequence=3
+RAW_WS_MESSAGE bytes=217 raw={"protocolVersion":2,"type":"snapshot_start","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","timestamp":1775063704977,"sequence":3,"payload":{"schemaVersion":2,"lastEventVersion":8100,"snapshotId" type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null,"rawMessageBytes":217}
+JSON_PARSE_SUCCESS type=snapshot_start sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_start","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+RELAY_INGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=946fd5acfffad8a870d978763357b672ebdef4196030978a714fa4c61478755d
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_start","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=snapshot_start sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd valid=true reason=none
+RAW_WS_MESSAGE bytes=208 raw={"protocolVersion":2,"type":"event_stream","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","timestamp":1775063704977,"sequence":4,"payload":{"eventVersion":8101,"opaque":"deferred-until-snapshot-re type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null,"rawMessageBytes":208}
+JSON_PARSE_SUCCESS type=event_stream sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"event_stream","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+RELAY_INGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=c70c2cec229c08691b8030df253c7ca317986d70d8bc05c032e42fc3ff2f92b7
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"event_stream","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=event_stream sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd valid=true reason=none
+RAW_WS_MESSAGE bytes=246 raw={"protocolVersion":2,"type":"snapshot_chunk","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","timestamp":1775063704977,"sequence":5,"payload":{"schemaVersion":2,"chunkIndex":0,"encoding":"base64"," type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null,"rawMessageBytes":246}
+JSON_PARSE_SUCCESS type=snapshot_chunk sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_chunk","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+RELAY_INGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=d7d365ebf28782ce5c044bdfd92c17b458d1c2723f21ab3e5ab8f5c36076c1c2
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_chunk","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=snapshot_chunk sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd valid=true reason=none
+RAW_WS_MESSAGE bytes=214 raw={"protocolVersion":2,"type":"snapshot_complete","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","timestamp":1775063704977,"sequence":6,"payload":{"schemaVersion":2,"lastEventVersion":8100,"checksum type=unknown sessionId=unknown
+[relay_ingress] {"stage":"ws_message_received","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":null,"rawMessageBytes":214}
+JSON_PARSE_SUCCESS type=snapshot_complete sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+[relay_ingress] {"stage":"json_parse_success","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_complete","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+RELAY_INGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=0524d1aeea51932ff53aebcb0702dfa6030a6ae2b21a1a969021af645413d46a
+[relay_ingress] {"stage":"transport_envelope_validated","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_complete","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","valid":true,"reason":null}
+ENVELOPE_VALIDATION type=snapshot_complete sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd valid=true reason=none
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704978,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+DISPATCH_LOOKUP type=snapshot_start sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd handlerExists=false
+SESSION_LOOKUP type=snapshot_start sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd found=true state=active
+[redis_session_registry] status=success action=activity sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+TIMER_SET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlMs=120000
+MESSAGE_RECEIVED type=snapshot_start
+RELAY_EGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=946fd5acfffad8a870d978763357b672ebdef4196030978a714fa4c61478755d
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_start sequence=3
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704978,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+FORWARD_MESSAGE type=snapshot_start sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd targetSocket=127.0.0.1:1698:127.0.0.1:1697
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704979,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_start","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","routed":true,"reason":null}
+ROUTING_DECISION type=snapshot_start sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=dddddddd-dddd-4ddd-8ddd-dddddddddddd type=snapshot_start sequence=3
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704979,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+DISPATCH_LOOKUP type=event_stream sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd handlerExists=false
+SESSION_LOOKUP type=event_stream sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd found=true state=active
+[redis_session_registry] status=success action=activity sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+TIMER_SET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlMs=120000
+MESSAGE_RECEIVED type=event_stream
+RELAY_EGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=c70c2cec229c08691b8030df253c7ca317986d70d8bc05c032e42fc3ff2f92b7
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=event_stream sequence=4
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704979,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+FORWARD_MESSAGE type=event_stream sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd targetSocket=127.0.0.1:1698:127.0.0.1:1697
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704979,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"event_stream","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","routed":true,"reason":null}
+ROUTING_DECISION type=event_stream sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=dddddddd-dddd-4ddd-8ddd-dddddddddddd type=event_stream sequence=4
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704979,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+DISPATCH_LOOKUP type=snapshot_chunk sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd handlerExists=false
+SESSION_LOOKUP type=snapshot_chunk sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd found=true state=active
+[redis_session_registry] status=success action=activity sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+TIMER_SET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlMs=120000
+MESSAGE_RECEIVED type=snapshot_chunk
+RELAY_EGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=d7d365ebf28782ce5c044bdfd92c17b458d1c2723f21ab3e5ab8f5c36076c1c2
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_chunk sequence=5
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704979,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+FORWARD_MESSAGE type=snapshot_chunk sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd targetSocket=127.0.0.1:1698:127.0.0.1:1697
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704979,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_chunk","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","routed":true,"reason":null}
+ROUTING_DECISION type=snapshot_chunk sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=dddddddd-dddd-4ddd-8ddd-dddddddddddd type=snapshot_chunk sequence=5
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704979,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+DISPATCH_LOOKUP type=snapshot_complete sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd handlerExists=false
+SESSION_LOOKUP type=snapshot_complete sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd found=true state=active
+[redis_session_registry] status=success action=activity sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlSeconds=120
+TIMER_CLEAR previousHandle=true
+TIMER_RESET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd
+TIMER_SET sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd ttlMs=120000
+MESSAGE_RECEIVED type=snapshot_complete
+RELAY_EGRESS_HASH sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd hash=0524d1aeea51932ff53aebcb0702dfa6030a6ae2b21a1a969021af645413d46a
+PAYLOAD_REFERENCE_EQUALITY true
+RELAY_ROUTE mobile→web type=snapshot_complete sequence=6
+[relay_ingress] {"stage":"socket_lookup","timestamp":1775063704980,"socketId":"127.0.0.1:1698:127.0.0.1:1697","messageType":null,"sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}
+FORWARD_MESSAGE type=snapshot_complete sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd targetSocket=127.0.0.1:1698:127.0.0.1:1697
+[relay_ingress] {"stage":"message_router_dispatch","timestamp":1775063704980,"socketId":"127.0.0.1:1699:127.0.0.1:1697","messageType":"snapshot_complete","sessionId":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","routed":true,"reason":null}
+ROUTING_DECISION type=snapshot_complete sessionId=dddddddd-dddd-4ddd-8ddd-dddddddddddd routed=true reason=forwarded
+RELAY_QUEUE_PROCESS session=dddddddd-dddd-4ddd-8ddd-dddddddddddd type=snapshot_complete sequence=6
+✔ snapshot_schema_v2_chunk_transfer_preserved_end_to_end (13.4691ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=disconnect
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704990,"socketId":"127.0.0.1:1701:127.0.0.1:1700","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704991,"socketId":"127.0.0.1:1702:127.0.0.1:1700","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704991,"socketId":"127.0.0.1:1703:127.0.0.1:1700","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704991,"socketId":"127.0.0.1:1704:127.0.0.1:1700","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704991,"socketId":"127.0.0.1:1705:127.0.0.1:1700","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704992,"socketId":"127.0.0.1:1706:127.0.0.1:1700","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704992,"socketId":"127.0.0.1:1707:127.0.0.1:1700","messageType":null,"sessionId":null}
+[relay_ingress] {"stage":"socket_registered","timestamp":1775063704992,"socketId":"127.0.0.1:1708:127.0.0.1:1700","messageType":null,"sessionId":null}
+✔ multiple_connection_handling (36.2212ms)
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=timeout
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=timeout
+TIMER_CLEAR previousHandle=true
+SESSION_CLOSED reason=timeout
+[redis_session_registry] status=success action=create sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=pair sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activate sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+[redis_session_registry] status=success action=activity sessionId=22222222-2222-4222-8222-222222222222 ttlSeconds=120
+✔ relay_startup_runtime (125.3616ms)
+✔ redis_session_registry_runtime (0.4742ms)
+✔ relay_session_ttl_runtime (0.4732ms)
+✔ redis_session_logs_runtime (1.8193ms)
+✔ relay_message_routing_runtime (0.3884ms)
+✔ relay_mutation_transport_runtime (0.3092ms)
+✔ transport_envelope_validation_runtime (0.2175ms)
+✔ session_lifecycle_transition_runtime (1.6633ms)
+ℹ tests 127
+ℹ suites 0
+ℹ pass 127
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 120651.5214

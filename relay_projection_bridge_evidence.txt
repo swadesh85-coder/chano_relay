@@ -1,5 +1,5 @@
 Relay Projection Bridge Audit
-GeneratedAt: 2026-04-01T17:15:08.590Z
+GeneratedAt: 2026-04-05T12:38:21.277Z
 Verdict: PASS
 
 Relay Transport Evidence
@@ -10,16 +10,874 @@ EventStreamAfterSnapshotComplete: true
 
 Web Projection Evidence
 ProjectionSpecStatus: 0
-ProjectionSpecCommand: cmd.exe /d /s /c npx vitest run --environment jsdom src/app/projection/web_sync_e2e.spec.ts
+ProjectionSpecCommand: cmd.exe /d /s /c ng test --watch=false --browsers=chromium --include src/app/projection/web_sync_e2e.spec.ts
 ProjectionSpecCwd: C:\Users\Taboo\chano_web
 ProjectionSuccessMarkersAsserted: SNAPSHOT_ASSEMBLY_STARTED, BOUNDARY_OK, EVENT_APPLY, EVENT_IGNORE_DUPLICATE, SNAPSHOT_RESYNC_REQUIRED
 
 Web Stdout
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/Taboo/chano_web[39m
+[33m❯[39m Building...
+[32m✔[39m Building...
+[1mInitial chunk files[22m                [2m | [22m[1mNames[22m                           [2m | [22m [1mRaw size[22m
+[32mspec-app-projection-web_sync_e2e.js[39m[2m | [22m[2mspec-app-projection-web_sync_e2e[22m[2m | [22m[36m134.37 kB[39m[2m | [22m
+[32mstyles.css[39m                         [2m | [22m[2mstyles[22m                          [2m | [22m [36m70.23 kB[39m[2m | [22m
+[32mchunk-JBWBLPNK.js[39m                  [2m | [22m[2m-[22m                               [2m | [22m  [36m5.19 kB[39m[2m | [22m
+[32minit-testbed.js[39m                    [2m | [22m[2minit-testbed[22m                    [2m | [22m  [36m1.21 kB[39m[2m | [22m
+[32mvitest-mock-patch.js[39m               [2m | [22m[2mvitest-mock-patch[22m               [2m | [22m[36m704 bytes[39m[2m | [22m
 
- [32m✓[39m src/app/projection/web_sync_e2e.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 330[2mms[22m[39m
+[1m [22m                                  [2m | [22m[1mInitial total[22m                   [2m | [22m[1m211.71 kB[22m
+
+Application bundle generation complete. [6.843 seconds] - 2026-04-05T12:38:16.659Z
+
+
+[1m[46m RUN [49m[22m [36mv4.1.2 [39m[90mC:/Users/Taboo/chano_web[39m
+
+[2m6:08:17 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWEB_SESSION_CREATED sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWEB_RELAY_CONNECT ws://172.20.10.3:8080/relay
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_start","sessionId":"78550769-c98f-41f5-a43f-0d023c1fd5a6","timestamp":1774605250000,"sequence":1,"payload":{"totalChunks":1,"totalBytes":790,"snapshotVersion":2," type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_start","sequence":1,"hash":"b9b94353"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_start","sequence":1,"hash":"c7e8b742"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_PARSED type=snapshot_start sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_start
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "baseEventVersion": 25,
+    "checksum": "11df11a961b3a9f9457283850a6d72d661c6f1fa59580f238e6626bb5dfe0e06",
+    "entityCount": 3,
+    "protocolVersion": 2,
+    "schemaVersion": 1,
+    "snapshotVersion": 2,
+    "totalBytes": 790,
+    "totalChunks": 1,
+  },
+  "protocolVersion": 2,
+  "sequence": 1,
+  "sessionId": "78550769-c98f-41f5-a43f-0d023c1fd5a6",
+  "timestamp": 1774605250000,
+  "type": "snapshot_start",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_start","sequence":1,"hash":"c7e8b742"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mMESSAGE_ROUTED type=snapshot_start target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_RECEIVE_START snapshotId=base-25-sha-11df11a961b3 totalChunks=1 type=snapshot_start sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_ASSEMBLY_STARTED snapshotId=base-25-sha-11df11a961b3
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mHANDLE_MESSAGE type=snapshot_start sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_chunk","sessionId":"78550769-c98f-41f5-a43f-0d023c1fd5a6","timestamp":1774605251000,"sequence":2,"payload":{"index":0,"data":"eyJzbmFwc2hvdFZlcnNpb24iOjIsInByb3Rv type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_chunk","sequence":2,"hash":"887a90b5"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_chunk","sequence":2,"hash":"ca19915d"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_PARSED type=snapshot_chunk sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_chunk
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "data": "eyJzbmFwc2hvdFZlcnNpb24iOjIsInByb3RvY29sVmVyc2lvbiI6Miwic2NoZW1hVmVyc2lvbiI6MSwiYmFzZUV2ZW50VmVyc2lvbiI6MjUsImdlbmVyYXRlZEF0IjoiMjAyNi0wMy0yN1QwOTo1NDowMC4wMDBaIiwiY2hlY2tzdW0iOiJjYW5vbmljYWwtcm9vdC1jaGVja3N1bSIsImVudGl0eUNvdW50IjozLCJlbnRpdGllcyI6W3siZW50aXR5VHlwZSI6ImZvbGRlciIsImVudGl0eVV1aWQiOiJmMSIsImVudGl0eVZlcnNpb24iOjEsImxhc3RFdmVudFZlcnNpb24iOjI1LCJvd25lclVzZXJJZCI6Im93bmVyLTEiLCJkYXRhIjp7InV1aWQiOiJmMSIsIm5hbWUiOiJXb3JrIiwicGFyZW50Rm9sZGVyVXVpZCI6bnVsbH19LHsiZW50aXR5VHlwZSI6InRocmVhZCIsImVudGl0eVV1aWQiOiJ0MSIsImVudGl0eVZlcnNpb24iOjEsImxhc3RFdmVudFZlcnNpb24iOjI1LCJvd25lclVzZXJJZCI6Im93bmVyLTEiLCJkYXRhIjp7InV1aWQiOiJ0MSIsImZvbGRlclV1aWQiOiJmMSIsInRpdGxlIjoiTG9nIn19LHsiZW50aXR5VHlwZSI6InJlY29yZCIsImVudGl0eVV1aWQiOiJyMSIsImVudGl0eVZlcnNpb24iOjEsImxhc3RFdmVudFZlcnNpb24iOjI1LCJvd25lclVzZXJJZCI6Im93bmVyLTEiLCJkYXRhIjp7InV1aWQiOiJyMSIsInRocmVhZFV1aWQiOiJ0MSIsInR5cGUiOiJ0ZXh0IiwiYm9keSI6IkVudHJ5IiwiY3JlYXRlZEF0IjoxNzc0NjA1MjUwMDAwLCJlZGl0ZWRBdCI6MTc3NDYwNTI1MDAwMCwib3JkZXJJbmRleCI6MCwiaXNTdGFycmVkIjpmYWxzZSwiaW1hZ2VHcm91cElkIjpudWxsfX1dfQ==",
+    "index": 0,
+  },
+  "protocolVersion": 2,
+  "sequence": 2,
+  "sessionId": "78550769-c98f-41f5-a43f-0d023c1fd5a6",
+  "timestamp": 1774605251000,
+  "type": "snapshot_chunk",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_chunk","sequence":2,"hash":"ca19915d"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mMESSAGE_ROUTED type=snapshot_chunk target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_RECEIVE_CHUNK index=0 type=snapshot_chunk sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mHANDLE_MESSAGE type=snapshot_chunk sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_complete","sessionId":"78550769-c98f-41f5-a43f-0d023c1fd5a6","timestamp":1774605252000,"sequence":3,"payload":{"totalChunks":1}} type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_complete","sequence":3,"hash":"45c96a3a"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_complete","sequence":3,"hash":"34e4d6e2"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_PARSED type=snapshot_complete sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_complete
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "totalChunks": 1,
+  },
+  "protocolVersion": 2,
+  "sequence": 3,
+  "sessionId": "78550769-c98f-41f5-a43f-0d023c1fd5a6",
+  "timestamp": 1774605252000,
+  "type": "snapshot_complete",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_complete","sequence":3,"hash":"34e4d6e2"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mMESSAGE_ROUTED type=snapshot_complete target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_RECEIVE_COMPLETE totalChunks=1 type=snapshot_complete sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mHANDLE_MESSAGE type=snapshot_complete sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_CHECKSUM_VALID
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_RECONSTRUCTED checksum=11df11a961b3a9f9457283850a6d72d661c6f1fa59580f238e6626bb5dfe0e06
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPROJECTION_BUILD_TRIGGERED type=snapshot_complete sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mORDERING_VALIDATION entity=folder status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mORDERING_VALIDATION entity=thread status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mORDERING_VALIDATION entity=record status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPROJECTION_SNAPSHOT_APPLIED baseEventVersion=25
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPROJECTION_BUILD_COMPLETE entityCount=3
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mBUFFER_PROCESS_START
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_SCHEMA_BASELINE {"entity":"folder","fields":["entityVersion","id","lastEventVersion","name","parentId"]}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_SCHEMA_BASELINE {"entity":"thread","fields":["entityVersion","folderId","id","lastEventVersion","title"]}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mSNAPSHOT_SCHEMA_BASELINE {"entity":"record","fields":["createdAt","editedAt","entityVersion","id","imageGroupId","isStarred","lastEventVersion","name","orderIndex","threadId","type"]}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPROJECTION_APPLY entityCount=3 type=snapshot_apply sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"event_stream","sessionId":"78550769-c98f-41f5-a43f-0d023c1fd5a6","timestamp":1774605254000,"sequence":8,"payload":{"eventId":26,"originDeviceId":"mobile-1","eventVersion": type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_FRAME_HASH {"type":"event_stream","sequence":8,"hash":"7dae0c9d"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_INGRESS_HASH {"type":"event_stream","sequence":8,"hash":"a50058fd"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWS_MESSAGE_PARSED type=event_stream sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=event_stream
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "checksum": "a78eaff8c62739b0e61257d7a5b99f645e89019fa37cb02b349105a208ae5735",
+    "entityId": "t1",
+    "entityType": "thread",
+    "eventId": 26,
+    "eventVersion": 26,
+    "operation": "update",
+    "originDeviceId": "mobile-1",
+    "payload": {
+      "contactId": null,
+      "createdAt": "2026-03-27T09:54:12.000Z",
+      "deviceId": "mobile-1",
+      "entityVersion": 2,
+      "fieldName": "title",
+      "folderUuid": "f1",
+      "hasStarred": false,
+      "isEmptyDraft": false,
+      "isPrivate": false,
+      "kind": "manual",
+      "lastUpdated": "2026-03-27T09:54:14.000Z",
+      "ownerUserId": "owner-1",
+      "title": "Smoke Rename 8082",
+    },
+    "timestamp": "2026-03-27T09:54:14.000Z",
+  },
+  "protocolVersion": 2,
+  "sequence": 8,
+  "sessionId": "78550769-c98f-41f5-a43f-0d023c1fd5a6",
+  "timestamp": 1774605254000,
+  "type": "event_stream",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mRELAY_EGRESS_HASH {"type":"event_stream","sequence":8,"hash":"a50058fd"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mMESSAGE_ROUTED type=event_stream target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mHANDLE_MESSAGE type=event_stream sessionId=78550769-c98f-41f5-a43f-0d023c1fd5a6 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mEVENT_SCHEMA_INCOMING {"entity":"thread","fields":["contactId","createdAt","deviceId","entityVersion","fieldName","folderUuid","hasStarred","isEmptyDraft","isPrivate","kind","lastUpdated","ownerUserId","title"],"eventId":26,"sequence":8}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mEVENT_SCHEMA_CANONICAL {"entity":"thread","fields":["folderId","id","isEmptyDraft","title"],"eventId":26,"sequence":8}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mEVENT_VALIDATION_SUCCESS eventVersion=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mEVENT_FORWARDED_TO_ENGINE eventVersion=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mBOUNDARY_CHECK expected=26 received=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mBOUNDARY_OK start=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mBOUNDARY_CHECK expected=26 received=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mBOUNDARY_OK start=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mEVENT_APPLY version=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mEVENT_APPLY eventVersion=26 lastApplied=25
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mAPPLY eventVersion=26 entity=thread id=t1 op=update
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:374:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mapplies authoritative mobile thread updates after the snapshot boundary
+[22m[39mORDERING_VALIDATION entity=thread status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_SESSION_CREATED sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_RELAY_CONNECT ws://172.20.10.3:8080/relay
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_start","sessionId":"4c1e170b-7532-4eeb-9245-69fefe4fc739","timestamp":1774605250000,"sequence":1,"payload":{"totalChunks":1,"totalBytes":790,"snapshotVersion":2," type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_start","sequence":1,"hash":"851a46fa"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_start","sequence":1,"hash":"c7e8b742"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_PARSED type=snapshot_start sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_start
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "baseEventVersion": 25,
+    "checksum": "11df11a961b3a9f9457283850a6d72d661c6f1fa59580f238e6626bb5dfe0e06",
+    "entityCount": 3,
+    "protocolVersion": 2,
+    "schemaVersion": 1,
+    "snapshotVersion": 2,
+    "totalBytes": 790,
+    "totalChunks": 1,
+  },
+  "protocolVersion": 2,
+  "sequence": 1,
+  "sessionId": "4c1e170b-7532-4eeb-9245-69fefe4fc739",
+  "timestamp": 1774605250000,
+  "type": "snapshot_start",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_start","sequence":1,"hash":"c7e8b742"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mMESSAGE_ROUTED type=snapshot_start target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_RECEIVE_START snapshotId=base-25-sha-11df11a961b3 totalChunks=1 type=snapshot_start sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_ASSEMBLY_STARTED snapshotId=base-25-sha-11df11a961b3
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mHANDLE_MESSAGE type=snapshot_start sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_chunk","sessionId":"4c1e170b-7532-4eeb-9245-69fefe4fc739","timestamp":1774605251000,"sequence":2,"payload":{"index":0,"data":"eyJzbmFwc2hvdFZlcnNpb24iOjIsInByb3Rv type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_chunk","sequence":2,"hash":"48d40d3c"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_chunk","sequence":2,"hash":"ca19915d"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_PARSED type=snapshot_chunk sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_chunk
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "data": "eyJzbmFwc2hvdFZlcnNpb24iOjIsInByb3RvY29sVmVyc2lvbiI6Miwic2NoZW1hVmVyc2lvbiI6MSwiYmFzZUV2ZW50VmVyc2lvbiI6MjUsImdlbmVyYXRlZEF0IjoiMjAyNi0wMy0yN1QwOTo1NDowMC4wMDBaIiwiY2hlY2tzdW0iOiJjYW5vbmljYWwtcm9vdC1jaGVja3N1bSIsImVudGl0eUNvdW50IjozLCJlbnRpdGllcyI6W3siZW50aXR5VHlwZSI6ImZvbGRlciIsImVudGl0eVV1aWQiOiJmMSIsImVudGl0eVZlcnNpb24iOjEsImxhc3RFdmVudFZlcnNpb24iOjI1LCJvd25lclVzZXJJZCI6Im93bmVyLTEiLCJkYXRhIjp7InV1aWQiOiJmMSIsIm5hbWUiOiJXb3JrIiwicGFyZW50Rm9sZGVyVXVpZCI6bnVsbH19LHsiZW50aXR5VHlwZSI6InRocmVhZCIsImVudGl0eVV1aWQiOiJ0MSIsImVudGl0eVZlcnNpb24iOjEsImxhc3RFdmVudFZlcnNpb24iOjI1LCJvd25lclVzZXJJZCI6Im93bmVyLTEiLCJkYXRhIjp7InV1aWQiOiJ0MSIsImZvbGRlclV1aWQiOiJmMSIsInRpdGxlIjoiTG9nIn19LHsiZW50aXR5VHlwZSI6InJlY29yZCIsImVudGl0eVV1aWQiOiJyMSIsImVudGl0eVZlcnNpb24iOjEsImxhc3RFdmVudFZlcnNpb24iOjI1LCJvd25lclVzZXJJZCI6Im93bmVyLTEiLCJkYXRhIjp7InV1aWQiOiJyMSIsInRocmVhZFV1aWQiOiJ0MSIsInR5cGUiOiJ0ZXh0IiwiYm9keSI6IkVudHJ5IiwiY3JlYXRlZEF0IjoxNzc0NjA1MjUwMDAwLCJlZGl0ZWRBdCI6MTc3NDYwNTI1MDAwMCwib3JkZXJJbmRleCI6MCwiaXNTdGFycmVkIjpmYWxzZSwiaW1hZ2VHcm91cElkIjpudWxsfX1dfQ==",
+    "index": 0,
+  },
+  "protocolVersion": 2,
+  "sequence": 2,
+  "sessionId": "4c1e170b-7532-4eeb-9245-69fefe4fc739",
+  "timestamp": 1774605251000,
+  "type": "snapshot_chunk",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_chunk","sequence":2,"hash":"ca19915d"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mMESSAGE_ROUTED type=snapshot_chunk target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_RECEIVE_CHUNK index=0 type=snapshot_chunk sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mHANDLE_MESSAGE type=snapshot_chunk sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_complete","sessionId":"4c1e170b-7532-4eeb-9245-69fefe4fc739","timestamp":1774605252000,"sequence":3,"payload":{"totalChunks":1}} type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_complete","sequence":3,"hash":"3f80e7f3"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_complete","sequence":3,"hash":"34e4d6e2"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_PARSED type=snapshot_complete sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_complete
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "totalChunks": 1,
+  },
+  "protocolVersion": 2,
+  "sequence": 3,
+  "sessionId": "4c1e170b-7532-4eeb-9245-69fefe4fc739",
+  "timestamp": 1774605252000,
+  "type": "snapshot_complete",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_complete","sequence":3,"hash":"34e4d6e2"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mMESSAGE_ROUTED type=snapshot_complete target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_RECEIVE_COMPLETE totalChunks=1 type=snapshot_complete sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mHANDLE_MESSAGE type=snapshot_complete sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_CHECKSUM_VALID
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_RECONSTRUCTED checksum=11df11a961b3a9f9457283850a6d72d661c6f1fa59580f238e6626bb5dfe0e06
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPROJECTION_BUILD_TRIGGERED type=snapshot_complete sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mORDERING_VALIDATION entity=folder status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mORDERING_VALIDATION entity=thread status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mORDERING_VALIDATION entity=record status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPROJECTION_SNAPSHOT_APPLIED baseEventVersion=25
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPROJECTION_BUILD_COMPLETE entityCount=3
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mBUFFER_PROCESS_START
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_SCHEMA_BASELINE {"entity":"folder","fields":["entityVersion","id","lastEventVersion","name","parentId"]}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_SCHEMA_BASELINE {"entity":"thread","fields":["entityVersion","folderId","id","lastEventVersion","title"]}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mSNAPSHOT_SCHEMA_BASELINE {"entity":"record","fields":["createdAt","editedAt","entityVersion","id","imageGroupId","isStarred","lastEventVersion","name","orderIndex","threadId","type"]}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPROJECTION_APPLY entityCount=3 type=snapshot_apply sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"event_stream","sessionId":"4c1e170b-7532-4eeb-9245-69fefe4fc739","timestamp":1774605253000,"sequence":4,"payload":{"eventId":26,"originDeviceId":"mobile-1","eventVersion": type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_FRAME_HASH {"type":"event_stream","sequence":4,"hash":"df9dde48"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_INGRESS_HASH {"type":"event_stream","sequence":4,"hash":"7387b10a"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_PARSED type=event_stream sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=event_stream
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "checksum": "67bced0829cc2f27cd6526d42742ffe85f438007c47c055cc25dcc1198e6c738",
+    "entityId": "r1",
+    "entityType": "record",
+    "eventId": 26,
+    "eventVersion": 26,
+    "operation": "softDelete",
+    "originDeviceId": "mobile-1",
+    "payload": {
+      "body": "Entry",
+      "createdAt": 1774605250000,
+      "deviceId": "mobile-1",
+      "editedAt": 1774605250000,
+      "fieldName": "clearAllData",
+      "imageGroupId": null,
+      "isStarred": false,
+      "orderIndex": 0,
+      "ownerUserId": "owner-1",
+      "threadUuid": "t1",
+      "type": "text",
+    },
+    "timestamp": "2026-03-27T09:54:13.000Z",
+  },
+  "protocolVersion": 2,
+  "sequence": 4,
+  "sessionId": "4c1e170b-7532-4eeb-9245-69fefe4fc739",
+  "timestamp": 1774605253000,
+  "type": "event_stream",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_EGRESS_HASH {"type":"event_stream","sequence":4,"hash":"7387b10a"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mMESSAGE_ROUTED type=event_stream target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mHANDLE_MESSAGE type=event_stream sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_SCHEMA_INCOMING {"entity":"record","fields":["body","createdAt","deviceId","editedAt","fieldName","imageGroupId","isStarred","orderIndex","ownerUserId","threadUuid","type"],"eventId":26,"sequence":4}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_SCHEMA_CANONICAL {"entity":"record","fields":["id"],"eventId":26,"sequence":4}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_VALIDATION_SUCCESS eventVersion=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_FORWARDED_TO_ENGINE eventVersion=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mBOUNDARY_CHECK expected=26 received=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mBOUNDARY_OK start=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mBOUNDARY_CHECK expected=26 received=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mBOUNDARY_OK start=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_APPLY version=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_APPLY eventVersion=26 lastApplied=25
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mAPPLY eventVersion=26 entity=record id=r1 op=softDelete
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mORDERING_VALIDATION entity=record status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"event_stream","sessionId":"4c1e170b-7532-4eeb-9245-69fefe4fc739","timestamp":1774605254000,"sequence":5,"payload":{"eventId":27,"originDeviceId":"mobile-1","eventVersion": type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_FRAME_HASH {"type":"event_stream","sequence":5,"hash":"d00fa358"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_INGRESS_HASH {"type":"event_stream","sequence":5,"hash":"08725cfc"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_PARSED type=event_stream sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=event_stream
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "checksum": "c34e7df18b5efcb1aa46d2ac719cf2a44903829c813ae08b8f35a9498c207baa",
+    "entityId": "t1",
+    "entityType": "thread",
+    "eventId": 27,
+    "eventVersion": 27,
+    "operation": "softDelete",
+    "originDeviceId": "mobile-1",
+    "payload": {
+      "deviceId": "mobile-1",
+      "entityVersion": 2,
+      "fieldName": "clearAllData",
+      "folderUuid": "f1",
+      "hasStarred": false,
+      "isEmptyDraft": false,
+      "isPrivate": false,
+      "kind": "manual",
+      "ownerUserId": "owner-1",
+      "title": "Log",
+    },
+    "timestamp": "2026-03-27T09:54:14.000Z",
+  },
+  "protocolVersion": 2,
+  "sequence": 5,
+  "sessionId": "4c1e170b-7532-4eeb-9245-69fefe4fc739",
+  "timestamp": 1774605254000,
+  "type": "event_stream",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_EGRESS_HASH {"type":"event_stream","sequence":5,"hash":"08725cfc"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mMESSAGE_ROUTED type=event_stream target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mHANDLE_MESSAGE type=event_stream sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_SCHEMA_INCOMING {"entity":"thread","fields":["deviceId","entityVersion","fieldName","folderUuid","hasStarred","isEmptyDraft","isPrivate","kind","ownerUserId","title"],"eventId":27,"sequence":5}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_SCHEMA_CANONICAL {"entity":"thread","fields":["id"],"eventId":27,"sequence":5}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_VALIDATION_SUCCESS eventVersion=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_FORWARDED_TO_ENGINE eventVersion=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_APPLY version=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_APPLY eventVersion=27 lastApplied=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mAPPLY eventVersion=27 entity=thread id=t1 op=softDelete
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mORDERING_VALIDATION entity=thread status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"event_stream","sessionId":"4c1e170b-7532-4eeb-9245-69fefe4fc739","timestamp":1774605255000,"sequence":6,"payload":{"eventId":28,"originDeviceId":"mobile-1","eventVersion": type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_FRAME_HASH {"type":"event_stream","sequence":6,"hash":"cbbde01f"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_INGRESS_HASH {"type":"event_stream","sequence":6,"hash":"3dc23d79"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWS_MESSAGE_PARSED type=event_stream sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=event_stream
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "checksum": "8dc4111e0f6df20bba7b407f42cfbc4fc1f32f12ee4ce977583f93837caaf5d2",
+    "entityId": "f1",
+    "entityType": "folder",
+    "eventId": 28,
+    "eventVersion": 28,
+    "operation": "softDelete",
+    "originDeviceId": "mobile-1",
+    "payload": {
+      "name": "Work",
+      "parentFolderUuid": null,
+    },
+    "timestamp": "2026-03-27T09:54:15.000Z",
+  },
+  "protocolVersion": 2,
+  "sequence": 6,
+  "sessionId": "4c1e170b-7532-4eeb-9245-69fefe4fc739",
+  "timestamp": 1774605255000,
+  "type": "event_stream",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mRELAY_EGRESS_HASH {"type":"event_stream","sequence":6,"hash":"3dc23d79"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mMESSAGE_ROUTED type=event_stream target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mHANDLE_MESSAGE type=event_stream sessionId=4c1e170b-7532-4eeb-9245-69fefe4fc739 handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_SCHEMA_INCOMING {"entity":"folder","fields":["name","parentFolderUuid"],"eventId":28,"sequence":6}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_SCHEMA_CANONICAL {"entity":"folder","fields":["id"],"eventId":28,"sequence":6}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_VALIDATION_SUCCESS eventVersion=28
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_FORWARDED_TO_ENGINE eventVersion=28
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_APPLY version=28
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mEVENT_APPLY eventVersion=28 lastApplied=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mAPPLY eventVersion=28 entity=folder id=f1 op=softDelete
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:458:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mpropagates authoritative wipe events through to an empty projected state
+[22m[39mORDERING_VALIDATION entity=folder status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_SESSION_CREATED sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_RELAY_CONNECT ws://172.20.10.3:8080/relay
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_start","sessionId":"1477be36-7c56-4d74-baaf-3502648e604b","timestamp":1774605250000,"sequence":1,"payload":{"totalChunks":1,"totalBytes":354,"snapshotVersion":2," type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_start","sequence":1,"hash":"28522a20"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_start","sequence":1,"hash":"399c65bf"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_PARSED type=snapshot_start sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_start
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "baseEventVersion": 25,
+    "checksum": "dbc22c89ddba90e685b967918963a029b1544c7d56310bf8a354dca79aa48919",
+    "entityCount": 1,
+    "protocolVersion": 2,
+    "schemaVersion": 1,
+    "snapshotVersion": 2,
+    "totalBytes": 354,
+    "totalChunks": 1,
+  },
+  "protocolVersion": 2,
+  "sequence": 1,
+  "sessionId": "1477be36-7c56-4d74-baaf-3502648e604b",
+  "timestamp": 1774605250000,
+  "type": "snapshot_start",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_start","sequence":1,"hash":"399c65bf"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mMESSAGE_ROUTED type=snapshot_start target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mSNAPSHOT_RECEIVE_START snapshotId=base-25-sha-dbc22c89ddba totalChunks=1 type=snapshot_start sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mSNAPSHOT_ASSEMBLY_STARTED snapshotId=base-25-sha-dbc22c89ddba
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mHANDLE_MESSAGE type=snapshot_start sessionId=1477be36-7c56-4d74-baaf-3502648e604b handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_chunk","sessionId":"1477be36-7c56-4d74-baaf-3502648e604b","timestamp":1774605251000,"sequence":2,"payload":{"index":0,"data":"eyJzbmFwc2hvdFZlcnNpb24iOjIsInByb3Rv type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_chunk","sequence":2,"hash":"6bf846b5"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_chunk","sequence":2,"hash":"1ad4f473"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_PARSED type=snapshot_chunk sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_chunk
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "data": "eyJzbmFwc2hvdFZlcnNpb24iOjIsInByb3RvY29sVmVyc2lvbiI6Miwic2NoZW1hVmVyc2lvbiI6MSwiYmFzZUV2ZW50VmVyc2lvbiI6MjUsImdlbmVyYXRlZEF0IjoiMjAyNi0wMy0yN1QwOTo1NDowMC4wMDBaIiwiY2hlY2tzdW0iOiJjYW5vbmljYWwtcm9vdC1jaGVja3N1bSIsImVudGl0eUNvdW50IjoxLCJlbnRpdGllcyI6W3siZW50aXR5VHlwZSI6ImZvbGRlciIsImVudGl0eVV1aWQiOiJmMSIsImVudGl0eVZlcnNpb24iOjEsImxhc3RFdmVudFZlcnNpb24iOjI1LCJvd25lclVzZXJJZCI6Im93bmVyLTEiLCJkYXRhIjp7InV1aWQiOiJmMSIsIm5hbWUiOiJJbmJveCIsInBhcmVudEZvbGRlclV1aWQiOm51bGx9fV19",
+    "index": 0,
+  },
+  "protocolVersion": 2,
+  "sequence": 2,
+  "sessionId": "1477be36-7c56-4d74-baaf-3502648e604b",
+  "timestamp": 1774605251000,
+  "type": "snapshot_chunk",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_chunk","sequence":2,"hash":"1ad4f473"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mMESSAGE_ROUTED type=snapshot_chunk target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mSNAPSHOT_RECEIVE_CHUNK index=0 type=snapshot_chunk sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mHANDLE_MESSAGE type=snapshot_chunk sessionId=1477be36-7c56-4d74-baaf-3502648e604b handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"snapshot_complete","sessionId":"1477be36-7c56-4d74-baaf-3502648e604b","timestamp":1774605252000,"sequence":3,"payload":{"totalChunks":1}} type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_FRAME_HASH {"type":"snapshot_complete","sequence":3,"hash":"797b3714"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_INGRESS_HASH {"type":"snapshot_complete","sequence":3,"hash":"34e4d6e2"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_PARSED type=snapshot_complete sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=snapshot_complete
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "totalChunks": 1,
+  },
+  "protocolVersion": 2,
+  "sequence": 3,
+  "sessionId": "1477be36-7c56-4d74-baaf-3502648e604b",
+  "timestamp": 1774605252000,
+  "type": "snapshot_complete",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_EGRESS_HASH {"type":"snapshot_complete","sequence":3,"hash":"34e4d6e2"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mMESSAGE_ROUTED type=snapshot_complete target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mSNAPSHOT_RECEIVE_COMPLETE totalChunks=1 type=snapshot_complete sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mHANDLE_MESSAGE type=snapshot_complete sessionId=1477be36-7c56-4d74-baaf-3502648e604b handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mSNAPSHOT_CHECKSUM_VALID
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mSNAPSHOT_RECONSTRUCTED checksum=dbc22c89ddba90e685b967918963a029b1544c7d56310bf8a354dca79aa48919
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPROJECTION_BUILD_TRIGGERED type=snapshot_complete sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mORDERING_VALIDATION entity=folder status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPROJECTION_SNAPSHOT_APPLIED baseEventVersion=25
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPROJECTION_BUILD_COMPLETE entityCount=1
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mBUFFER_PROCESS_START
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mSNAPSHOT_SCHEMA_BASELINE {"entity":"folder","fields":["entityVersion","id","lastEventVersion","name","parentId"]}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPROJECTION_APPLY entityCount=1 type=snapshot_apply sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"event_stream","sessionId":"1477be36-7c56-4d74-baaf-3502648e604b","timestamp":1774605253000,"sequence":4,"payload":{"eventId":26,"originDeviceId":"mobile-1","eventVersion": type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_FRAME_HASH {"type":"event_stream","sequence":4,"hash":"b3ddd475"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_INGRESS_HASH {"type":"event_stream","sequence":4,"hash":"e282fcf0"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_PARSED type=event_stream sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=event_stream
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "checksum": "e82e2e685bef72f4b241c8cefb8947dba6f29d3b01d60675dd4c8c6c456eb519",
+    "entityId": "t-draft",
+    "entityType": "thread",
+    "eventId": 26,
+    "eventVersion": 26,
+    "operation": "create",
+    "originDeviceId": "mobile-1",
+    "payload": {
+      "folderUuid": "f1",
+      "isEmptyDraft": true,
+      "title": "Untitled Draft",
+    },
+    "timestamp": "2026-03-27T09:54:13.000Z",
+  },
+  "protocolVersion": 2,
+  "sequence": 4,
+  "sessionId": "1477be36-7c56-4d74-baaf-3502648e604b",
+  "timestamp": 1774605253000,
+  "type": "event_stream",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_EGRESS_HASH {"type":"event_stream","sequence":4,"hash":"e282fcf0"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mMESSAGE_ROUTED type=event_stream target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mHANDLE_MESSAGE type=event_stream sessionId=1477be36-7c56-4d74-baaf-3502648e604b handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_SCHEMA_INCOMING {"entity":"thread","fields":["folderUuid","isEmptyDraft","title"],"eventId":26,"sequence":4}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_SCHEMA_CANONICAL {"entity":"thread","fields":["folderId","id","isEmptyDraft","title"],"eventId":26,"sequence":4}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_VALIDATION_SUCCESS eventVersion=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_FORWARDED_TO_ENGINE eventVersion=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mBOUNDARY_CHECK expected=26 received=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mBOUNDARY_OK start=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mBOUNDARY_CHECK expected=26 received=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mBOUNDARY_OK start=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_APPLY version=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_APPLY eventVersion=26 lastApplied=25
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mAPPLY eventVersion=26 entity=thread id=t-draft op=create
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mORDERING_VALIDATION entity=thread status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"event_stream","sessionId":"1477be36-7c56-4d74-baaf-3502648e604b","timestamp":1774605254000,"sequence":5,"payload":{"eventId":27,"originDeviceId":"mobile-1","eventVersion": type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_FRAME_HASH {"type":"event_stream","sequence":5,"hash":"14edaa61"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_INGRESS_HASH {"type":"event_stream","sequence":5,"hash":"045f3122"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_PARSED type=event_stream sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=event_stream
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "checksum": "a535d93b8964b2b02f0ea53d51ce532cbe3f377f4e2a929270cfb9f9a222ff19",
+    "entityId": "r-draft",
+    "entityType": "record",
+    "eventId": 27,
+    "eventVersion": 27,
+    "operation": "create",
+    "originDeviceId": "mobile-1",
+    "payload": {
+      "body": "First synced record",
+      "createdAt": 1774605253000,
+      "editedAt": 1774605253000,
+      "imageGroupId": null,
+      "isStarred": false,
+      "orderIndex": 0,
+      "threadUuid": "t-draft",
+      "type": "text",
+    },
+    "timestamp": "2026-03-27T09:54:14.000Z",
+  },
+  "protocolVersion": 2,
+  "sequence": 5,
+  "sessionId": "1477be36-7c56-4d74-baaf-3502648e604b",
+  "timestamp": 1774605254000,
+  "type": "event_stream",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_EGRESS_HASH {"type":"event_stream","sequence":5,"hash":"045f3122"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mMESSAGE_ROUTED type=event_stream target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mHANDLE_MESSAGE type=event_stream sessionId=1477be36-7c56-4d74-baaf-3502648e604b handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_SCHEMA_INCOMING {"entity":"record","fields":["body","createdAt","editedAt","imageGroupId","isStarred","orderIndex","threadUuid","type"],"eventId":27,"sequence":5}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_SCHEMA_CANONICAL {"entity":"record","fields":["createdAt","editedAt","id","imageGroupId","isStarred","name","orderIndex","threadId","type"],"eventId":27,"sequence":5}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_VALIDATION_SUCCESS eventVersion=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_FORWARDED_TO_ENGINE eventVersion=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_APPLY version=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_APPLY eventVersion=27 lastApplied=26
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mAPPLY eventVersion=27 entity=record id=r-draft op=create
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mORDERING_VALIDATION entity=record status=OK
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_RECEIVED raw={"protocolVersion":2,"type":"event_stream","sessionId":"1477be36-7c56-4d74-baaf-3502648e604b","timestamp":1774605255000,"sequence":6,"payload":{"eventId":28,"originDeviceId":"mobile-1","eventVersion": type=unknown sessionId=unknown
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_FRAME_HASH {"type":"event_stream","sequence":6,"hash":"c75b7590"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_INGRESS_HASH {"type":"event_stream","sequence":6,"hash":"7ebabb71"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWS_MESSAGE_PARSED type=event_stream sessionId=1477be36-7c56-4d74-baaf-3502648e604b
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mWEB_RELAY_ENVELOPE_RECEIVED type=event_stream
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mTRANSPORT_ENVELOPE_PARSED {
+  "payload": {
+    "checksum": "0ee5d4d942fe76d311e99efb5568d0b1c003e4cd1e1058647d6426775589d979",
+    "entityId": "t-draft",
+    "entityType": "thread",
+    "eventId": 28,
+    "eventVersion": 28,
+    "operation": "update",
+    "originDeviceId": "mobile-1",
+    "payload": {
+      "folderUuid": "f1",
+      "isEmptyDraft": false,
+      "title": "Untitled Draft",
+    },
+    "timestamp": "2026-03-27T09:54:15.000Z",
+  },
+  "protocolVersion": 2,
+  "sequence": 6,
+  "sessionId": "1477be36-7c56-4d74-baaf-3502648e604b",
+  "timestamp": 1774605255000,
+  "type": "event_stream",
+}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mRELAY_EGRESS_HASH {"type":"event_stream","sequence":6,"hash":"7ebabb71"}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mPAYLOAD_REFERENCE_EQUALITY true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mMESSAGE_ROUTED type=event_stream target=projection
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mHANDLE_MESSAGE type=event_stream sessionId=1477be36-7c56-4d74-baaf-3502648e604b handled=true
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_SCHEMA_INCOMING {"entity":"thread","fields":["folderUuid","isEmptyDraft","title"],"eventId":28,"sequence":6}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_SCHEMA_CANONICAL {"entity":"thread","fields":["folderId","id","isEmptyDraft","title"],"eventId":28,"sequence":6}
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_VALIDATION_SUCCESS eventVersion=28
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_FORWARDED_TO_ENGINE eventVersion=28
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_APPLY version=28
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mEVENT_APPLY eventVersion=28 lastApplied=27
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mAPPLY eventVersion=28 entity=thread id=t-draft op=update
+[90mstdout[2m | src/app/projection/web_sync_e2e.spec.ts[2m:554:3[22m[2m[2m > [22m[2mWeb Sync E2E[2m > [22m[2mkeeps draft threads invisible until the first record arrives and the thread activates
+[22m[39mORDERING_VALIDATION entity=thread status=OK
+ [32m✓[39m [30m[46m chano_web (chromium) [49m[39m src/app/projection/web_sync_e2e.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 414[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m3 passed[39m[22m[90m (3)[39m
-[2m   Start at [22m 22:45:06
-[2m   Duration [22m 2.43s[2m (transform 272ms, setup 0ms, import 720ms, tests 330ms, environment 1.10s)[22m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 18:08:17
+[2m   Duration [22m 3.40s[2m (transform 0ms, setup 522ms, import 87ms, tests 414ms, environment 0ms)[22m

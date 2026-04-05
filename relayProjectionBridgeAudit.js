@@ -5,24 +5,21 @@ const { runRelayTransportIntegrityAudit } = require('./relayTransportIntegrityAu
 
 const EVIDENCE_FILE_PATH = path.join(__dirname, 'relay_projection_bridge_evidence.txt');
 
+const WEB_PROJECTION_AUDIT_COMMAND = process.platform === 'win32'
+  ? 'ng test --watch=false --browsers=chromium --include src/app/projection/web_sync_e2e.spec.ts'
+  : 'npx ng test --watch=false --browsers=chromium --include src/app/projection/web_sync_e2e.spec.ts';
+
 function resolveNpxCommand() {
   return process.platform === 'win32' ? 'npx.cmd' : 'npx';
 }
 
 function runWebProjectionAudit() {
   const webWorkspace = path.resolve(__dirname, '..', 'chano_web');
-  const vitestArgs = [
-    'vitest',
-    'run',
-    '--environment',
-    'jsdom',
-    'src/app/projection/web_sync_e2e.spec.ts',
-  ];
   const isWindows = process.platform === 'win32';
   const command = isWindows ? 'cmd.exe' : resolveNpxCommand();
   const args = isWindows
-    ? ['/d', '/s', '/c', `npx ${vitestArgs.join(' ')}`]
-    : vitestArgs;
+    ? ['/d', '/s', '/c', WEB_PROJECTION_AUDIT_COMMAND]
+    : ['ng', 'test', '--watch=false', '--browsers=chromium', '--include', 'src/app/projection/web_sync_e2e.spec.ts'];
 
   const result = spawnSync(command, args, {
     cwd: webWorkspace,
